@@ -4,7 +4,6 @@ from modules.translator import translate_to_english
 from modules.wiki_crawler import get_wikipedia_summary
 from modules.script_generator import create_script_with_gemini
 from modules.audio_generator import process_script_to_audio_and_timings
-from modules.add_style_speech import add_style_speech
 
 async def process_science_concept(user_input, long, style):
     """Xử lý khái niệm khoa học từ đầu vào đến đầu ra"""
@@ -24,10 +23,10 @@ async def process_science_concept(user_input, long, style):
     # Bước 4: Tạo kịch bản với Gemini
     script = create_script_with_gemini(english_topic, wiki_data, detected_lang, style, long)
     print("Kịch bản:", script)
-    
-    # Bước 5: Tạo file âm thanh với ngôn ngữ gốc
-    output_file, timings_string = process_script_to_audio_and_timings(script, detected_lang, output_file = "output_file")
+    output_file = "output.mp3"
 
+    # Bước 5: Tạo file âm thanh với ngôn ngữ gốc
+    output_file, timings_string = process_script_to_audio_and_timings(script, detected_lang, style, output_file)
     # In kết quả
     if output_file and timings_string:
         print(f"File MP3: {output_file}")
@@ -36,14 +35,11 @@ async def process_science_concept(user_input, long, style):
     else:
         print("Có lỗi xảy ra trong quá trình xử lý.")
 
-    # Bước 6: Thêm phong cách giọng nói
-    final_file = f"final.mp3"
-    add_style_speech(style, output_file, final_file)
 
 if __name__ == "__main__":
     # style 1: serious voice for scientific documents
     # style 2: fun voice for kids
-    style = 2
+    style = 1
     long = 300
     user_input = "Cách dùng flex box trong CSS"  # Thay bằng đầu vào mong muốn
-    asyncio.run(process_science_concept(user_input, long, style))  # 20 từ cho kịch bản
+    asyncio.run(process_science_concept(user_input, long, style))  
