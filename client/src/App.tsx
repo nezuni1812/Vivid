@@ -1,7 +1,8 @@
 import { Route, Routes } from "react-router-dom";
 import "./App.css";
-import Home from "./pages/Home";
+import Home from "./pages/Login";
 import About from "./pages/About";
+import HomePage from "./pages/HomePage";
 import NavBar from "./components/NavBar";
 
 function App() {
@@ -11,6 +12,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
+        <Route path="/homepage" element={<HomePage />} />
         {/* <Route path="*" element={<NotFound />} /> */}
       </Routes>
     </div>
