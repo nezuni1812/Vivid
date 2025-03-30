@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FiSettings } from "react-icons/fi";
 import { FcGoogle } from "react-icons/fc";
+import { FaUpload } from "react-icons/fa";
+import { gapi } from "gapi-script";
 
 const videos = [
     { title: "Video Title 1", thumbnail: "" },
@@ -11,9 +13,130 @@ const videos = [
 
 const HomePage = () => {
     const [activeTab, setActiveTab] = useState("all");
+    const [videoFile, setVideoFile] = useState(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [isSignedIn, setIsSignedIn] = useState(false);
+    
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.files && event.target.files.length > 0) {
+            setSelectedFile(event.target.files[0]);
+        }
+    };
+
+    // Load Google API client
+    useEffect(() => {
+        function start() {
+            gapi.load("client:auth2", () => {
+                gapi.client
+                    .init({
+                        clientId: import.meta.env.VITE_CLIENT_ID,
+                        scope: "https://www.googleapis.com/auth/youtube.upload",
+                    })
+                    .then(() => {
+                        setIsSignedIn(gapi.auth2.getAuthInstance().isSignedIn.get());
+                    });
+            });
+        }
+        start();
+    }, []);
+
+    const handleSignIn = async () => {
+        const auth = gapi.auth2.getAuthInstance();
+        await auth.signIn();
+
+        const accessToken = auth.currentUser.get().getAuthResponse().access_token;
+        localStorage.setItem("youtube_access_token", accessToken);
+        
+        setIsSignedIn(auth.isSignedIn.get());
+    };
+
+    async function checkYouTubeChannel() {
+        const accessToken = localStorage.getItem("youtube_access_token"); 
+        const response = await fetch(
+            "https://www.googleapis.com/youtube/v3/channels?part=id&mine=true",
+            {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    Accept: "application/json",
+                },
+            }
+        );
+        const data = await response.json();
+    
+        if (data.items && data.items.length > 0) {
+            return true; // Có kênh
+        } else {
+            return false; // Không có kênh
+        }
+    }
+    const handleUpload = async () => {
+        const hasChannel = await checkYouTubeChannel();
+    
+        if (!hasChannel) {
+            alert("Your account does not have a YouTube channel. Please create one first.");
+            window.open("https://www.youtube.com/create_channel", "_blank");
+            return;
+        }
+    
+        // Nếu có kênh, tiếp tục upload video
+        await uploadVideo();
+    };
+
+    // Upload video to YouTube
+    const uploadVideo = async () => {
+        if (!selectedFile) {
+            alert("Please select a video file first.");
+            return;
+        }
+
+        const token = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;
+        
+        // Thay đổi thông tin video ở đây
+        const metadata = {
+            snippet: {
+                title: "Demo video", // tên video
+                description: "This is a test video upload via YouTube API.", // mô tả video
+                tags: ["API", "Video Generation", "test", "AI"], // tags video
+                // categoryId: "",  // danh mục video
+            },
+            status: {
+                privacyStatus: "private", // trạng thái video(public, private, unlisted)
+            },
+        };
+
+        const form = new FormData();
+        form.append(
+            "metadata",
+            new Blob([JSON.stringify(metadata)], { type: "application/json" })
+        );
+        form.append("file", selectedFile);
+
+        try {
+            const response = await fetch(
+                "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=multipart&part=snippet,status",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: form,
+                }
+            );
+
+            const data = await response.json();
+            if (data.id) {
+                alert("Upload successful! Video link: " + `https://www.youtube.com/watch?v=${data.id}`);
+            } else {
+                console.error("Upload failed:", data);
+            }
+        } catch (error) {
+            console.error("Error uploading video:", error);
+        }
+    };
+    
 
     return (
-        <div className="absolute top-0 left-0 w-screen bg-gray-500 text-black text-center p-4 h-screen overflow-y-auto">
+        <div className="absolute top-0 left-0 w-screen bg-gray-100 text-black text-center p-4 h-screen overflow-y-auto">
             {/* Header */}
             <header className="bg-white p-4 flex items-center justify-between shadow-md">
                 <div className="flex items-center gap-2">
@@ -40,22 +163,39 @@ const HomePage = () => {
                 <p>abc xyz 123</p>
             </div>
 
-            {/* Tabs */}
-            <div className="flex gap-6 p-4 border-b">
-                {[
-                    { id: "all", label: "Tất cả" },
-                    { id: "created", label: "Video đã tạo" },
-                    { id: "processing", label: "Video đang xử lý" },
-                    { id: "stats", label: "Thống kê" },
-                ].map((tab) => (
-                    <button
-                        key={tab.id}
-                        className={`pb-2 font-semibold ${activeTab === tab.id ? "border-b-2 border-black" : "text-gray-500"}`}
-                        onClick={() => setActiveTab(tab.id)}
-                    >
-                        {tab.label}
-                    </button>
-                ))}
+            {/* Tabs and Actions */}
+            <div className="flex justify-between items-center p-4 border-b">
+                <div className="flex gap-6">
+                    {["all", "created", "processing", "stats"].map((tab, index) => (
+                        <button
+                            key={tab}
+                            className={`pb-2 font-semibold ${activeTab === tab ? "border-b-2 border-black" : "text-gray-500"}`}
+                            onClick={() => setActiveTab(tab)}
+                        >
+                            {tab === "all" ? "Tất cả" : tab === "created" ? "Video đã tạo" : tab === "processing" ? "Video đang xử lý" : "Thống kê"}
+                        </button>
+                    ))}
+                </div>
+                <div className="p-4">
+                    <h1 className="text-xl font-bold mb-4">YouTube Video Upload</h1>
+
+                    {!isSignedIn ? (
+                        <button onClick={handleSignIn} className="px-4 py-2 bg-blue-500 text-black rounded">
+                            Sign in with Google
+                        </button>
+                    ) : (
+                        <>
+                            <input type="file" accept="video/*" onChange={handleFileChange} className="mb-2" />
+                            <button onClick={handleUpload} className="px-4 py-2 bg-green-500 text-black rounded">
+                                Upload to YouTube
+                            </button>
+
+                            <button onClick={handleSignIn} className="bg-red-500 text-black px-4 py-2 rounded m-2">
+                                Chuyển tài khoản
+                            </button>
+                        </>
+                    )}
+                </div>
             </div>
 
             {/* Video Sections */}
