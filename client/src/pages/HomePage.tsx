@@ -16,10 +16,23 @@ const HomePage = () => {
     const [videoFile, setVideoFile] = useState(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [isSignedIn, setIsSignedIn] = useState(false);
-    
+    const [userEmail, setUserEmail] = useState("");
+    const [accessToken, setAccessToken] = useState("");
+
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files.length > 0) {
             setSelectedFile(event.target.files[0]);
+        }
+    };
+
+    const updateUserInfo = (user: any) => {
+        if (user && user.isSignedIn()) {
+            const profile = user.getBasicProfile();
+            setUserEmail(profile.getEmail());
+            setIsSignedIn(true);
+        } else {
+            setUserEmail("");
+            setIsSignedIn(false);
         }
     };
 
@@ -30,10 +43,16 @@ const HomePage = () => {
                 gapi.client
                     .init({
                         clientId: import.meta.env.VITE_CLIENT_ID,
-                        scope: "https://www.googleapis.com/auth/youtube.upload",
+                        scope: "https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly",
                     })
                     .then(() => {
                         setIsSignedIn(gapi.auth2.getAuthInstance().isSignedIn.get());
+                        
+                        const auth = gapi.auth2.getAuthInstance();
+                        updateUserInfo(auth.currentUser.get());
+
+                        // Lắng nghe khi thay đổi tài khoản
+                        auth.currentUser.listen(updateUserInfo);
                     });
             });
         }
@@ -44,14 +63,18 @@ const HomePage = () => {
         const auth = gapi.auth2.getAuthInstance();
         await auth.signIn();
 
-        const accessToken = auth.currentUser.get().getAuthResponse().access_token;
-        localStorage.setItem("youtube_access_token", accessToken);
-        
+        const user = auth.currentUser.get();
+        const authResponse = user.getAuthResponse();
+        if (authResponse && authResponse.access_token) {
+            setAccessToken(authResponse.access_token);
+        } else {
+            console.error("Failed to get access token");
+        }
+
         setIsSignedIn(auth.isSignedIn.get());
     };
 
     async function checkYouTubeChannel() {
-        const accessToken = localStorage.getItem("youtube_access_token"); 
         const response = await fetch(
             "https://www.googleapis.com/youtube/v3/channels?part=id&mine=true",
             {
@@ -185,6 +208,7 @@ const HomePage = () => {
                         </button>
                     ) : (
                         <>
+                            <p>Tài khoản: {userEmail}</p>
                             <input type="file" accept="video/*" onChange={handleFileChange} className="mb-2" />
                             <button onClick={handleUpload} className="px-4 py-2 bg-green-500 text-black rounded">
                                 Upload to YouTube
