@@ -4,7 +4,7 @@ from datetime import datetime
 # Model Users
 class User(Document):
     firebase_uid = StringField(required=True, unique=True)
-    username = StringField(max_length=50, required=True, unique=True)
+    username = StringField(max_length=50, required=True, unique=False)
     email = StringField(required=True, unique=True)
     role = StringField(default="user", choices=["user", "admin"])
     created_at = DateTimeField(default=datetime.utcnow)

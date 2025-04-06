@@ -3,6 +3,7 @@ import { FiSettings } from "react-icons/fi";
 import { FcGoogle } from "react-icons/fc";
 import { FaUpload } from "react-icons/fa";
 import { gapi } from "gapi-script";
+import { signInWithGoogle } from "../services/auth";
 
 const videos = [
     { title: "Video Title 1", thumbnail: "" },
@@ -15,9 +16,13 @@ const HomePage = () => {
     const [activeTab, setActiveTab] = useState("all");
     const [videoFile, setVideoFile] = useState(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [isSignedIn, setIsSignedIn] = useState(false);
+    const [isChannelSignedIn, setIsChannelSignedIn] = useState(false);
     const [userEmail, setUserEmail] = useState("");
     const [accessToken, setAccessToken] = useState("");
+
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [userName, setUserName] = useState("");
+    const [photoURL, setPhotoURL] = useState("");
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files.length > 0) {
@@ -25,14 +30,14 @@ const HomePage = () => {
         }
     };
 
-    const updateUserInfo = (user: any) => {
+    const updateUserChannelInfo = (user: any) => {
         if (user && user.isSignedIn()) {
             const profile = user.getBasicProfile();
             setUserEmail(profile.getEmail());
-            setIsSignedIn(true);
+            setIsChannelSignedIn(true);
         } else {
             setUserEmail("");
-            setIsSignedIn(false);
+            setIsChannelSignedIn(false);
         }
     };
 
@@ -46,20 +51,48 @@ const HomePage = () => {
                         scope: "https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly",
                     })
                     .then(() => {
-                        setIsSignedIn(gapi.auth2.getAuthInstance().isSignedIn.get());
+                        setIsChannelSignedIn(gapi.auth2.getAuthInstance().isSignedIn.get());
                         
                         const auth = gapi.auth2.getAuthInstance();
-                        updateUserInfo(auth.currentUser.get());
+                        updateUserChannelInfo(auth.currentUser.get());
 
                         // Lắng nghe khi thay đổi tài khoản
-                        auth.currentUser.listen(updateUserInfo);
+                        auth.currentUser.listen(updateUserChannelInfo);
                     });
             });
         }
         start();
+
+        const storedUser = localStorage.getItem("currentUser");
+        if (storedUser) {
+            const parsed = JSON.parse(storedUser);
+            setUserName(parsed.username || "");
+            setPhotoURL(parsed.photoURL || "");
+        }
     }, []);
 
-    const handleSignIn = async () => {
+    const changeGoogleAccount = async () => {
+        try {
+            const user = await signInWithGoogle();
+            setUserName(user.username || "");
+            setPhotoURL(user.photoURL || "");
+
+            // Đăng xuât tài khoản kênh hiện tại
+            const auth = gapi.auth2.getAuthInstance();
+            auth.signOut();
+            window.location.reload();  
+        } catch (error) {
+          
+        }
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem("currentUser");
+        gapi.auth2.getAuthInstance().signOut();
+        window.location.href = "/"; // Redirect về trang login
+    };
+
+    const handleChannelSignIn = async () => {
         const auth = gapi.auth2.getAuthInstance();
         await auth.signIn();
 
@@ -71,7 +104,7 @@ const HomePage = () => {
             console.error("Failed to get access token");
         }
 
-        setIsSignedIn(auth.isSignedIn.get());
+        setIsChannelSignedIn(auth.isSignedIn.get());
     };
 
     async function checkYouTubeChannel() {
@@ -171,13 +204,43 @@ const HomePage = () => {
                     placeholder="Tìm kiếm tên video"
                     className="border p-2 rounded w-1/3"
                 />
-                <div className="flex items-center gap-4">
-                    <FiSettings className="text-xl cursor-pointer" />
-                    <div className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded">
-                        {/* <FcGoogle className="text-xl" /> */}
-                        <span>Tên người dùng</span>
+                <div className="relative">
+                    <div
+                        className="flex items-center gap-3 bg-gray-100 px-4 py-2 rounded-lg cursor-pointer shadow-sm hover:bg-gray-200 transition"
+                        onClick={() => setDropdownOpen(!dropdownOpen)}
+                    >
+                        <img
+                            src={photoURL}
+                            alt="avatar"
+                            className="w-8 h-8 rounded-full object-cover"
+                        />
+                        <span className="font-medium text-sm">{userName}</span>
                     </div>
+
+                    {dropdownOpen && (
+                        <div className="absolute right-0 mt-2 shadow-lg z-10 w-48 overflow-hidden pn-2">
+                            <button
+                                onClick={() => {
+                                    setDropdownOpen(false);
+                                    changeGoogleAccount();
+                                }}
+                                className=" px-4 py-2 text-sm text-left hover:bg-gray-200 w-full"
+                            >
+                                Thay đổi tài khoản
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setDropdownOpen(false);
+                                    handleLogout();
+                                }}
+                                className=" px-4py-2 text-sm text-left hover:bg-gray-200 w-full"
+                            > 
+                                Đăng xuất
+                            </button>
+                        </div>
+                    )}
                 </div>
+
             </header>
 
             {/* Banner */}
@@ -202,8 +265,8 @@ const HomePage = () => {
                 <div className="p-4">
                     <h1 className="text-xl font-bold mb-4">YouTube Video Upload</h1>
 
-                    {!isSignedIn ? (
-                        <button onClick={handleSignIn} className="px-4 py-2 bg-blue-500 text-black rounded">
+                    {!isChannelSignedIn ? (
+                        <button onClick={handleChannelSignIn} className="px-4 py-2 bg-blue-500 text-black rounded">
                             Sign in with Google
                         </button>
                     ) : (
@@ -214,7 +277,7 @@ const HomePage = () => {
                                 Upload to YouTube
                             </button>
 
-                            <button onClick={handleSignIn} className="bg-red-500 text-black px-4 py-2 rounded m-2">
+                            <button onClick={handleChannelSignIn} className="bg-red-500 text-black px-4 py-2 rounded m-2">
                                 Chuyển tài khoản
                             </button>
                         </>

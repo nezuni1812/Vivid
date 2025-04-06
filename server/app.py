@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 from config.database import init_db
 from routes.clip_routes import clip_bp
 from routes.user_routes import user_bp
@@ -8,6 +9,11 @@ from routes.audio_routes import audio_bp
 from routes.script_routes import script_bp
 
 app = Flask(__name__)
+cors = CORS(app, resources={
+    r"/*": {
+        "origins": "http://localhost:5173"
+    }
+})
 
 # Khởi tạo database
 init_db()

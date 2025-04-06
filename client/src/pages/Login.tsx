@@ -2,24 +2,17 @@ import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "../firebaseConfig";
 import { FcGoogle } from "react-icons/fc"; // Import icon Google
 import { useNavigate } from "react-router-dom"; // Import useNavigate
-
+import { signInWithGoogle } from "../services/auth";
 const Home = () => {
     const navigate = useNavigate();
 
     const handleGoogleLogin = async () => {
-        
-        const provider = new GoogleAuthProvider();
         try {
-            const result = await signInWithPopup(auth, provider);
-            const user = result.user;
-            console.log("User info:", user);
-            alert(`Welcome, ${user.displayName}!`);
-
+            const user = await signInWithGoogle();
             
             navigate("/homepage");
         } catch (error) {
-            console.error("Error during login:", error);
-            alert("Login failed. Please try again.");
+            alert("Đăng nhập thất bại!");
         }
     };
 
