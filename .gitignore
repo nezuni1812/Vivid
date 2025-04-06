@@ -310,3 +310,4 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+server/output.mp3
