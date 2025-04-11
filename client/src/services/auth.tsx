@@ -15,16 +15,15 @@ export const signInWithGoogle = async () => {
             photoURL: user.photoURL || "",
         };
 
-        // Gửi thông tin lên server (POST hoặc GET trước như bạn đang làm)
+        // Gửi thông tin lên server
         await fetch("http://localhost:5000/users", {
-            method: "POST", // hoặc GET trước, nếu đã có
+            method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify(userData),
         });
 
-        // Lưu vào localStorage
         localStorage.setItem("currentUser", JSON.stringify(userData));
 
         return userData;

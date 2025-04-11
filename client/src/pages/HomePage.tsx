@@ -4,6 +4,9 @@ import { FcGoogle } from "react-icons/fc";
 import { FaUpload } from "react-icons/fa";
 import { gapi } from "gapi-script";
 import { signInWithGoogle } from "../services/auth";
+import { AllContent, CreatedContent, ProcessingContent, StatsContent } from "./tabsContent"
+import { useNavigate } from "react-router-dom";
+
 
 const videos = [
     { title: "Video Title 1", thumbnail: "" },
@@ -13,6 +16,8 @@ const videos = [
 ];
 
 const HomePage = () => {
+    const navigate = useNavigate();
+
     const [activeTab, setActiveTab] = useState("all");
     const [videoFile, setVideoFile] = useState(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -88,6 +93,7 @@ const HomePage = () => {
 
     const handleLogout = () => {
         localStorage.removeItem("currentUser");
+        localStorage.removeItem("accessToken")
         gapi.auth2.getAuthInstance().signOut();
         window.location.href = "/"; // Redirect về trang login
     };
@@ -100,6 +106,7 @@ const HomePage = () => {
         const authResponse = user.getAuthResponse();
         if (authResponse && authResponse.access_token) {
             setAccessToken(authResponse.access_token);
+            localStorage.setItem("accessToken", authResponse.access_token);
         } else {
             console.error("Failed to get access token");
         }
@@ -189,7 +196,15 @@ const HomePage = () => {
             console.error("Error uploading video:", error);
         }
     };
-    
+
+    const tabs = [
+        { id: "all", label: "Tất cả", content: <AllContent /> },
+        { id: "created", label: "Video đã tạo", content: <CreatedContent /> },
+        { id: "processing", label: "Video đang xử lý", content: <ProcessingContent /> },
+        { id: "stats", label: "Thống kê", content: <StatsContent /> },
+      ]
+    // Tìm tab đang active
+    const activeTabData = tabs.find((tab) => tab.id === activeTab) || tabs[0]
 
     return (
         <div className="absolute top-0 left-0 w-screen bg-gray-100 text-black text-center p-4 h-screen overflow-y-auto">
@@ -252,15 +267,29 @@ const HomePage = () => {
             {/* Tabs and Actions */}
             <div className="flex justify-between items-center p-4 border-b">
                 <div className="flex gap-6">
-                    {["all", "created", "processing", "stats"].map((tab, index) => (
-                        <button
-                            key={tab}
-                            className={`pb-2 font-semibold ${activeTab === tab ? "border-b-2 border-black" : "text-gray-500"}`}
-                            onClick={() => setActiveTab(tab)}
-                        >
-                            {tab === "all" ? "Tất cả" : tab === "created" ? "Video đã tạo" : tab === "processing" ? "Video đang xử lý" : "Thống kê"}
-                        </button>
-                    ))}
+                {["all", "created", "processing", "stats"].map((tab) => (
+                    <button
+                    key={tab}
+                    className={`pb-2 font-semibold ${
+                        activeTab === tab ? "border-b-2 border-black" : "text-gray-500"
+                    }`}
+                    onClick={() => {
+                        if (tab === "stats") {
+                            navigate("/channelStat", { state: { accessToken } });
+                        } else {
+                          setActiveTab(tab);
+                        }
+                      }}
+                    >
+                    {tab === "all"
+                        ? "Tất cả"
+                        : tab === "created"
+                        ? "Video đã tạo"
+                        : tab === "processing"
+                        ? "Video đang xử lý"
+                        : "Thống kê"}
+                    </button>
+                ))}
                 </div>
                 <div className="p-4">
                     <h1 className="text-xl font-bold mb-4">YouTube Video Upload</h1>

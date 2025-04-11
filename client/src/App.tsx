@@ -5,6 +5,7 @@ import About from "./pages/About";
 import HomePage from "./pages/HomePage";
 import NavBar from "./components/NavBar";
 import PrivateRoute from "./privateRoute";
+import StatPage from "./pages/StatPage";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/about" element={<About />} />
         <Route path="/homepage" element={
           <PrivateRoute><HomePage/></PrivateRoute>} />
+        { <Route path="/channelStat/" element={<PrivateRoute><StatPage/></PrivateRoute>} /> }
         {/* <Route path="*" element={<NotFound />} /> */}
       </Routes>
     </div>
