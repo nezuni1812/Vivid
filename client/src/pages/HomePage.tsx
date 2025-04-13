@@ -53,7 +53,7 @@ const HomePage = () => {
                 gapi.client
                     .init({
                         clientId: import.meta.env.VITE_CLIENT_ID,
-                        scope: "https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly",
+                        scope: "https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly",
                     })
                     .then(() => {
                         setIsChannelSignedIn(gapi.auth2.getAuthInstance().isSignedIn.get());
