@@ -11,9 +11,26 @@ class UserController:
                 role=role
             )
             user.save()
-            return {"user_id": str(user.id)}, 201
+            return {
+                    "user_id": str(user.id),
+                    "firebase_uid": firebase_uid,
+                    "username": username,
+                    "email": email,
+                    "role": role,
+                }, 201
         except Exception as e:
-            return {"error": str(e)}, 500
+            # user có thê đã tồn tại trong db, nếu có thì trả về thông tin user đó
+            existing_user = User.objects(firebase_uid=firebase_uid).first()
+            if existing_user:
+                return {
+                    "user_id": str(existing_user.id),
+                    "firebase_uid": existing_user.firebase_uid,
+                    "username": existing_user.username,
+                    "email": existing_user.email,
+                    "role": existing_user.role,
+                }, 201
+            else: 
+                return {"error": str(e)}, 500
 
     @staticmethod
     def get_user(user_id):
