@@ -7,7 +7,6 @@ export const signInWithGoogle = async () => {
     try {
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
-
         const userData = {
             firebase_uid: user.uid,
             username: user.displayName || "None",
@@ -15,19 +14,19 @@ export const signInWithGoogle = async () => {
             photoURL: user.photoURL || "",
         };
 
-        // Gửi thông tin lên server (POST hoặc GET trước như bạn đang làm)
-        await fetch("http://localhost:5000/users", {
-            method: "POST", // hoặc GET trước, nếu đã có
+        // Gửi thông tin lên server
+        const response = await fetch("http://localhost:5000/users", {
+            method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify(userData),
         });
+        const loginUser = await response.json();
 
-        // Lưu vào localStorage
-        localStorage.setItem("currentUser", JSON.stringify(userData));
-
-        return userData;
+        localStorage.setItem("currentUser", JSON.stringify(loginUser));
+       
+        return loginUser;
     } catch (error) {
         console.error("Login failed:", error);
         throw error;

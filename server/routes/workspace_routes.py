@@ -8,7 +8,7 @@ def create_workspace():
     data = request.get_json()
     name = data.get("name")
     description = data.get("description")
-    owner_id = data.get("owner_id")
+    owner_id = data.get("user_id")
 
     if not all([name, owner_id]):
         return jsonify({"error": "Missing required fields"}), 400
@@ -34,6 +34,6 @@ def delete_workspace(workspace_id):
 
 @workspace_bp.route("/workspaces", methods=["GET"])
 def list_workspaces():
-    owner_id = request.args.get("owner_id")
+    owner_id = request.args.get("user_id")
     response, status_code = WorkspaceController.list_workspaces(owner_id)
     return jsonify(response), status_code
