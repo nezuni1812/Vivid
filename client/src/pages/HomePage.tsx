@@ -1,21 +1,38 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect } from "react"
-import { FiPlus } from "react-icons/fi"
-import { FaFolder } from "react-icons/fa"
-import { gapi } from "gapi-script"
-import { signInWithGoogle } from "../services/auth"
-import { AllContent, CreatedContent, ProcessingContent, StatsContent } from "./tabsContent"
-import { useNavigate } from "react-router-dom"
+import { useState, useEffect } from "react";
+import { FiPlus } from "react-icons/fi";
+import { FaFolder } from "react-icons/fa";
+import { gapi } from "gapi-script";
+import { signInWithGoogle } from "../services/auth";
+import {
+  AllContent,
+  CreatedContent,
+  ProcessingContent,
+  StatsContent,
+} from "./tabsContent";
+import { useNavigate } from "react-router-dom";
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import { Video, BarChart2 } from "lucide-react";
+
+import VideoList from "../components/video-list";
+import StatsChart from "../components/stats-chart";
 
 interface Workspace {
-  _id: string
-  name: string
-  description: string
-  created_at: string
-  updated_at: string
+  _id: string;
+  name: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
 }
 
 const videos = [
@@ -23,45 +40,45 @@ const videos = [
   { title: "Video Title 2", thumbnail: "" },
   { title: "Video Title 3", thumbnail: "" },
   { title: "Long video titleeeeeeeee...", thumbnail: "" },
-]
+];
 
 const HomePage = () => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState("all")
-  const [videoFile, setVideoFile] = useState(null)
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [isChannelSignedIn, setIsChannelSignedIn] = useState(false)
-  const [userEmail, setUserEmail] = useState("")
-  const [accessToken, setAccessToken] = useState("")
+  const [activeTab, setActiveTab] = useState("all");
+  const [videoFile, setVideoFile] = useState(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isChannelSignedIn, setIsChannelSignedIn] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
+  const [accessToken, setAccessToken] = useState("");
 
-  const [dropdownOpen, setDropdownOpen] = useState(false)
-  const [userName, setUserName] = useState("")
-  const [photoURL, setPhotoURL] = useState("")
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [userName, setUserName] = useState("");
+  const [photoURL, setPhotoURL] = useState("");
 
   // Workspace states
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([])
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [newWorkspaceName, setNewWorkspaceName] = useState("")
-  const [newWorkspaceDescription, setNewWorkspaceDescription] = useState("")
-  const [isWorkspaceLoading, setIsWorkspaceLoading] = useState(false)
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newWorkspaceName, setNewWorkspaceName] = useState("");
+  const [newWorkspaceDescription, setNewWorkspaceDescription] = useState("");
+  const [isWorkspaceLoading, setIsWorkspaceLoading] = useState(false);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
-      setSelectedFile(event.target.files[0])
+      setSelectedFile(event.target.files[0]);
     }
-  }
+  };
 
   const updateUserChannelInfo = (user: any) => {
     if (user && user.isSignedIn()) {
-      const profile = user.getBasicProfile()
-      setUserEmail(profile.getEmail())
-      setIsChannelSignedIn(true)
+      const profile = user.getBasicProfile();
+      setUserEmail(profile.getEmail());
+      setIsChannelSignedIn(true);
     } else {
-      setUserEmail("")
-      setIsChannelSignedIn(false)
+      setUserEmail("");
+      setIsChannelSignedIn(false);
     }
-  }
+  };
 
   // Load Google API client
   useEffect(() => {
@@ -74,66 +91,71 @@ const HomePage = () => {
               "https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly",
           })
           .then(() => {
-            setIsChannelSignedIn(gapi.auth2.getAuthInstance().isSignedIn.get())
+            setIsChannelSignedIn(gapi.auth2.getAuthInstance().isSignedIn.get());
 
-            const auth = gapi.auth2.getAuthInstance()
-            updateUserChannelInfo(auth.currentUser.get())
+            const auth = gapi.auth2.getAuthInstance();
+            updateUserChannelInfo(auth.currentUser.get());
 
             // Lắng nghe khi thay đổi tài khoản
-            auth.currentUser.listen(updateUserChannelInfo)
-          })
-      })
+            auth.currentUser.listen(updateUserChannelInfo);
+          });
+      });
     }
-    start()
+    start();
 
-    const storedUser = localStorage.getItem("currentUser")
+    const storedUser = localStorage.getItem("currentUser");
     if (storedUser) {
-      const parsed = JSON.parse(storedUser)
-      setUserName(parsed.username || "")
-      setPhotoURL(parsed.photoURL || "")
+      const parsed = JSON.parse(storedUser);
+      setUserName(parsed.username || "");
+      setPhotoURL(parsed.photoURL || "");
     }
 
     // Fetch workspaces when component mounts
-    fetchWorkspaces()
-  }, [])
+    fetchWorkspaces();
+  }, []);
 
   // Fetch workspaces from MongoDB
   const fetchWorkspaces = async () => {
-    setIsWorkspaceLoading(true)
-    const storedUser = localStorage.getItem("currentUser")
-    const userId = storedUser ? JSON.parse(storedUser).user_id : null
+    setIsWorkspaceLoading(true);
+    const storedUser = localStorage.getItem("currentUser");
+    const userId = storedUser ? JSON.parse(storedUser).user_id : null;
     // console.log("userId: ", userId)
     try {
-      const response = await fetch(`http://localhost:5000/workspaces?user_id=${userId}`, {
-        method: "GET",
-        headers: {
+      const response = await fetch(
+        `http://localhost:5000/workspaces?user_id=${userId}`,
+        {
+          method: "GET",
+          headers: {
             "Content-Type": "application/json",
-        },
-    });
+          },
+        }
+      );
       const WorkspacesData = await response.json();
 
-      setWorkspaces(WorkspacesData.map((w: any) => ({
-        _id: w.id, 
-        name: w.name,
-        description: w.description,
-        created_at: w.created_at,
-        updated_at: w.updated_at,
-      })))
+      setWorkspaces(
+        WorkspacesData.map((w: any) => ({
+          _id: w.id,
+          name: w.name,
+          description: w.description,
+          created_at: w.created_at,
+          updated_at: w.updated_at,
+        }))
+      );
     } catch (error) {
-      console.error("Error fetching workspaces:", error)
+      console.error("Error fetching workspaces:", error);
     } finally {
-      setIsWorkspaceLoading(false)
+      setIsWorkspaceLoading(false);
     }
-  }
+  };
 
   // Create new workspace
   const createWorkspace = async () => {
     if (!newWorkspaceName.trim()) {
-      alert("Vui lòng nhập tên workspace")
-      return
+      alert("Vui lòng nhập tên workspace");
+      return;
     }
-    const storedUser = localStorage.getItem("currentUser")
-    const userId = storedUser ? JSON.parse(storedUser).user_id : null
+    const storedUser = localStorage.getItem("currentUser");
+    const userId = storedUser ? JSON.parse(storedUser).user_id : null;
     try {
       const newWorkspace = {
         user_id: userId,
@@ -141,12 +163,12 @@ const HomePage = () => {
         description: newWorkspaceDescription,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-      }
+      };
 
-      const response = await fetch('http://localhost:5000/workspaces', {
-        method: 'POST',
+      const response = await fetch("http://localhost:5000/workspaces", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(newWorkspace),
       });
@@ -157,94 +179,102 @@ const HomePage = () => {
         description: newWorkspace.description,
         created_at: newWorkspace.created_at,
         updated_at: newWorkspace.updated_at,
-      }
-      setWorkspaces([...workspaces, newWorkspaceObj as Workspace])
-      setIsCreateModalOpen(false)
-      setNewWorkspaceName("")
-      setNewWorkspaceDescription("")
+      };
+      setWorkspaces([...workspaces, newWorkspaceObj as Workspace]);
+      setIsCreateModalOpen(false);
+      setNewWorkspaceName("");
+      setNewWorkspaceDescription("");
     } catch (error) {
-      console.error("Error creating workspace:", error)
+      console.error("Error creating workspace:", error);
     }
-  }
+  };
 
   // Navigate to workspace page
   const navigateToWorkspace = (workspaceId: string) => {
-    navigate(`/workspace/${workspaceId}`)
-  }
+    navigate(`/workspace/${workspaceId}`);
+  };
 
   const changeGoogleAccount = async () => {
     try {
-      const user = await signInWithGoogle()
-      setUserName(user.username || "")
-      setPhotoURL(user.photoURL || "")
+      const user = await signInWithGoogle();
+      setUserName(user.username || "");
+      setPhotoURL(user.photoURL || "");
 
       // Đăng xuât tài khoản kênh hiện tại
-      const auth = gapi.auth2.getAuthInstance()
-      auth.signOut()
-      window.location.reload()
+      const auth = gapi.auth2.getAuthInstance();
+      auth.signOut();
+      window.location.reload();
     } catch (error) {}
-  }
+  };
 
   const handleLogout = () => {
-    localStorage.removeItem("currentUser")
-    localStorage.removeItem("accessToken")
-    gapi.auth2.getAuthInstance().signOut()
-    window.location.href = "/" // Redirect về trang login
-  }
+    localStorage.removeItem("currentUser");
+    localStorage.removeItem("accessToken");
+    gapi.auth2.getAuthInstance().signOut();
+    window.location.href = "/"; // Redirect về trang login
+  };
 
   const handleChannelSignIn = async () => {
-    const auth = gapi.auth2.getAuthInstance()
-    await auth.signIn()
+    const auth = gapi.auth2.getAuthInstance();
+    await auth.signIn();
 
-    const user = auth.currentUser.get()
-    const authResponse = user.getAuthResponse()
+    const user = auth.currentUser.get();
+    const authResponse = user.getAuthResponse();
     if (authResponse && authResponse.access_token) {
-      setAccessToken(authResponse.access_token)
-      localStorage.setItem("accessToken", authResponse.access_token)
+      setAccessToken(authResponse.access_token);
+      localStorage.setItem("accessToken", authResponse.access_token);
     } else {
-      console.error("Failed to get access token")
+      console.error("Failed to get access token");
     }
 
-    setIsChannelSignedIn(auth.isSignedIn.get())
-  }
+    setIsChannelSignedIn(auth.isSignedIn.get());
+  };
 
   async function checkYouTubeChannel() {
-    const response = await fetch("https://www.googleapis.com/youtube/v3/channels?part=id&mine=true", {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: "application/json",
-      },
-    })
-    const data = await response.json()
+    const response = await fetch(
+      "https://www.googleapis.com/youtube/v3/channels?part=id&mine=true",
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/json",
+        },
+      }
+    );
+    const data = await response.json();
 
     if (data.items && data.items.length > 0) {
-      return true // Có kênh
+      return true; // Có kênh
     } else {
-      return false // Không có kênh
+      return false; // Không có kênh
     }
   }
 
   const handleUpload = async () => {
-    const hasChannel = await checkYouTubeChannel()
+    const hasChannel = await checkYouTubeChannel();
 
     if (!hasChannel) {
-      alert("Your account does not have a YouTube channel. Please create one first.")
-      window.open("https://www.youtube.com/create_channel", "_blank")
-      return
+      alert(
+        "Your account does not have a YouTube channel. Please create one first."
+      );
+      window.open("https://www.youtube.com/create_channel", "_blank");
+      return;
     }
 
     // Nếu có kênh, tiếp tục upload video
-    await uploadVideo()
-  }
+    await uploadVideo();
+  };
 
   // Upload video to YouTube
   const uploadVideo = async () => {
     if (!selectedFile) {
-      alert("Please select a video file first.")
-      return
+      alert("Please select a video file first.");
+      return;
     }
 
-    const token = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token
+    const token = gapi.auth2
+      .getAuthInstance()
+      .currentUser.get()
+      .getAuthResponse().access_token;
 
     // Thay đổi thông tin video ở đây
     const metadata = {
@@ -257,11 +287,14 @@ const HomePage = () => {
       status: {
         privacyStatus: "private", // trạng thái video(public, private, unlisted)
       },
-    }
+    };
 
-    const form = new FormData()
-    form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }))
-    form.append("file", selectedFile)
+    const form = new FormData();
+    form.append(
+      "metadata",
+      new Blob([JSON.stringify(metadata)], { type: "application/json" })
+    );
+    form.append("file", selectedFile);
 
     try {
       const response = await fetch(
@@ -272,39 +305,46 @@ const HomePage = () => {
             Authorization: `Bearer ${token}`,
           },
           body: form,
-        },
-      )
+        }
+      );
 
-      const data = await response.json()
+      const data = await response.json();
       if (data.id) {
-        alert("Upload successful! Video link: " + `https://www.youtube.com/watch?v=${data.id}`)
+        alert(
+          "Upload successful! Video link: " +
+            `https://www.youtube.com/watch?v=${data.id}`
+        );
       } else {
-        console.error("Upload failed:", data)
+        console.error("Upload failed:", data);
       }
     } catch (error) {
-      console.error("Error uploading video:", error)
+      console.error("Error uploading video:", error);
     }
-  }
+  };
 
   const tabs = [
     { id: "all", label: "Tất cả", content: <AllContent /> },
     { id: "created", label: "Video đã tạo", content: <CreatedContent /> },
-    { id: "processing", label: "Video đang xử lý", content: <ProcessingContent /> },
+    {
+      id: "processing",
+      label: "Video đang xử lý",
+      content: <ProcessingContent />,
+    },
     { id: "stats", label: "Thống kê", content: <StatsContent /> },
-  ]
+  ];
 
   // Tìm tab đang active
-  const activeTabData = tabs.find((tab) => tab.id === activeTab) || tabs[0]
+  const activeTabData = tabs.find((tab) => tab.id === activeTab) || tabs[0];
 
   // Format date function
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
+    const date = new Date(dateString);
     return date.toLocaleDateString("vi-VN", {
       year: "numeric",
       month: "short",
       day: "numeric",
-    })
-  }
+    });
+  };
 
   return (
     <div className="absolute top-0 left-0 w-screen bg-gray-100 text-black text-center p-4 h-screen overflow-y-auto">
@@ -314,13 +354,21 @@ const HomePage = () => {
           <img src="/logo.png" alt="Logo" className="h-8" />
           {/* <h1 className="text-xl font-bold">Vivid</h1> */}
         </div>
-        <input type="text" placeholder="Tìm kiếm tên video" className="border p-2 rounded w-1/3" />
+        <input
+          type="text"
+          placeholder="Tìm kiếm tên video"
+          className="border p-2 rounded w-1/3"
+        />
         <div className="relative">
           <div
             className="flex items-center gap-3 bg-gray-100 px-4 py-2 rounded-lg cursor-pointer shadow-sm hover:bg-gray-200 transition"
             onClick={() => setDropdownOpen(!dropdownOpen)}
           >
-            <img src={photoURL || "/placeholder.svg"} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
+            <img
+              src={photoURL || "/placeholder.svg"}
+              alt="avatar"
+              className="w-8 h-8 rounded-full object-cover"
+            />
             <span className="font-medium text-sm">{userName}</span>
           </div>
 
@@ -328,8 +376,8 @@ const HomePage = () => {
             <div className="absolute right-0 mt-2 shadow-lg z-10 w-48 overflow-hidden pn-2 bg-white rounded">
               <button
                 onClick={() => {
-                  setDropdownOpen(false)
-                  changeGoogleAccount()
+                  setDropdownOpen(false);
+                  changeGoogleAccount();
                 }}
                 className="px-4 py-2 text-sm text-left hover:bg-gray-200 w-full"
               >
@@ -337,8 +385,8 @@ const HomePage = () => {
               </button>
               <button
                 onClick={() => {
-                  setDropdownOpen(false)
-                  handleLogout()
+                  setDropdownOpen(false);
+                  handleLogout();
                 }}
                 className="px-4 py-2 text-sm text-left hover:bg-gray-200 w-full"
               >
@@ -361,22 +409,24 @@ const HomePage = () => {
           {["all", "created", "processing", "stats"].map((tab) => (
             <button
               key={tab}
-              className={`pb-2 font-semibold ${activeTab === tab ? "border-b-2 border-black" : "text-gray-500"}`}
+              className={`pb-2 font-semibold ${
+                activeTab === tab ? "border-b-2 border-black" : "text-gray-500"
+              }`}
               onClick={() => {
                 if (tab === "stats") {
-                  navigate("/channelStat", { state: { accessToken } })
+                  navigate("/channelStat", { state: { accessToken } });
                 } else {
-                  setActiveTab(tab)
+                  setActiveTab(tab);
                 }
               }}
             >
               {tab === "all"
                 ? "Tất cả"
                 : tab === "created"
-                  ? "Video đã tạo"
-                  : tab === "processing"
-                    ? "Video đang xử lý"
-                    : "Thống kê"}
+                ? "Video đã tạo"
+                : tab === "processing"
+                ? "Video đang xử lý"
+                : "Thống kê"}
             </button>
           ))}
         </div>
@@ -384,18 +434,32 @@ const HomePage = () => {
           <h1 className="text-xl font-bold mb-4">YouTube Video Upload</h1>
 
           {!isChannelSignedIn ? (
-            <button onClick={handleChannelSignIn} className="px-4 py-2 bg-blue-500 text-black rounded">
+            <button
+              onClick={handleChannelSignIn}
+              className="px-4 py-2 bg-blue-500 text-black rounded"
+            >
               Sign in with Google
             </button>
           ) : (
             <>
               <p>Tài khoản: {userEmail}</p>
-              <input type="file" accept="video/*" onChange={handleFileChange} className="mb-2" />
-              <button onClick={handleUpload} className="px-4 py-2 bg-green-500 text-black rounded">
+              <input
+                type="file"
+                accept="video/*"
+                onChange={handleFileChange}
+                className="mb-2"
+              />
+              <button
+                onClick={handleUpload}
+                className="px-4 py-2 bg-green-500 text-black rounded"
+              >
                 Upload to YouTube
               </button>
 
-              <button onClick={handleChannelSignIn} className="bg-red-500 text-black px-4 py-2 rounded m-2">
+              <button
+                onClick={handleChannelSignIn}
+                className="bg-red-500 text-black px-4 py-2 rounded m-2"
+              >
                 Chuyển tài khoản
               </button>
             </>
@@ -434,12 +498,18 @@ const HomePage = () => {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-lg text-left">{workspace.name}</h4>
-                    <p className="text-gray-600 text-sm mt-1 text-left line-clamp-2">{workspace.description}</p>
+                    <h4 className="font-semibold text-lg text-left">
+                      {workspace.name}
+                    </h4>
+                    <p className="text-gray-600 text-sm mt-1 text-left line-clamp-2">
+                      {workspace.description}
+                    </p>
                   </div>
                   <FaFolder className="text-purple-600 text-xl" />
                 </div>
-                <div className="mt-4 text-xs text-gray-500 text-left">Tạo ngày: {formatDate(workspace.created_at)}</div>
+                <div className="mt-4 text-xs text-gray-500 text-left">
+                  Tạo ngày: {formatDate(workspace.created_at)}
+                </div>
               </div>
             ))}
           </div>
@@ -447,6 +517,48 @@ const HomePage = () => {
       </div>
 
       {/* Video Sections */}
+
+      {/* Layout hiển thị số video */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-8">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle>Tổng số Video</CardTitle>
+            <CardDescription>Số lượng video đã tạo</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center">
+              <Video className="h-8 w-8 text-green-500 mr-3" />
+              <span className="text-3xl font-bold">24</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle>Lượt xem YouTube</CardTitle>
+            <CardDescription>Tổng lượt xem trên YouTube</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center">
+              <BarChart2 className="h-8 w-8 text-red-500 mr-3" />
+              <span className="text-3xl font-bold">12,458</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle>Lượt xem TikTok</CardTitle>
+            <CardDescription>Tổng lượt xem trên TikTok</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center">
+              <BarChart2 className="h-8 w-8 text-blue-500 mr-3" />
+              <span className="text-3xl font-bold">35,721</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
       <div className="p-6">
         <h3 className="text-lg font-semibold mb-2">Video gần đây</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -475,6 +587,37 @@ const HomePage = () => {
             </div>
           ))}
         </div>
+
+        {/* Thêm hai phần mới */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+          <div className="lg:col-span-2">
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle>Video của bạn</CardTitle>
+                <CardDescription>
+                  Danh sách các video đã tạo và đang xử lý
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <VideoList />
+              </CardContent>
+            </Card>
+          </div>
+
+          <div>
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle>Hiệu suất</CardTitle>
+                <CardDescription>
+                  Thống kê hiệu suất video theo thời gian
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <StatsChart />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
 
       {/* Create Workspace Modal */}
@@ -484,7 +627,9 @@ const HomePage = () => {
             <h3 className="text-xl font-semibold mb-4">Tạo Workspace mới</h3>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1 text-left">Tên workspace</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                Tên workspace
+              </label>
               <input
                 type="text"
                 value={newWorkspaceName}
@@ -495,7 +640,9 @@ const HomePage = () => {
             </div>
 
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-1 text-left">Mô tả</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                Mô tả
+              </label>
               <textarea
                 value={newWorkspaceDescription}
                 onChange={(e) => setNewWorkspaceDescription(e.target.value)}
@@ -523,7 +670,7 @@ const HomePage = () => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default HomePage
+export default HomePage;

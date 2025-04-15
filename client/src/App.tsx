@@ -6,6 +6,7 @@ import HomePage from "./pages/HomePage";
 import NavBar from "./components/NavBar";
 import PrivateRoute from "./privateRoute";
 import StatPage from "./pages/StatPage";
+import CreateVideo from "./pages/CreateVideo"
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
+        <Route path="/create-video" element={<CreateVideo />} />
         <Route path="/homepage" element={
           <PrivateRoute><HomePage/></PrivateRoute>} />
         { <Route path="/channelStat/" element={<PrivateRoute><StatPage/></PrivateRoute>} /> }

@@ -1,0 +1,246 @@
+"use client"
+
+import { useState, useRef, useEffect } from "react"
+import { Button } from "./ui/button"
+import { Input } from "./ui/input"
+import { Textarea } from "./ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
+import { Wand2, Upload, FileText, X } from 'lucide-react'
+
+const suggestedTopics = [
+  "Vũ trụ",
+  "Tế bào",
+  "Vật lý lượng tử cơ bản",
+  "Hóa học hữu cơ",
+  "Sinh học tiến hóa",
+  "Khoa học thần kinh",
+  "Biến đổi khí hậu",
+  "Trí tuệ nhân tạo",
+]
+
+export default function ScriptGenerator() {
+  const [topic, setTopic] = useState("")
+  const [style, setStyle] = useState("general")
+  const [generatedScript, setGeneratedScript] = useState("")
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleTopicSelect = (selectedTopic: string) => {
+    setTopic(selectedTopic)
+  }
+
+  const generateScript = () => {
+    if (!topic) return
+
+    setIsGenerating(true)
+
+    setTimeout(() => {
+      const scripts = {
+        children: `# Video Khoa học cho trẻ em: ${topic}
+
+## Giới thiệu
+Xin chào các bạn nhỏ! Hôm nay chúng ta sẽ cùng nhau khám phá về ${topic}. Đây là một chủ đề thú vị mà các bạn sẽ rất thích!
+
+## Nội dung chính
+1. ${topic} là gì?
+2. Tại sao ${topic} lại quan trọng?
+3. Những điều thú vị về ${topic}
+
+## Kết luận
+Vậy là chúng ta đã tìm hiểu về ${topic}. Các bạn đã học được gì hôm nay? Hãy chia sẻ với bạn bè và gia đình nhé!`,
+
+        general: `# Video Khoa học phổ thông: ${topic}
+
+## Giới thiệu
+Chào mừng các bạn đến với video khoa học hôm nay. Chúng ta sẽ tìm hiểu về ${topic}, một chủ đề vô cùng thú vị và quan trọng.
+
+## Nội dung chính
+1. Tổng quan về ${topic}
+2. Lịch sử nghiên cứu và phát triển
+3. Ứng dụng trong đời sống
+4. Những khám phá mới nhất
+
+## Kết luận
+Như vậy, chúng ta đã tìm hiểu về ${topic}. Hy vọng video này đã mang đến cho bạn những kiến thức bổ ích. Đừng quên đăng ký kênh để xem thêm nhiều video khoa học thú vị khác.`,
+
+        advanced: `# Video Khoa học chuyên sâu: ${topic}
+
+## Giới thiệu
+Kính chào quý vị và các bạn. Trong video chuyên sâu hôm nay, chúng ta sẽ đi sâu vào phân tích ${topic}, một lĩnh vực có nhiều khía cạnh phức tạp và đáng nghiên cứu.
+
+## Nội dung chính
+1. Cơ sở lý thuyết của ${topic}
+2. Phương pháp nghiên cứu và phân tích
+3. Các phát hiện quan trọng trong lịch sử
+4. Tranh luận khoa học hiện tại
+5. Hướng nghiên cứu trong tương lai
+
+## Kết luận
+Tóm lại, ${topic} là một lĩnh vực nghiên cứu phong phú với nhiều tiềm năng phát triển. Chúng tôi hy vọng video này đã cung cấp cho quý vị một cái nhìn sâu sắc và toàn diện về chủ đề này.`,
+      }
+
+      setGeneratedScript(scripts[style as keyof typeof scripts])
+      setIsGenerating(false)
+    }, 2000)
+  }
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      // Đặt lại chiều cao về auto để tính toán lại chiều cao thực tế
+      textareaRef.current.style.height = 'auto'
+      // Đặt chiều cao bằng với scrollHeight để hiển thị tất cả nội dung
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
+    }
+  }, [generatedScript])
+
+  // Xử lý khi người dùng thay đổi nội dung textarea
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setGeneratedScript(e.target.value)
+    // Điều chỉnh chiều cao
+    e.target.style.height = 'auto'
+    e.target.style.height = `${e.target.scrollHeight}px`
+  }
+
+  // Xử lý tải file lên
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Kiểm tra định dạng file
+      const fileExt = file.name.split('.').pop()?.toLowerCase()
+      if (fileExt === 'docx' || fileExt === 'pdf') {
+        setSelectedFile(file)
+      } else {
+        alert('Chỉ chấp nhận file .docx hoặc .pdf')
+        e.target.value = ''
+      }
+    }
+  }
+
+  const handleFileUploadClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const removeSelectedFile = () => {
+    setSelectedFile(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Chủ đề khoa học</label>
+        <div className="flex gap-2">
+          <Input
+            placeholder="Nhập chủ đề khoa học..."
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+            className="flex-1"
+          />
+          <Button onClick={generateScript} disabled={!topic || isGenerating}>
+            <Wand2 className="mr-2 h-4 w-4" />
+            Tạo kịch bản
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Chọn từ danh sách gợi ý</label>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          {suggestedTopics.map((suggestedTopic) => (
+            <Button
+              key={suggestedTopic}
+              variant="outline"
+              onClick={() => handleTopicSelect(suggestedTopic)}
+              className={topic === suggestedTopic ? "border-green-500 bg-green-50" : ""}
+            >
+              {suggestedTopic}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Phong cách nội dung</label>
+        <Select value={style} onValueChange={setStyle}>
+          <SelectTrigger>
+            <SelectValue placeholder="Chọn phong cách nội dung" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="children">Trẻ em</SelectItem>
+            <SelectItem value="general">Phổ thông</SelectItem>
+            <SelectItem value="advanced">Chuyên sâu</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Tải lên kịch bản có sẵn</label>
+        <div className="border-2 border-dashed rounded-md p-4 text-center cursor-pointer hover:bg-gray-50" onClick={handleFileUploadClick}>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept=".docx,.pdf"
+            className="hidden"
+          />
+          {!selectedFile ? (
+            <>
+              <Upload className="h-6 w-6 mx-auto text-gray-400" />
+              <p className="mt-2 text-sm text-gray-500">Nhấp để tải lên hoặc kéo và thả file .docx, .pdf</p>
+              <p className="text-xs text-gray-400 mt-1">Kích thước tối đa: ...MB</p>
+            </>
+          ) : (
+            <div className="flex items-center justify-between bg-gray-50 p-2 rounded">
+              <div className="flex items-center">
+                <FileText className="h-5 w-5 text-blue-500 mr-2" />
+                <span className="text-sm font-medium truncate max-w-xs">{selectedFile.name}</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  removeSelectedFile()
+                }}
+              >
+                <X className="h-4 w-4 text-gray-500" />
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {isGenerating ? (
+        <div className="h-60 flex items-center justify-center border rounded-md bg-gray-50">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto"></div>
+            <p className="mt-2 text-sm text-gray-500">Đang tạo kịch bản...</p>
+          </div>
+        </div>
+      ) : generatedScript ? (
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <label className="text-sm font-medium">Kịch bản đã tạo</label>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm">
+                Tạo lại
+              </Button>
+              <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                Phê duyệt
+              </Button>
+            </div>
+          </div>
+          <Textarea
+            value={generatedScript}
+            onChange={(e) => setGeneratedScript(e.target.value)}
+            className="min-h-[300px] font-mono"
+          />
+        </div>
+      ) : null}
+    </div>
+  )
+}
