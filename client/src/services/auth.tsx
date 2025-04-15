@@ -2,6 +2,7 @@ import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "../firebaseConfig";
 
 export const signInWithGoogle = async () => {
+    localStorage.removeItem("accessToken")
     const provider = new GoogleAuthProvider();
 
     try {

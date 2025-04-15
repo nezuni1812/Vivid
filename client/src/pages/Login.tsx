@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom"; // Import useNavigate
 import { signInWithGoogle } from "../services/auth";
 const Home = () => {
     const navigate = useNavigate();
-
     const handleGoogleLogin = async () => {
         try {
             const user = await signInWithGoogle();

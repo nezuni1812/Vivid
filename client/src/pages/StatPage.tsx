@@ -114,7 +114,7 @@ const StatPage = () => {
 				const fetchVideos = async () => {
 						try {
 								if (!accessToken) {
-										setError("Access token not found. Please login again.")
+										setError("Vui lòng đăng nhập tài khoản Youtube để xem thống kê")
 										setLoading(false)
 										return
 								}
@@ -133,7 +133,7 @@ const StatPage = () => {
 								const channelCreatedAt = channelData.items?.[0]?.snippet?.publishedAt
 
 								if (!channelId) {
-										setError("Không tìm thấy kênh YouTube.")
+										setError("Không tìm thấy kênh YouTube. Có thể tài khoản này chưa đăng kí kênh Youtube")
 										setLoading(false)
 										return
 								}

@@ -2,9 +2,9 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { FiPlus } from "react-icons/fi"
-import { FaFolder } from "react-icons/fa"
+import { FaFolder, FaTiktok } from "react-icons/fa"
 import { gapi } from "gapi-script"
 import { signInWithGoogle } from "../services/auth"
 import { AllContent, CreatedContent, ProcessingContent, StatsContent } from "./tabsContent"
@@ -74,10 +74,15 @@ const HomePage = () => {
               "https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly",
           })
           .then(() => {
-            setIsChannelSignedIn(gapi.auth2.getAuthInstance().isSignedIn.get())
-
+            // setIsChannelSignedIn(gapi.auth2.getAuthInstance().isSignedIn.get())
             const auth = gapi.auth2.getAuthInstance()
-            updateUserChannelInfo(auth.currentUser.get())
+            const accessToken = localStorage.getItem("accessToken") || null;
+            if (accessToken) {
+              setAccessToken(accessToken)
+              updateUserChannelInfo(auth.currentUser.get())
+            }
+            
+            
 
             // Lắng nghe khi thay đổi tài khoản
             auth.currentUser.listen(updateUserChannelInfo)
@@ -158,7 +163,7 @@ const HomePage = () => {
         created_at: newWorkspace.created_at,
         updated_at: newWorkspace.updated_at,
       }
-      setWorkspaces([...workspaces, newWorkspaceObj as Workspace])
+      setWorkspaces([...workspaces, newWorkspaceObj])
       setIsCreateModalOpen(false)
       setNewWorkspaceName("")
       setNewWorkspaceDescription("")
@@ -251,8 +256,8 @@ const HomePage = () => {
       snippet: {
         title: "Demo video", // tên video
         description: "This is a test video upload via YouTube API.", // mô tả video
-        tags: ["API", "Video Generation", "test", "AI"], // tags video
-        // categoryId: "",  // danh mục video
+        tags: ["API"  , "Video Generation", "test", "AI", ], // tags video, thêm tag "Shorts" để biến nó thành Shorts
+        // categoryId: "",  // danh mục video để phân loại, giúp youtube recommend dễ hơn, chi tiết: https://gist.github.com/dgp/1b24bf2961521bd75d6c
       },
       status: {
         privacyStatus: "private", // trạng thái video(public, private, unlisted)
@@ -381,23 +386,30 @@ const HomePage = () => {
           ))}
         </div>
         <div className="p-4">
-          <h1 className="text-xl font-bold mb-4">YouTube Video Upload</h1>
+          <h1 className="text-xl font-bold mb-4">Video Upload</h1>
 
           {!isChannelSignedIn ? (
-            <button onClick={handleChannelSignIn} className="px-4 py-2 bg-blue-500 text-black rounded">
-              Sign in with Google
-            </button>
+            <div className="flex flex-col gap-2">
+              <button onClick={handleChannelSignIn} className="px-4 py-2 bg-blue-500 text-black rounded">
+                Đăng nhập tài khoản kênh Youtube
+              </button>
+              <div className="tex t-sm text-gray-500">Đăng nhập để tải video lên YouTube</div>
+            </div>
           ) : (
             <>
               <p>Tài khoản: {userEmail}</p>
-              <input type="file" accept="video/*" onChange={handleFileChange} className="mb-2" />
-              <button onClick={handleUpload} className="px-4 py-2 bg-green-500 text-black rounded">
-                Upload to YouTube
-              </button>
-
-              <button onClick={handleChannelSignIn} className="bg-red-500 text-black px-4 py-2 rounded m-2">
-                Chuyển tài khoản
-              </button>
+              <div className="flex flex-col gap-2 mt-2">
+                <input type="file" accept="video/*" onChange={handleFileChange} className="mb-2" />
+                <div className="flex gap-2">
+                  <button onClick={handleUpload} className="px-4 py-2 bg-green-500 text-black rounded">
+                    Upload to YouTube
+                  </button>
+                  <button onClick={handleChannelSignIn} className="bg-red-500 text-black px-4 py-2 rounded">
+                  Chuyển tài khoản
+                </button>
+                </div>
+                
+              </div>
             </>
           )}
         </div>
