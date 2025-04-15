@@ -14,3 +14,5 @@ aiohttp
 boto3
 flask_cors
 recharts
+PyPDF2
+python-docx

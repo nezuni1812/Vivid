@@ -5,7 +5,8 @@ import { Button } from "./ui/button"
 import { Input } from "./ui/input"
 import { Textarea } from "./ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
-import { Wand2, Upload, FileText, X } from 'lucide-react'
+import { Wand2, Upload, FileText, X, Loader2 } from 'lucide-react'
+import axios from "axios"
 
 const suggestedTopics = [
   "Vũ trụ",
@@ -26,65 +27,58 @@ export default function ScriptGenerator() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
 
   const handleTopicSelect = (selectedTopic: string) => {
     setTopic(selectedTopic)
   }
 
-  const generateScript = () => {
-    if (!topic) return
-
-    setIsGenerating(true)
-
-    setTimeout(() => {
-      const scripts = {
-        children: `# Video Khoa học cho trẻ em: ${topic}
-
-## Giới thiệu
-Xin chào các bạn nhỏ! Hôm nay chúng ta sẽ cùng nhau khám phá về ${topic}. Đây là một chủ đề thú vị mà các bạn sẽ rất thích!
-
-## Nội dung chính
-1. ${topic} là gì?
-2. Tại sao ${topic} lại quan trọng?
-3. Những điều thú vị về ${topic}
-
-## Kết luận
-Vậy là chúng ta đã tìm hiểu về ${topic}. Các bạn đã học được gì hôm nay? Hãy chia sẻ với bạn bè và gia đình nhé!`,
-
-        general: `# Video Khoa học phổ thông: ${topic}
-
-## Giới thiệu
-Chào mừng các bạn đến với video khoa học hôm nay. Chúng ta sẽ tìm hiểu về ${topic}, một chủ đề vô cùng thú vị và quan trọng.
-
-## Nội dung chính
-1. Tổng quan về ${topic}
-2. Lịch sử nghiên cứu và phát triển
-3. Ứng dụng trong đời sống
-4. Những khám phá mới nhất
-
-## Kết luận
-Như vậy, chúng ta đã tìm hiểu về ${topic}. Hy vọng video này đã mang đến cho bạn những kiến thức bổ ích. Đừng quên đăng ký kênh để xem thêm nhiều video khoa học thú vị khác.`,
-
-        advanced: `# Video Khoa học chuyên sâu: ${topic}
-
-## Giới thiệu
-Kính chào quý vị và các bạn. Trong video chuyên sâu hôm nay, chúng ta sẽ đi sâu vào phân tích ${topic}, một lĩnh vực có nhiều khía cạnh phức tạp và đáng nghiên cứu.
-
-## Nội dung chính
-1. Cơ sở lý thuyết của ${topic}
-2. Phương pháp nghiên cứu và phân tích
-3. Các phát hiện quan trọng trong lịch sử
-4. Tranh luận khoa học hiện tại
-5. Hướng nghiên cứu trong tương lai
-
-## Kết luận
-Tóm lại, ${topic} là một lĩnh vực nghiên cứu phong phú với nhiều tiềm năng phát triển. Chúng tôi hy vọng video này đã cung cấp cho quý vị một cái nhìn sâu sắc và toàn diện về chủ đề này.`,
+  const generateScriptFromAI = async () => {
+    if (!topic) return;
+  
+    setIsGenerating(true);
+  
+    try {
+      const response = await axios.post('http://127.0.0.1:5000/scripts/generate', {
+        workspace_id: '67ef5c1032c9368838561563',
+        title: topic,
+        style: 1,
+        length: 1000
+      });
+  
+      if (response.data?.script) {
+        setGeneratedScript(response.data.script);
+      } else {
+        throw new Error('Phản hồi API không chứa kịch bản');
       }
-
-      setGeneratedScript(scripts[style as keyof typeof scripts])
-      setIsGenerating(false)
-    }, 2000)
-  }
+    } catch (error) {
+      console.error('Error generating script from AI:', error);
+      alert('Không thể tạo kịch bản từ AI. Sử dụng mẫu mặc định.');
+      generateScriptTemplate();
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+  
+  // Rename your current template-based generation to make it a fallback
+  const generateScriptTemplate = () => {
+    const scripts = {
+      children: `# Video Khoa học cho trẻ em: ${topic}
+      
+      // ...existing template code...`,
+      general: `// ...existing template code...`,
+      advanced: `// ...existing template code...`,
+    };
+  
+    setGeneratedScript(scripts[style as keyof typeof scripts]);
+  };
+  
+  // Update your existing generateScript function to use the AI version
+  const generateScript = () => {
+    if (!topic) return;
+    generateScriptFromAI();
+  };
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -117,6 +111,47 @@ Tóm lại, ${topic} là một lĩnh vực nghiên cứu phong phú với nhiề
       }
     }
   }
+
+  const handleUploadToServer = async () => {
+    if (!selectedFile) {
+      alert('Vui lòng chọn một tệp để tải lên');
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadError(null);
+
+    try {
+      // Create form data
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('workspace_id', '67ef5c1032c9368838561563'); // Replace with actual workspace ID from context/props
+      formData.append('style', style); // Add the current style
+
+      // Send to server
+      const response = await axios.post('http://127.0.0.1:5000/generate-script-from-file', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      // Handle success
+      if (response.data && response.data.script) {
+        setGeneratedScript(response.data.script);
+        
+        // Set a topic based on the file name (optional)
+        if (response.data.title) {
+          setTopic(response.data.title);
+        }
+      }
+
+    } catch (error: any) {
+      console.error('Error uploading file:', error);
+      setUploadError(error.response?.data?.error || 'Đã xảy ra lỗi khi xử lý tệp');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleFileUploadClick = () => {
     fileInputRef.current?.click()
@@ -212,6 +247,30 @@ Tóm lại, ${topic} là một lĩnh vực nghiên cứu phong phú với nhiề
             </div>
           )}
         </div>
+        {selectedFile && (
+          <div className="mt-2">
+            <Button 
+              onClick={handleUploadToServer} 
+              disabled={isUploading} 
+              className="w-full bg-green-600 hover:bg-green-700"
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Đang xử lý tệp...
+                </>
+              ) : (
+                <>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Trích xuất nội dung kịch bản
+                </>
+              )}
+            </Button>
+            {uploadError && (
+              <p className="text-red-500 text-sm mt-1">{uploadError}</p>
+            )}
+          </div>
+        )}
       </div>
 
       {isGenerating ? (

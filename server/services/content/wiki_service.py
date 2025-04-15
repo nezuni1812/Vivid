@@ -2,7 +2,7 @@ import wikipedia
 import wikipedia.exceptions
 import warnings
 
-def get_wikipedia_summary(topic, sentences=30):
+def get_wikipedia_summary(topic, sentences):
     """Lấy summary từ Wikipedia"""
     try:
         warnings.filterwarnings("ignore", category=UserWarning)

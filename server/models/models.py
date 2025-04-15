@@ -47,7 +47,7 @@ class PublishedClip(Document):
 class Script(Document):
     workspace_id = ReferenceField(Workspace, required=True)
     title = StringField(required=True)
-    source_content = StringField(required=True)  # Original text/wiki content
+    source_content = StringField 
     generated_script = StringField()  # AI generated script
     language = StringField(default="en")
     style = IntField(default=1)  # 1: serious, 2: fun
