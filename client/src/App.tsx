@@ -7,6 +7,9 @@ import NavBar from "./components/NavBar";
 import PrivateRoute from "./privateRoute";
 import StatPage from "./pages/StatPage";
 import CreateVideo from "./pages/CreateVideo"
+import TikTokLogin from "./pages/TikTokLogin";
+import TikTokCallback from "./pages/TikTokCallback";
+import TikTokStats from "./pages/TikTokStats";
 
 function App() {
   return (
@@ -20,6 +23,16 @@ function App() {
           <PrivateRoute><HomePage/></PrivateRoute>} />
         { <Route path="/channelStat/" element={<PrivateRoute><StatPage/></PrivateRoute>} /> }
         {/* <Route path="*" element={<NotFound />} /> */}
+        <Route path="/tiktok-login" element={<TikTokLogin />} />
+        <Route path="/tiktok-callback" element={<TikTokCallback />} />
+        <Route
+          path="/tiktok-stats"
+          element={
+            <PrivateRoute>
+              <TikTokStats />
+            </PrivateRoute>
+          }
+        />
       </Routes>
     </div>
   );
