@@ -26,6 +26,13 @@ export const signInWithGoogle = async () => {
         const loginUser = await response.json();
 
         localStorage.setItem("currentUser", JSON.stringify(loginUser));
+        // loginUser = {
+        // "user_id":
+        // "firebase_uid": 
+        // "username": 
+        // "email":
+        // "role":
+        // }
        
         return loginUser;
     } catch (error) {
