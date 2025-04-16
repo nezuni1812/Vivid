@@ -12,6 +12,7 @@ import {
 import { ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
+import { Link } from 'react-router-dom';
 
 interface TikTokVideo {
   id: string;
@@ -144,6 +145,12 @@ const TikTokStats = () => {
   return (
     <div className="p-6 max-w-[45rem] mx-auto">
       <h1 className="text-2xl font-bold mb-6">TikTok Video Statistics</h1>
+
+      <div className="mb-6">
+        <Link to="/tiktok-upload">
+          <Button>Upload New Video</Button>
+        </Link>
+      </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">

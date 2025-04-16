@@ -10,6 +10,7 @@ import CreateVideo from "./pages/CreateVideo"
 import TikTokLogin from "./pages/TikTokLogin";
 import TikTokCallback from "./pages/TikTokCallback"; 
 import TikTokStats from "./pages/TikTokStats";
+import TikTokUpload from "./pages/TikTokUpload";
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
         {/* <Route path="*" element={<NotFound />} /> */}
         <Route path="/tiktok-login" element={<TikTokLogin />} />
         <Route path="/tiktok-callback" element={<TikTokCallback />} />
+        <Route path="/tiktok-upload" element={<TikTokUpload />} />
         <Route
           path="/tiktok-stats"
           element={
