@@ -279,10 +279,6 @@ export function LanguageSelect({ value, onChange }: LanguageSelectProps) {
                       {language.label}
                     </CommandItem>
                   ))}
-                  <CommandItem value="custom" onSelect={handleSelect}>
-                    <Check className={cn("mr-2 h-4 w-4", "opacity-0")} />
-                    Ngôn ngữ khác...
-                  </CommandItem>
                 </CommandGroup>
               </CommandList>
             </Command>
