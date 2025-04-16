@@ -6,7 +6,7 @@ from models.models import Audio, Script, Workspace
 
 class AudioController:
     @staticmethod
-    async def generate_audio(script_id, voice_style=1):
+    async def generate_audio(script_id, speed=1.0, pitch=1.0, volume=0.0):
         try:
             # Get script
             script = Script.objects(id=script_id).first()
@@ -18,8 +18,10 @@ class AudioController:
             output_file, timings_string = process_script_to_audio_and_timings(
                 script.generated_script,
                 script.language,
-                voice_style,
-                temp_file
+                speed=speed,
+                pitch=pitch,
+                volume=volume,
+                output_file=temp_file
             )
 
             if not output_file:
@@ -36,7 +38,6 @@ class AudioController:
                     script_id=script,
                     audio_url=audio_url,
                     timings=timings_string,
-                    voice_style=voice_style,
                     status="completed"
                 )
                 audio.save()

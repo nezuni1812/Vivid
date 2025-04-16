@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-
+import { useWorkspace } from "../context/WorkspaceContext";
 import { useState, useRef, useEffect } from "react"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
@@ -34,8 +34,7 @@ export default function ScriptGenerator() {
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [language, setLanguage] = useState("vietnamese")
   const [wordCount, setWordCount] = useState<number>(500)
-  const [scriptId, setScriptId] = useState<string | null>(null) // Thêm state để lưu script_id
-  const [workspaceId, setWorkspaceId] = useState<string | null>(null) // Thêm state để lưu workspace_id
+  const { workspaceId, scriptId, setScriptId } = useWorkspace();
 
 
   const handleTopicSelect = (selectedTopic: string) => {
@@ -49,7 +48,7 @@ export default function ScriptGenerator() {
 
     try {
       const response = await axios.post("http://127.0.0.1:5000/scripts/generate", {
-        workspace_id: workspaceId || "67ef5c1032c9368838561563",
+        workspace_id: workspaceId,
         title: topic,
         style: style,
         length: wordCount, // Sử dụng wordCount thay vì giá trị cố định 1000
@@ -58,7 +57,6 @@ export default function ScriptGenerator() {
 
       if (response.data?.script) {
         setGeneratedScript(response.data.script)
-        console.log("Setting scriptId:", response); // Debug log
         setScriptId(response.data.id) // Lưu script_id
       } else {
         throw new Error("Phản hồi API không chứa kịch bản")
@@ -170,7 +168,6 @@ export default function ScriptGenerator() {
       // Handle success
       if (response.data && response.data.script) {
         setGeneratedScript(response.data.script)
-        console.log("Setting scriptId:", response); // Debug log
         setScriptId(response.data.id)
         // Set a topic based on the file name (optional)
         if (response.data.title) {

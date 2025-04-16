@@ -11,31 +11,34 @@ import TikTokLogin from "./pages/TikTokLogin";
 import TikTokCallback from "./pages/TikTokCallback"; 
 import TikTokStats from "./pages/TikTokStats";
 import TikTokUpload from "./pages/TikTokUpload";
+import { WorkspaceProvider } from "./context/WorkspaceContext";
 
 function App() {
   return (
-    <div className="max-w-[45rem] mx-auto">
-      <NavBar />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/create-video" element={<CreateVideo />} />
-        <Route path="/homepage" element={
-          <PrivateRoute><HomePage/></PrivateRoute>} />
-        { <Route path="/channelStat/" element={<PrivateRoute><StatPage/></PrivateRoute>} /> }
-        {/* <Route path="*" element={<NotFound />} /> */}
-        <Route path="/tiktok-login" element={<TikTokLogin />} />
-        <Route path="/tiktok-callback" element={<TikTokCallback />} />
-        <Route path="/tiktok-upload" element={<TikTokUpload />} />
-        <Route
-          path="/tiktok-stats"
-          element={
-              <TikTokStats />
-          }
-        />
-      </Routes>
-    </div>
-  );
+    <WorkspaceProvider>
+      <div className="max-w-[45rem] mx-auto">
+        <NavBar />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/create-video" element={<CreateVideo />} />
+          <Route path="/homepage" element={
+            <PrivateRoute><HomePage/></PrivateRoute>} />
+          { <Route path="/channelStat/" element={<PrivateRoute><StatPage/></PrivateRoute>} /> }
+          {/* <Route path="*" element={<NotFound />} /> */}
+          <Route path="/tiktok-login" element={<TikTokLogin />} />
+          <Route path="/tiktok-callback" element={<TikTokCallback />} />
+          <Route path="/tiktok-upload" element={<TikTokUpload />} />
+          <Route
+            path="/tiktok-stats"
+            element={
+                <TikTokStats />
+            }
+          />
+        </Routes>
+      </div>
+    </WorkspaceProvider>
+    );
 }
 
 export default App;

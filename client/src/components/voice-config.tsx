@@ -1,5 +1,5 @@
 "use client"
-
+import { useWorkspace } from "../context/WorkspaceContext";
 import { useState } from "react"
 import { Button } from "./ui/button"
 import { Slider } from "./ui/slider"
@@ -7,6 +7,7 @@ import { Upload, Volume2 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
+import axios from "axios"
 
 const voiceProviders = [
   // {
@@ -48,21 +49,46 @@ export default function VoiceConfig() {
   const [activeTab, setActiveTab] = useState("ai")
   const [showAudioPreview, setShowAudioPreview] = useState(false)
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false)
-
+  const [audioUrl, setAudioUrl] = useState<string | null>(null) // Lưu URL âm thanh thực tế
+  const { scriptId } = useWorkspace();
+  
   const selectedProvider = voiceProviders.find((p) => p.id === provider)
 
   const handlePlay = () => {
     setIsPlaying(!isPlaying)
   }
 
-  const handleCreateAudio = () => {
+const handleCreateAudio = async () => {
+    if (!scriptId) {
+      alert("Vui lòng tạo kịch bản trước khi tạo âm thanh.")
+      return
+    }
+
     setIsGeneratingAudio(true)
 
-    // Giả lập quá trình tạo âm thanh
-    setTimeout(() => {
+    try {
+      // Chuyển đổi intensity (0-1) thành volume (-12.0 đến 12.0 dB)
+      const volume = (intensity[0] - 0.5) * 24 // Chuyển từ [0,1] sang [-12,12]
+
+      const response = await axios.post(`http://127.0.0.1:5000/scripts/${scriptId}/generate_audio`, {
+        speed: speed[0],
+        pitch: pitch[0],
+        volume: volume,
+      })
+
+      if (response.status === 201 && response.data?.audio_url) {
+        setAudioUrl(response.data.audio_url)
+        setShowAudioPreview(true)
+        alert("Tạo âm thanh thành công!")
+      } else {
+        throw new Error("Phản hồi API không chứa URL âm thanh")
+      }
+    } catch (error: any) {
+      console.error("Error generating audio:", error)
+      alert(error.response?.data?.error || "Đã xảy ra lỗi khi tạo âm thanh.")
+    } finally {
       setIsGeneratingAudio(false)
-      setShowAudioPreview(true)
-    }, 1500)
+    }
   }
 
   return (
@@ -128,12 +154,12 @@ export default function VoiceConfig() {
                     <p className="text-sm text-gray-600">
                       <span className="font-medium">URL:</span>{" "}
                       <a
-                        href="https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/audios/67ef5c1032c9368838561563/Solar_System.mp3"
+                        href={audioUrl || "#"}
                         className="text-blue-600 hover:underline break-all"
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/audios/67ef5c1032c9368838561563/Solar_System.mp3
+                        {audioUrl}
                       </a>
                     </p>
                   )}
@@ -164,7 +190,7 @@ export default function VoiceConfig() {
                 <label className="text-sm font-medium">Xem trước âm thanh</label>
                 <div className="border rounded-md p-4 bg-gray-50">
                   <audio
-                    src="https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/audios/67ef5c1032c9368838561563/Solar_System.mp3"
+                    src={audioUrl || "#"}
                     controls
                     className="w-full"
                   />

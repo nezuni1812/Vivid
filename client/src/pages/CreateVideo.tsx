@@ -13,6 +13,7 @@ import ImageGenerator from "../components/image-generator"
 import VideoEditor from "../components/video-editor"
 import PublishOptions from "../components/publish-options"
 import { useNavigate } from "react-router-dom"
+import { useWorkspace } from "../context/WorkspaceContext";
 
 const steps = [
   { id: "content", label: "Nội dung" },
@@ -27,6 +28,8 @@ export default function CreateVideo() {
   const voiceRef = useRef<HTMLDivElement>(null)
   const imagesRef = useRef<HTMLDivElement>(null)
   const editorRef = useRef<HTMLDivElement>(null)
+  
+  const { scriptId } = useWorkspace(); // Get scriptId from context
 
   const scrollToSection = (ref: React.RefObject<HTMLDivElement | null>) => {
       if (ref.current) {
