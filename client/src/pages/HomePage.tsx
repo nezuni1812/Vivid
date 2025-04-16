@@ -352,7 +352,7 @@ const HomePage = () => {
   };
 
   return (
-    <div className="absolute top-0 left-0 w-screen bg-gray-100 text-black text-center p-4 h-screen overflow-y-auto">
+    <div className="w-full bg-gray-100 text-black text-center p-4 min-h-screen overflow-y-auto">
       {/* Header */}
       <header className="bg-white p-4 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-2">

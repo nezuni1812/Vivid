@@ -38,7 +38,7 @@ export default function CreateVideo() {
     }
 
   return (
-    <main className="container mx-auto py-6 px-4 md:px-6">
+    <main className="max-w-[45rem] container mx-auto py-6 px-4 md:px-6">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center">
           <Button
