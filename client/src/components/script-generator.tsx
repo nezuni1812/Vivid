@@ -7,7 +7,7 @@ import { Button } from "./ui/button"
 import { Input } from "./ui/input"
 import { Textarea } from "./ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
-import { Wand2, Upload, FileText, X, Loader2 } from 'lucide-react'
+import { Wand2, Upload, FileText, X, Loader2 } from "lucide-react"
 import axios from "axios"
 import { LanguageSelect } from "./custom-language-select"
 
@@ -33,38 +33,39 @@ export default function ScriptGenerator() {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [language, setLanguage] = useState("vietnamese")
+  const [wordCount, setWordCount] = useState<number>(500)
 
   const handleTopicSelect = (selectedTopic: string) => {
     setTopic(selectedTopic)
   }
 
   const generateScriptFromAI = async () => {
-    if (!topic) return;
-  
-    setIsGenerating(true);
-  
+    if (!topic) return
+
+    setIsGenerating(true)
+
     try {
-      const response = await axios.post('http://127.0.0.1:5000/scripts/generate', {
-        workspace_id: '67ef5c1032c9368838561563',
+      const response = await axios.post("http://127.0.0.1:5000/scripts/generate", {
+        workspace_id: "67ef5c1032c9368838561563",
         title: topic,
         style: 1,
-        length: 1000
-      });
-  
+        length: wordCount, // Sử dụng wordCount thay vì giá trị cố định 1000
+      })
+
       if (response.data?.script) {
-        setGeneratedScript(response.data.script);
+        setGeneratedScript(response.data.script)
       } else {
-        throw new Error('Phản hồi API không chứa kịch bản');
+        throw new Error("Phản hồi API không chứa kịch bản")
       }
     } catch (error) {
-      console.error('Error generating script from AI:', error);
-      alert('Không thể tạo kịch bản từ AI. Sử dụng mẫu mặc định.');
-      generateScriptTemplate();
+      console.error("Error generating script from AI:", error)
+      alert("Không thể tạo kịch bản từ AI. Sử dụng mẫu mặc định.")
+      generateScriptTemplate()
     } finally {
-      setIsGenerating(false);
+      setIsGenerating(false)
     }
-  };
-  
+  }
+
   // Rename your current template-based generation to make it a fallback
   const generateScriptTemplate = () => {
     const scripts = {
@@ -73,16 +74,16 @@ export default function ScriptGenerator() {
       // ...existing template code...`,
       general: `// ...existing template code...`,
       advanced: `// ...existing template code...`,
-    };
-  
-    setGeneratedScript(scripts[style as keyof typeof scripts]);
-  };
-  
+    }
+
+    setGeneratedScript(scripts[style as keyof typeof scripts])
+  }
+
   // Update your existing generateScript function to use the AI version
   const generateScript = () => {
-    if (!topic) return;
-    generateScriptFromAI();
-  };
+    if (!topic) return
+    generateScriptFromAI()
+  }
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -118,44 +119,43 @@ export default function ScriptGenerator() {
 
   const handleUploadToServer = async () => {
     if (!selectedFile) {
-      alert('Vui lòng chọn một tệp để tải lên');
-      return;
+      alert("Vui lòng chọn một tệp để tải lên")
+      return
     }
 
-    setIsUploading(true);
-    setUploadError(null);
+    setIsUploading(true)
+    setUploadError(null)
 
     try {
       // Create form data
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('workspace_id', '67ef5c1032c9368838561563'); // Replace with actual workspace ID from context/props
-      formData.append('style', style); // Add the current style
+      const formData = new FormData()
+      formData.append("file", selectedFile)
+      formData.append("workspace_id", "67ef5c1032c9368838561563") // Replace with actual workspace ID from context/props
+      formData.append("style", style) // Add the current style
 
       // Send to server
-      const response = await axios.post('http://127.0.0.1:5000/generate-script-from-file', formData, {
+      const response = await axios.post("http://127.0.0.1:5000/generate-script-from-file", formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+          "Content-Type": "multipart/form-data",
+        },
+      })
 
       // Handle success
       if (response.data && response.data.script) {
-        setGeneratedScript(response.data.script);
-        
+        setGeneratedScript(response.data.script)
+
         // Set a topic based on the file name (optional)
         if (response.data.title) {
-          setTopic(response.data.title);
+          setTopic(response.data.title)
         }
       }
-
     } catch (error: any) {
-      console.error('Error uploading file:', error);
-      setUploadError(error.response?.data?.error || 'Đã xảy ra lỗi khi xử lý tệp');
+      console.error("Error uploading file:", error)
+      setUploadError(error.response?.data?.error || "Đã xảy ra lỗi khi xử lý tệp")
     } finally {
-      setIsUploading(false);
+      setIsUploading(false)
     }
-  };
+  }
 
   const handleFileUploadClick = () => {
     fileInputRef.current?.click()
@@ -173,11 +173,11 @@ export default function ScriptGenerator() {
       <div className="space-y-2">
         <label className="text-sm font-medium">Chủ đề khoa học</label>
         <div className="flex gap-2">
-          <Input
+          <Textarea
             placeholder="Nhập chủ đề khoa học..."
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
-            className="flex-1"
+            className="flex-1 min-h-[60px] resize-none"
           />
           <Button onClick={generateScript} disabled={!topic || isGenerating}>
             <Wand2 className="mr-2 h-4 w-4" />
@@ -221,6 +221,21 @@ export default function ScriptGenerator() {
       </div>
 
       <div className="space-y-2">
+        <label className="text-sm font-medium">Số lượng từ trong kịch bản</label>
+        <div className="flex items-center gap-2">
+          <Input
+            type="number"
+            min={100}
+            value={wordCount}
+            onChange={(e) => setWordCount(Number.parseInt(e.target.value) || 500)}
+            className="flex-1"
+          />
+          <span className="text-sm text-gray-500">từ</span>
+        </div>
+        <p className="text-xs text-gray-500">Nhập số lượng từ mong muốn cho kịch bản của bạn (tối thiểu 100)</p>
+      </div>
+
+      <div className="space-y-2">
         <label className="text-sm font-medium">Tải lên kịch bản có sẵn</label>
         <div
           className="border-2 border-dashed rounded-md p-4 text-center cursor-pointer hover:bg-gray-50"
@@ -254,9 +269,9 @@ export default function ScriptGenerator() {
         </div>
         {selectedFile && (
           <div className="mt-2">
-            <Button 
-              onClick={handleUploadToServer} 
-              disabled={isUploading} 
+            <Button
+              onClick={handleUploadToServer}
+              disabled={isUploading}
               className="w-full bg-green-600 hover:bg-green-700"
             >
               {isUploading ? (
@@ -271,9 +286,7 @@ export default function ScriptGenerator() {
                 </>
               )}
             </Button>
-            {uploadError && (
-              <p className="text-red-500 text-sm mt-1">{uploadError}</p>
-            )}
+            {uploadError && <p className="text-red-500 text-sm mt-1">{uploadError}</p>}
           </div>
         )}
       </div>
