@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useRef, useEffect } from "react"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
@@ -7,6 +9,7 @@ import { Textarea } from "./ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import { Wand2, Upload, FileText, X, Loader2 } from 'lucide-react'
 import axios from "axios"
+import { LanguageSelect } from "./custom-language-select"
 
 const suggestedTopics = [
   "Vũ trụ",
@@ -29,6 +32,7 @@ export default function ScriptGenerator() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [language, setLanguage] = useState("vietnamese")
 
   const handleTopicSelect = (selectedTopic: string) => {
     setTopic(selectedTopic)
@@ -83,7 +87,7 @@ export default function ScriptGenerator() {
   useEffect(() => {
     if (textareaRef.current) {
       // Đặt lại chiều cao về auto để tính toán lại chiều cao thực tế
-      textareaRef.current.style.height = 'auto'
+      textareaRef.current.style.height = "auto"
       // Đặt chiều cao bằng với scrollHeight để hiển thị tất cả nội dung
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
     }
@@ -93,7 +97,7 @@ export default function ScriptGenerator() {
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setGeneratedScript(e.target.value)
     // Điều chỉnh chiều cao
-    e.target.style.height = 'auto'
+    e.target.style.height = "auto"
     e.target.style.height = `${e.target.scrollHeight}px`
   }
 
@@ -102,12 +106,12 @@ export default function ScriptGenerator() {
     const file = e.target.files?.[0]
     if (file) {
       // Kiểm tra định dạng file
-      const fileExt = file.name.split('.').pop()?.toLowerCase()
-      if (fileExt === 'docx' || fileExt === 'pdf') {
+      const fileExt = file.name.split(".").pop()?.toLowerCase()
+      if (fileExt === "docx" || fileExt === "pdf") {
         setSelectedFile(file)
       } else {
-        alert('Chỉ chấp nhận file .docx hoặc .pdf')
-        e.target.value = ''
+        alert("Chỉ chấp nhận file .docx hoặc .pdf")
+        e.target.value = ""
       }
     }
   }
@@ -160,7 +164,7 @@ export default function ScriptGenerator() {
   const removeSelectedFile = () => {
     setSelectedFile(null)
     if (fileInputRef.current) {
-      fileInputRef.current.value = ''
+      fileInputRef.current.value = ""
     }
   }
 
@@ -213,15 +217,16 @@ export default function ScriptGenerator() {
       </div>
 
       <div className="space-y-2">
+        <LanguageSelect value={language} onChange={setLanguage} />
+      </div>
+
+      <div className="space-y-2">
         <label className="text-sm font-medium">Tải lên kịch bản có sẵn</label>
-        <div className="border-2 border-dashed rounded-md p-4 text-center cursor-pointer hover:bg-gray-50" onClick={handleFileUploadClick}>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept=".docx,.pdf"
-            className="hidden"
-          />
+        <div
+          className="border-2 border-dashed rounded-md p-4 text-center cursor-pointer hover:bg-gray-50"
+          onClick={handleFileUploadClick}
+        >
+          <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".docx,.pdf" className="hidden" />
           {!selectedFile ? (
             <>
               <Upload className="h-6 w-6 mx-auto text-gray-400" />
@@ -288,9 +293,20 @@ export default function ScriptGenerator() {
               <Button variant="outline" size="sm">
                 Tạo lại
               </Button>
-              <Button size="sm" className="bg-green-600 hover:bg-green-700">
+              {/* <Button
+                size="sm"
+                className="bg-green-600 hover:bg-green-700"
+                onClick={() => {
+                  // Simulate sending to backend and getting audio URL
+                  const audioUrl =
+                    "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/audios/67ef5c1032c9368838561563/Solar_System.mp3"
+                  // You would typically dispatch this to your state management or pass to parent component
+                  console.log("Audio URL received:", audioUrl)
+                  // Here you could navigate to voice config or update global state
+                }}
+              >
                 Phê duyệt
-              </Button>
+              </Button> */}
             </div>
           </div>
           <Textarea
