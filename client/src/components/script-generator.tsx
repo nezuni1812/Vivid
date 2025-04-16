@@ -34,6 +34,9 @@ export default function ScriptGenerator() {
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [language, setLanguage] = useState("vietnamese")
   const [wordCount, setWordCount] = useState<number>(500)
+  const [scriptId, setScriptId] = useState<string | null>(null) // Thêm state để lưu script_id
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null) // Thêm state để lưu workspace_id
+
 
   const handleTopicSelect = (selectedTopic: string) => {
     setTopic(selectedTopic)
@@ -46,14 +49,17 @@ export default function ScriptGenerator() {
 
     try {
       const response = await axios.post("http://127.0.0.1:5000/scripts/generate", {
-        workspace_id: "67ef5c1032c9368838561563",
+        workspace_id: workspaceId || "67ef5c1032c9368838561563",
         title: topic,
-        style: 1,
+        style: style,
         length: wordCount, // Sử dụng wordCount thay vì giá trị cố định 1000
+        language: language,
       })
 
       if (response.data?.script) {
         setGeneratedScript(response.data.script)
+        console.log("Setting scriptId:", response); // Debug log
+        setScriptId(response.data.id) // Lưu script_id
       } else {
         throw new Error("Phản hồi API không chứa kịch bản")
       }
@@ -83,6 +89,27 @@ export default function ScriptGenerator() {
   const generateScript = () => {
     if (!topic) return
     generateScriptFromAI()
+  }
+
+  const completeScript = async () => {
+    if (!scriptId) {
+      alert("Không có kịch bản nào để hoàn thành. Vui lòng tạo kịch bản trước.")
+      return
+    }
+
+    try {
+      const response = await axios.post(`http://127.0.0.1:5000/scripts/${scriptId}/complete`, {
+        new_script: generatedScript,
+      })
+      if (response.status === 200) {
+        alert(response.data.message || "Kịch bản đã được cập nhật và hoàn thành!")
+      } else {
+        throw new Error("Phản hồi API không hợp lệ")
+      }
+    } catch (error: any) {
+      console.error("Error completing script:", error)
+      alert(error.response?.data?.error || "Đã xảy ra lỗi khi hoàn thành kịch bản.")
+    }
   }
 
   useEffect(() => {
@@ -143,7 +170,8 @@ export default function ScriptGenerator() {
       // Handle success
       if (response.data && response.data.script) {
         setGeneratedScript(response.data.script)
-
+        console.log("Setting scriptId:", response); // Debug log
+        setScriptId(response.data.id)
         // Set a topic based on the file name (optional)
         if (response.data.title) {
           setTopic(response.data.title)
@@ -306,20 +334,14 @@ export default function ScriptGenerator() {
               <Button variant="outline" size="sm">
                 Tạo lại
               </Button>
-              {/* <Button
+              { <Button
                 size="sm"
                 className="bg-green-600 hover:bg-green-700"
-                onClick={() => {
-                  // Simulate sending to backend and getting audio URL
-                  const audioUrl =
-                    "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/audios/67ef5c1032c9368838561563/Solar_System.mp3"
-                  // You would typically dispatch this to your state management or pass to parent component
-                  console.log("Audio URL received:", audioUrl)
-                  // Here you could navigate to voice config or update global state
-                }}
+                onClick={completeScript}
+                disabled={!scriptId}
               >
-                Phê duyệt
-              </Button> */}
+                Lưu kịch bản
+              </Button> }
             </div>
           </div>
           <Textarea

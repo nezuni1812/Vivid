@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from flask_cors import cross_origin  # Thêm import cross_origin
 from controllers.script_controller import ScriptController
 import asyncio
 import os
@@ -11,29 +12,43 @@ import tempfile
 script_bp = Blueprint('script', __name__)
 
 
-@script_bp.route("/scripts/generate", methods=["POST"])
+@script_bp.route("/scripts/generate", methods=["POST", "OPTIONS"])
+@cross_origin(origins=["http://localhost:5173"], methods=["POST", "OPTIONS"], allow_headers=["Content-Type"])
 def generate_script():
+    if request.method == "OPTIONS":
+        # Trả về phản hồi cho yêu cầu preflight
+        return jsonify({}), 200
+
     try:
         data = request.get_json()
-        required_fields = ["workspace_id", "title", "style", "length"]
+        required_fields = ["workspace_id", "title", "style", "length", "language"]
         
         if not all(field in data for field in required_fields):
             return jsonify({"error": "Missing required fields"}), 400
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
+        
+        if data["style"] == "children":
+            data["style"] = 1
+        elif data["style"] == "general":
+            data["style"] = 2
+        elif data["style"] == "advanced":
+            data["style"] = 3
+
         result = loop.run_until_complete(
             ScriptController.generate_script(
                 data["workspace_id"],
                 data["title"],
                 data["style"],
-                data["length"]
+                data["length"],
+                data["language"]
             )
         )
         loop.close()
 
         return jsonify({
-            "id": result[0].get("id"),
+            "id": result[0].get("script_id"),
             "script": result[0].get("script"),
             "title": result[0].get("title"),
         }), 201
@@ -41,9 +56,14 @@ def generate_script():
         return jsonify({"error": str(e)}), 500
 
 
-@script_bp.route("/generate-script-from-file", methods=["POST"])
+@script_bp.route("/generate-script-from-file", methods=["POST", "OPTIONS"])
+@cross_origin(origins=["http://localhost:5173"], methods=["POST", "OPTIONS"], allow_headers=["Content-Type"])
 def generate_script_from_file():
     """Generate script from uploaded file (PDF/DOC)"""
+    if request.method == "OPTIONS":
+        # Trả về phản hồi cho yêu cầu preflight
+        return jsonify({}), 200
+
     try:
         # Check if workspace_id is provided
         if 'workspace_id' not in request.form:
@@ -114,10 +134,39 @@ def generate_script_from_file():
             return jsonify(script_result[0]), script_result[1]
             
         return jsonify({
-        "id": script_result[0].get("id"),
-        "script": text_content,
-        "title": os.path.splitext(filename)[0]
-    }), 201
+            "id": script_result[0].get("script_id"),
+            "script": text_content,
+            "title": os.path.splitext(filename)[0]
+        }), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+
+
+@script_bp.route("/scripts/<script_id>/complete", methods=["POST", "OPTIONS"])
+@cross_origin(origins=["http://localhost:5173"], methods=["POST", "OPTIONS"], allow_headers=["Content-Type"])
+def complete_script(script_id):
+    """Change the status of a script to completed"""
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
+
+    try:
+        data = request.get_json()
+        if not data or "new_script" not in data:
+            return jsonify({"error": "Thiếu new_script trong body yêu cầu"}), 400
+
+        new_script = data["new_script"]
+        
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        result, status = loop.run_until_complete(
+            ScriptController.change_script_status_completed(script_id, new_script)
+        )
+        loop.close()
+
+        return jsonify(result), status
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

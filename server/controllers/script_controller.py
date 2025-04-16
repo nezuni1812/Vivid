@@ -6,7 +6,7 @@ from models.models import Script, Workspace
 
 class ScriptController:
     @staticmethod
-    async def generate_script(workspace_id, title, style=1, length=300):
+    async def generate_script(workspace_id, title, style, length, language):
         try:
             # Validate workspace
             workspace = Workspace.objects(id=workspace_id).first()
@@ -14,31 +14,31 @@ class ScriptController:
                 raise Exception("Workspace not found")
 
             
-            original_text, detected_lang = await detect_language_and_input(title)
-            english_topic = await translate_to_english(original_text)
+            # original_text, detected_lang = await detect_language_and_input(title)
+            # english_topic = await translate_to_english(original_text)
             
             # Get Wiki data
-            wiki_data = get_wikipedia_summary(english_topic, sentences=1)
-            print(f"Wiki data: {wiki_data}")
+            # wiki_data = get_wikipedia_summary(english_topic, sentences=1)
+            # print(f"Wiki data: {wiki_data}")
             # Generate script
             generated_script = create_script_with_gemini(
-                english_topic, 
-                wiki_data, 
-                detected_lang, 
+                title, 
                 style, 
-                length
+                length,
+                language
             )
-            print(f"Generated script: {generated_script}")
+            # print(f"Generated script: {generated_script}")
             # Save to database
             script = Script(
                 workspace_id=workspace,
                 title=title,
                 generated_script=generated_script,
+                language=language,
                 style=style,
                 status="draft"
             )
             script.save()
-
+            print(f"Script saved: {script.id}")
             return {
                 "script_id": str(script.id),
                 "title": title,
@@ -72,7 +72,7 @@ class ScriptController:
             return {"error": str(e)}, 500
         
     @staticmethod
-    async def change_script_status_completed(script_id):
+    async def change_script_status_completed(script_id, new_script):
         try:
             # Find the script by ID
             script = Script.objects(id=script_id).first()
@@ -81,6 +81,7 @@ class ScriptController:
 
             # Update the status to completed
             script.status = "completed"
+            script.generated_script = new_script
             script.save()
 
             return {"message": "Script status updated to completed"}, 200
@@ -100,6 +101,6 @@ class ScriptController:
             )
             script.save()
             
-            return {"id": str(script.id), "message": "Script created successfully"}, 201
+            return {"script_id": str(script.id), "message": "Script created successfully"}, 201
         except Exception as e:
             return {"error": str(e)}, 500
