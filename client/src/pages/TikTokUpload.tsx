@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 
 const TikTokUpload: React.FC = () => {
   const [sourceType, setSourceType] = useState<'FILE_UPLOAD' | 'PULL_FROM_URL'>('FILE_UPLOAD');
+  const [publishType, setPublishType] = useState<'UPLOAD_CONTENT' | 'DIRECT_POST'>('UPLOAD_CONTENT');
   const [file, setFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState('');
   const [message, setMessage] = useState('');
@@ -14,6 +15,7 @@ const TikTokUpload: React.FC = () => {
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return; // Prevent multiple submissions
     setMessage('');
     setError('');
     setLoading(true);
@@ -26,6 +28,7 @@ const TikTokUpload: React.FC = () => {
 
     const formData = new FormData();
     formData.append('source_type', sourceType);
+    formData.append('publish_type', publishType); // Add publish_type
     if (sourceType === 'FILE_UPLOAD' && file) {
       formData.append('video_file', file);
     } else if (sourceType === 'PULL_FROM_URL') {
@@ -50,7 +53,7 @@ const TikTokUpload: React.FC = () => {
       if (data.success) {
         setMessage(data.message);
       } else {
-        setError(data.error || 'Failed to upload video.');
+        setError(data.error || 'Failed to upload video. Details: ' + JSON.stringify(data.details));
       }
     } catch (err) {
       setError('Error uploading video: ' + (err as Error).message);
@@ -78,6 +81,20 @@ const TikTokUpload: React.FC = () => {
               >
                 <option value="FILE_UPLOAD">Upload from File</option>
                 <option value="PULL_FROM_URL">Pull from URL</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Publish Type
+              </label>
+              <select
+                value={publishType}
+                onChange={(e) => setPublishType(e.target.value as 'UPLOAD_CONTENT' | 'DIRECT_POST')}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              >
+                <option value="UPLOAD_CONTENT">Upload as Draft (Inbox)</option>
+                <option value="DIRECT_POST">Direct Post (Profile)</option>
               </select>
             </div>
 
