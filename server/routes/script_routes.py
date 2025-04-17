@@ -71,6 +71,7 @@ def generate_script_from_file():
             
         workspace_id = request.form['workspace_id']
         voice_style = int(request.form.get('voice_style', 1))
+        language = request.form.get('language', 'en')
         
         # Check if file is provided
         if 'file' not in request.files:
@@ -120,13 +121,14 @@ def generate_script_from_file():
             ScriptController.create_script_from_text(
                 workspace_id=workspace_id,
                 title=os.path.splitext(filename)[0],
-                content=text_content
+                content=text_content,
+                language=language
             )
         )
         ScriptController.save_new_script(
             workspace_id=workspace_id,
             title=os.path.splitext(filename)[0],
-            content=text_content
+            content=text_content,
         )
         # Check if script creation was successful
         if script_result[1] != 201:

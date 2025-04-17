@@ -158,6 +158,8 @@ export default function ScriptGenerator() {
       formData.append("workspace_id", "67ef5c1032c9368838561563") // Replace with actual workspace ID from context/props
       formData.append("style", style) // Add the current style
 
+      formData.append("language", language);
+
       // Send to server
       const response = await axios.post("http://127.0.0.1:5000/generate-script-from-file", formData, {
         headers: {
