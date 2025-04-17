@@ -12,31 +12,8 @@ import TikTokCallback from "./pages/TikTokCallback";
 import TikTokStats from "./pages/TikTokStats";
 import TikTokUpload from "./pages/TikTokUpload";
 
-import React, { useEffect } from 'react';
-declare const FB: any;
 function App() {
-
-  useEffect(() => {
-    window.fbAsyncInit = function () {
-      FB.init({
-        appId: import.meta.env.VITE_FACEBOOK_APP_ID,
-        cookie: true,
-        xfbml: true,
-        version: 'v19.0',
-      });
-    };
-    console.log("Facebook SDK Initialized");
-   // Tải SDK Facebook từ URL chính thức
-    (function (d, s, id) {
-      var js: HTMLScriptElement, fjs = d.getElementsByTagName(s)[0];
-      if (d.getElementById(id)) return;
-      js = d.createElement(s) as HTMLScriptElement;
-      js.id = id;
-      js.src = "https://connect.facebook.net/zh_TW/all.js";
-      fjs.parentNode.insertBefore(js, fjs);
-    }(document, 'script', 'facebook-jssdk'));
-  }, []);
-
+//https://connect.facebook.net/zh_TW/all.js
   
 
   return (

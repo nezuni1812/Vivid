@@ -23,7 +23,6 @@ import {
   CardTitle,
 } from "../components/ui/card";
 import { Video, BarChart2, Facebook} from "lucide-react";
-
 import VideoList from "../components/video-list";
 import StatsChart from "../components/stats-chart";
 
@@ -35,6 +34,8 @@ import { Textarea } from "../components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { Progress } from "../components/ui/progress"
+
+import FacebookUploader from "../components/facebook-upload"; 
 
 interface Workspace {
   _id: string;
@@ -51,7 +52,7 @@ const videos = [
   { title: "Long video titleeeeeeeee...", thumbnail: "" },
 ];
 
-const HomePage = () => {
+const HomePage: React.FC = () => {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState("all");
@@ -383,115 +384,6 @@ const HomePage = () => {
     });
   };
 
-  async function uploadVideoToFacebook(
-    file: File,
-    pageId: string,
-    pageAccessToken: string,
-    title: string,
-    description: string
-  ) {
-    // 1. Start phase
-    const startRes = await fetch(`https://graph-video.facebook.com/v22.0/${pageId}/videos`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        upload_phase: 'start',
-        access_token: pageAccessToken,
-        file_size: file.size.toString()
-      }),
-    });
-  
-    const startData = await startRes.json();
-    const uploadSessionId = startData.upload_session_id;
-    let startOffset = startData.start_offset;
-    let endOffset = startData.end_offset;
-  
-    // 2. Transfer phase
-    while (startOffset !== endOffset) {
-      const chunk = file.slice(Number(startOffset), Number(endOffset));
-      const formData = new FormData();
-      formData.append('upload_phase', 'transfer');
-      formData.append('upload_session_id', uploadSessionId);
-      formData.append('access_token', pageAccessToken);
-      formData.append('video_file_chunk', chunk);
-  
-      const transferRes = await fetch(`https://graph-video.facebook.com/v22.0/${pageId}/videos`, {
-        method: 'POST',
-        body: formData,
-      });
-  
-      const transferData = await transferRes.json();
-      startOffset = transferData.start_offset;
-      endOffset = transferData.end_offset;
-    }
-  
-    // 3. Finish phase
-    const finishRes = await fetch(`https://graph-video.facebook.com/v22.0/${pageId}/videos`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        upload_phase: 'finish',
-        upload_session_id: uploadSessionId,
-        access_token: pageAccessToken,
-        title,
-        description,
-      }),
-    });
-  
-    const finishData = await finishRes.json();
-    console.log('Video upload complete! Video ID:', finishData.id);
-  }
-  
-
-  const handleFacebookLogin = () => {
-    if (typeof FB !== 'undefined') {
-      FB.login(
-        (response: any) => {
-          if (response.authResponse) {
-            setIsFBLoggedIn(true);
-            setAccessToken(response.authResponse.accessToken);
-            setIsFBModalOpen(true); // Open the modal after login success
-
-            // Lấy danh sách các page người dùng quản lý
-            FB.api('/me/accounts', 'GET', {}, (res: any) => {
-              setFBPages(res.data);
-            });
-          } else {
-            console.log('User cancelled login or did not fully authorize.');
-          }
-        },
-        {
-          scope: 'public_profile,email,pages_show_list,pages_read_engagement,pages_manage_posts,pages_read_user_content,pages_manage_metadata',
-          auth_type: 'rerequest'
-        }
-      );
-    } else {
-      console.log("Facebook SDK is not initialized.");
-    }
-  };
-  
-  const handlePostSubmission = async () => {
-    if (!videoFBFile || !selectedFBPage) {
-      console.log("Chưa chọn video hoặc chưa chọn page.");
-      return;
-    }
-  
-    const pageId = selectedFBPage.id;
-    const pageAccessToken = selectedFBPage.access_token;
-  
-    try {
-      await uploadVideoToFacebook(
-        videoFBFile,
-        pageId,
-        pageAccessToken,
-        postFBTitle,
-        postFBTitle
-      );
-      setIsFBModalOpen(false); // đóng modal sau khi đăng thành công
-    } catch (err) {
-      console.error("Upload failed", err);
-    }
-  };
   return (
     <div className="absolute top-0 left-0 w-screen bg-gray-100 text-black text-center p-4 h-screen overflow-y-auto">
       {/* Header */}
@@ -611,72 +503,7 @@ const HomePage = () => {
             </>
           )}
         </div>
-        <div>
-        {!isFBLoggedIn ? (
-          <button onClick={handleFacebookLogin}>Login to Facebook</button>
-        ) : (
-          <div>
-            {/* Modal popup */}
-            <Modal
-              isOpen={isFBModalOpen}
-              onRequestClose={() => setIsFBModalOpen(false)}
-              contentLabel="Facebook Post Modal"
-              ariaHideApp={false} // Required for React Modal to work without warning
-            >
-              <h2>Post Video to Facebook</h2>
-
-              <h3>Choose a Facebook Page to Post</h3>
-              <select
-                onChange={(e) => {
-                  const selectedPage = FBpages.find((page) => page.id === e.target.value);
-                  setSelectedFBPage(selectedPage || null);
-                  if (selectedPage?.access_token) {
-                    setFBAccessToken(selectedPage.access_token);
-                  }
-                }}
-              >
-                <option value="">Select Page</option>
-                {FBpages.map((page: any) => (
-                  <option key={page.id} value={page.id}>
-                    {page.name}
-                  </option>
-                ))}
-              </select>
-
-              <h3>Upload Video</h3>
-              <input
-                type="file"
-                accept="video/*"
-                onChange={(e) => setVideoFBFile(e.target.files ? e.target.files[0] : null)}
-              />
-              <p>or</p>
-              <input
-                type="url"
-                placeholder="Enter video URL"
-                value={videoFBUrl || ''}
-                onChange={(e) => setVideoFBUrl(e.target.value)}
-              />
-
-              <h3>Post Title</h3>
-              <input
-                type="text"
-                value={postFBTitle}
-                onChange={(e) => setPostFBTitle(e.target.value)}
-                placeholder="Enter a title"
-              />
-
-              <h3>Post Privacy</h3>
-              <select onChange={(e) => setPostFBPrivacy(e.target.value)} value={postFBPrivacy}>
-                <option value="PUBLIC">Public</option>
-                <option value="PRIVATE">Private</option>
-              </select>
-
-              <button onClick={handlePostSubmission}>Post to Facebook</button>
-              <button onClick={() => setIsFBModalOpen(false)}>Cancel</button>
-            </Modal>
-          </div>
-        )}
-      </div>
+        <FacebookUploader />
       </div>
 
       {/* Workspace Section */}
