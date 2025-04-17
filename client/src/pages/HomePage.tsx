@@ -14,7 +14,7 @@ import {
   StatsContent,
 } from "./tabsContent";
 import { useNavigate } from "react-router-dom";
-
+import Modal from 'react-modal';
 import {
   Card,
   CardContent,
@@ -22,10 +22,20 @@ import {
   CardHeader,
   CardTitle,
 } from "../components/ui/card";
-import { Video, BarChart2 } from "lucide-react";
-
+import { Video, BarChart2, Facebook} from "lucide-react";
 import VideoList from "../components/video-list";
 import StatsChart from "../components/stats-chart";
+
+// import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../component/ui/dialog"
+import { Button } from "../components/ui/button"
+import { Input } from "../components/ui/input"
+import { Label } from "../components/ui/label"
+import { Textarea } from "../components/ui/textarea"
+import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
+import { Progress } from "../components/ui/progress"
+
+import FacebookUploader from "../components/facebook-upload"; 
 
 interface Workspace {
   _id: string;
@@ -34,7 +44,7 @@ interface Workspace {
   created_at: string;
   updated_at: string;
 }
-
+declare const FB: any;
 const videos = [
   { title: "Video Title 1", thumbnail: "" },
   { title: "Video Title 2", thumbnail: "" },
@@ -42,11 +52,11 @@ const videos = [
   { title: "Long video titleeeeeeeee...", thumbnail: "" },
 ];
 
-const HomePage = () => {
+const HomePage: React.FC = () => {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState("all");
-  const [videoFile, setVideoFile] = useState(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isChannelSignedIn, setIsChannelSignedIn] = useState(false);
   const [userEmail, setUserEmail] = useState("");
@@ -293,6 +303,17 @@ const HomePage = () => {
         privacyStatus: "private", // trạng thái video(public, private, unlisted)
       },
     };
+    // Lấy video từ URL thay vì chọn file từ thiết bị
+    // const videoResponse = await fetch("https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4");
+    // console.log("videoResponse: ", videoResponse)
+    // const videoBlob = await videoResponse.blob();
+    // console.log("videoBlob: ", videoBlob)
+    // const form = new FormData();
+    // form.append(
+    //   "metadata",
+    //   new Blob([JSON.stringify(metadata)], { type: "application/json" })
+    // );
+    // form.append("file", videoBlob);
 
     const form = new FormData();
     form.append(
@@ -470,6 +491,7 @@ const HomePage = () => {
             </>
           )}
         </div>
+        <FacebookUploader />
       </div>
 
       {/* Workspace Section */}
@@ -672,7 +694,7 @@ const HomePage = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>  
       )}
     </div>
   );
