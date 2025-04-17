@@ -90,6 +90,7 @@ const FacebookUploader: React.FC = () => {
       formData.append("description", description);
       formData.append("access_token", selectedPage.access_token);
       formData.append("published", published ? "true" : "false");
+      formData.append("privacy", JSON.stringify({"value": "EVERYONE"}));
 
       const res = await fetch(
         `https://graph-video.facebook.com/${selectedPage.id}/videos`,
@@ -100,6 +101,7 @@ const FacebookUploader: React.FC = () => {
       );
 
       const data = await res.json();
+      console.log("Upload success:", data);
       if (data.id) {
         alert(` Đăng video thành công! ID: https://www.facebook.com/${selectedPage.id}/posts/${data.id}`);
       } else {

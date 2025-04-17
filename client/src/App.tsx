@@ -15,6 +15,7 @@ import { WorkspaceProvider } from "./context/WorkspaceContext";
 import Workspace from "./pages/Workspace";
 import VideoEditor from "./pages/Editor";
 import Resource from "./pages/Resource";
+import FacebookStatPage from './pages/FacebookStatPage';
 
 function App() {
   const location = useLocation()
@@ -44,6 +45,9 @@ function App() {
             <Route path="/workspace/:id" element={<Workspace></Workspace>} />
             <Route path="/resource" element={<Resource></Resource>} />
             <Route path="/editor" element={<VideoEditor/>} />
+
+            <Route path="/facebook-stats" element={<FacebookStatPage />} />
+
           </Routes>
         </div>
       </div>
