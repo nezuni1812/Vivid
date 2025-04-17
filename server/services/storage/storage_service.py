@@ -30,7 +30,15 @@ async def delete_from_r2(url):
     try:
         # Extract file name from URL
         file_name = url.split("/")[-1]
+    except Exception as e:
+        raise Exception(f"Delete failed: {str(e)}")
         
+async def remove_from_r2(url_path):
+    """Remove file from R2 storage"""
+    file_name = url_path  # Extract file name from URL
+
+    loop = asyncio.get_event_loop()
+    try:
         # Delete file from R2
         await loop.run_in_executor(None, lambda: s3_client.delete_object(
             Bucket=R2_BUCKET, Key=file_name
