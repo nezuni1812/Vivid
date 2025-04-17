@@ -41,5 +41,5 @@ if __name__ == "__main__":
     # style 2: fun voice for kids
     style = 1
     long = 300
-    user_input = "Cách dùng flex box trong CSS"  # Thay bằng đầu vào mong muốn
+    user_input = "Giải thích vật lý lượng tử"  # Thay bằng đầu vào mong muốn
     asyncio.run(process_science_concept(user_input, long, style))  
