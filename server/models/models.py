@@ -57,6 +57,14 @@ class Script(Document):
 
     meta = {"collection": "scripts"}
 
+class Resource(Document):
+    workspace_id = ReferenceField(Workspace, required=True)
+    resource_url = StringField(required=True)
+    resource_type = StringField(required=True, choices=["image", "video", "audio"])
+    created_at = DateTimeField(default=datetime.utcnow)
+
+    meta = {"collection": "resources"}
+
 class Audio(Document):
     workspace_id = ReferenceField(Workspace, required=True)
     script_id = ReferenceField(Script, required=True)

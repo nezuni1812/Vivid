@@ -1,4 +1,4 @@
-from models.models import Workspace
+from models.models import Script, Workspace
 from flask import jsonify
 from bson import ObjectId
 
@@ -24,6 +24,29 @@ class WorkspaceController:
             return {"error": str(e)}, 500
 
     @staticmethod
+    def get_workspace_data(workspace_id, kind):
+        # kind: what kind of requested data: script, audio, clip, timing,  
+        # if kind == "script":
+        #     try:
+                
+                
+        try:
+            script = Script.objects(workspace_id=workspace_id).first() 
+            if not script:
+                return {"error": "Script not found"}, 404
+            
+            return {
+                "id": str(script.id),
+                "prompt": script.prompt,
+                "clip_url": script.clip_url,
+                "status": script.status,
+                "created_at": script.created_at.isoformat() if script.created_at else None,
+                "updated_at": script.updated_at.isoformat() if script.updated_at else None
+            }, 200
+        except Exception as e:
+            return {"error": str(e)}, 500
+
+    @staticmethod
     def get_workspace(workspace_id):
         try:
             workspace = Workspace.objects(id=workspace_id).first()
@@ -33,7 +56,7 @@ class WorkspaceController:
                 "id": str(workspace.id),
                 "name": workspace.name,
                 "description": workspace.description,
-                "owner_id": str(workspace.owner_id)
+                "owner_id": str(workspace.user_id.id)
             }, 200
         except Exception as e:
             return {"error": str(e)}, 500

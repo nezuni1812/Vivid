@@ -1,54 +1,170 @@
-import { useState } from "react";
-import { useParams } from "react-router-dom";
+"use client"
 
-const Workspace = () => {
-  const { id } = useParams();
+import type React from "react"
 
-  const [materials, setMaterials] = useState([
-    "/images/c8f37c3e16754d78b75b538e8efa46d4.png",
-    "https://videos.pexels.com/video-files/10755265/10755265-hd_3840_2160_30fps.mp4",
-    "https://videos.pexels.com/video-files/4990231/4990231-hd_1920_1080_30fps.mp4",
-    "https://videos.pexels.com/video-files/15392342/15392342-uhd_2560_1440_24fps.mp4",
-    "/images/c21aa3c1569b43d5b9f2ef56b53fa037.png",
-    "/images/dd7084c401e746ad858704f85e75d57f.png",
-    "https://videos.pexels.com/video-files/5465034/5465034-uhd_2160_3840_25fps.mp4",
-    "https://videos.pexels.com/video-files/7606424/7606424-hd_720_1280_30fps.mp4",
-    "https://videos.pexels.com/video-files/3806673/3806673-hd_1920_1080_24fps.mp4",
-    "/images/23eaeecacd3a4a13b1613446988c156a.png",
-    "/images/9b3fe30c9dab40b5a91eed9587c2437a.png",
-    "/images/6fb975630892443abc944f1119fa49b8.png",
-    "https://videos.pexels.com/video-files/25744127/11904065_1920_1080_15fps.mp4",
-  ]);
+import { useState, useRef } from "react"
+import { Button } from "../components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
+import { ArrowLeft, ArrowRight, Save } from "lucide-react"
+import ScriptGenerator from "../components/script-generator"
+import VoiceConfig from "../components/voice-config"
+import ImageGenerator from "../components/image-generator"
+import VideoEditor from "../components/video-editor"
+import PublishOptions from "../components/publish-options"
+import { useNavigate } from "react-router-dom"
+import { useWorkspace } from "../context/WorkspaceContext";
+
+const steps = [
+  { id: "content", label: "Nội dung" },
+  { id: "publish", label: "Xuất bản" },
+]
+
+export default function CreateVideo() {
+  const navigate = useNavigate()
+  const [activeStep, setActiveStep] = useState("content")
+
+  const scriptRef = useRef<HTMLDivElement>(null)
+  const voiceRef = useRef<HTMLDivElement>(null)
+  const imagesRef = useRef<HTMLDivElement>(null)
+  const editorRef = useRef<HTMLDivElement>(null)
+  
+  const { scriptId, workspaceId } = useWorkspace(); // Get scriptId from context
+
+  const scrollToSection = (ref: React.RefObject<HTMLDivElement | null>) => {
+      if (ref.current) {
+        ref.current.scrollIntoView({ behavior: "smooth", block: "start" })
+      }
+    }
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
-      {materials.map((material, index) => {
-        const isImage =
-          material.endsWith(".png") ||
-          material.endsWith(".jpg") ||
-          material.endsWith(".jpeg");
-        const isVideo = material.endsWith(".mp4") || material.endsWith(".mov");
+    <main className="max-w-[45rem] container mx-auto py-6 px-4 md:px-6">
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center">
+          <Button
+            variant="outline"
+            size="icon"
+            className="mr-2"
+            onClick={() => navigate("/")}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h1 className="text-3xl font-bold">Tạo Video Mới</h1>
+        </div>
+        <Button className="bg-green-600 hover:bg-green-700">
+          <Save className="mr-2 h-4 w-4" />
+          Lưu dự thảo
+        </Button>
+      </div>
 
-        return (
-          <div key={index} className="mb-4">
-            {isImage && (
-              <img
-                src={material.startsWith("/") ? `${import.meta.env.VITE_BACKEND_URL}${material}` : material}
-                alt={`Material ${index}`}
-                className="max-w-full h-auto"
-              />
-            )}
-            {isVideo && (
-              <video controls className="max-w-full h-auto">
-                <source src={material} type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-};
+      <div className="mb-8">
+        <Tabs value={activeStep} className="w-full">
+          <TabsList className="grid grid-cols-2 w-full">
+            {steps.map((step) => (
+              <TabsTrigger key={step.id} value={step.id} onClick={() => setActiveStep(step.id)}>
+                {step.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-export default Workspace;
+          <TabsContent value="content" className="space-y-8">
+            {/* Navigation buttons for sections */}
+            <div className="flex justify-between bg-gray-50 p-3 rounded-lg sticky top-0 z-10 border shadow-sm">
+              <Button variant="outline" onClick={() => scrollToSection(scriptRef)}>
+                Kịch bản
+              </Button>
+              <Button variant="outline" onClick={() => scrollToSection(voiceRef)}>
+                Giọng nói
+              </Button>
+              <Button variant="outline" onClick={() => scrollToSection(imagesRef)}>
+                Hình ảnh
+              </Button>
+              <Button variant="outline" onClick={() => scrollToSection(editorRef)}>
+                Chỉnh sửa
+              </Button>
+            </div>
+
+            {/* Script Section */}
+            <div ref={scriptRef}>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tạo kịch bản video khoa học</CardTitle>
+                  <CardDescription>Nhập chủ đề khoa học hoặc chọn từ danh sách gợi ý</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScriptGenerator/>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Voice Section */}
+            <div ref={voiceRef}>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Cấu hình giọng nói</CardTitle>
+                  <CardDescription>Lựa chọn và tùy chỉnh giọng nói cho video của bạn</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <VoiceConfig />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Images Section */}
+            <div ref={imagesRef}>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tạo hình ảnh và video</CardTitle>
+                  <CardDescription>Tạo và tùy chỉnh hình ảnh minh họa cho video</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ImageGenerator />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Editor Section */}
+            <div ref={editorRef}>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Trình chỉnh sửa video</CardTitle>
+                  <CardDescription>Chỉnh sửa và sắp xếp các phần của video</CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <VideoEditor />
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="flex justify-end">
+              <Button onClick={() => setActiveStep("publish")} className="bg-green-600 hover:bg-green-700">
+                Tiếp tục đến xuất bản
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="publish">
+            <Card>
+              <CardHeader>
+                <CardTitle>Xuất bản và quản lý nội dung</CardTitle>
+                <CardDescription>Cấu hình xuất bản và chia sẻ video của bạn</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PublishOptions />
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-between mt-6">
+              <Button variant="outline" onClick={() => setActiveStep("content")}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Quay lại chỉnh sửa
+              </Button>
+
+              <Button className="bg-green-600 hover:bg-green-700">Hoàn thành</Button>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </main>
+  )
+}
