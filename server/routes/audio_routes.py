@@ -19,7 +19,7 @@ def generate_audio(script_id):
     try:
         data = request.get_json()
         required_fields = ["speed", "pitch", "volume"]
-        
+
         if not all(field in data for field in required_fields):
             return jsonify({"error": "Thiếu các trường bắt buộc (speed, pitch, volume)"}), 400
 
@@ -28,6 +28,18 @@ def generate_audio(script_id):
         pitch = float(data["pitch"])
         volume = float(data["volume"])
 
+        # Thêm engine và gender, với giá trị mặc định
+        engine = data.get("engine", "gtts")  # Mặc định là gtts nếu không cung cấp
+        gender = data.get("gender", "female")  # Mặc định là female nếu không cung cấp
+        
+        # Kiểm tra giá trị engine hợp lệ
+        if engine not in ["gtts", "edge_tts"]:
+            return jsonify({"error": "Engine phải là 'gtts' hoặc 'edge_tts'"}), 400
+
+        # Kiểm tra giá trị gender hợp lệ
+        if gender not in ["male", "female"]:
+            return jsonify({"error": "Gender phải là 'male' hoặc 'female'"}), 400
+        
         # Optional: Validate ranges
         if not (0.5 <= speed <= 2.0):
             return jsonify({"error": "Tốc độ phải nằm trong khoảng 0.5 đến 2.0"}), 400
@@ -42,6 +54,8 @@ def generate_audio(script_id):
         result, status = loop.run_until_complete(
             AudioController.generate_audio(
                 script_id=script_id,
+                engine=engine,  
+                gender=gender,  
                 speed=speed,
                 pitch=pitch,
                 volume=volume

@@ -11,18 +11,18 @@ import axios from "axios"
 
 const voiceProviders = [
   {
-    id: "edge",
+    id: "edge_tts",
     name: "Edge TTS",
     voices: [
-      { id: "el1", name: "Nữ" },
-      { id: "el2", name: "Nam" },
+      { id: "female", name: "Nữ" },
+      { id: "male", name: "Nam" },
     ],
   },
   {
-    id: "google",
+    id: "gtts",
     name: "Google TTS",
     voices: [
-      { id: "g1", name: "Mặc định" },
+      { id: "default", name: "Mặc định" },
     ],
   },
   // {
@@ -37,8 +37,8 @@ const voiceProviders = [
 ]
 
 export default function VoiceConfig() {
-  const [provider, setProvider] = useState("google")
-  const [voice, setVoice] = useState("")
+  const [provider, setProvider] = useState("gtts")
+  const [voice, setVoice] = useState("default")
   const [speed, setSpeed] = useState([1])
   const [pitch, setPitch] = useState([1])
   const [intensity, setIntensity] = useState([0.5])
@@ -66,11 +66,14 @@ const handleCreateAudio = async () => {
     try {
       // Chuyển đổi intensity (0-1) thành volume (-12.0 đến 12.0 dB)
       const volume = (intensity[0] - 0.5) * 24 // Chuyển từ [0,1] sang [-12,12]
-
+      const engine = provider
+      const gender = voice === "default" ? "female" : voice
       const response = await axios.post(`http://127.0.0.1:5000/scripts/${scriptId}/generate_audio`, {
         speed: speed[0],
         pitch: pitch[0],
         volume: volume,
+        engine: engine, 
+        gender: gender,
       })
 
       if (response.status === 201 && response.data?.audio_url) {
@@ -198,11 +201,12 @@ const handleCreateAudio = async () => {
               </CardFooter>
             </Card>
 
-            {showAudioPreview && (
+            {showAudioPreview && audioUrl && (
               <div className="space-y-2 mt-4">
                 <label className="text-sm font-medium">Xem trước âm thanh</label>
                 <div className="border rounded-md p-4 bg-gray-50">
                   <audio
+                    key={audioUrl}
                     src={audioUrl || "#"}
                     controls
                     className="w-full"
