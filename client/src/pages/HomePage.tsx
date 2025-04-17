@@ -73,18 +73,6 @@ const HomePage: React.FC = () => {
   const [newWorkspaceDescription, setNewWorkspaceDescription] = useState("");
   const [isWorkspaceLoading, setIsWorkspaceLoading] = useState(false);
 
-  // Facebook state
-  const [isFBLoggedIn, setIsFBLoggedIn] = useState(false);
-  const [FBaccessToken, setFBAccessToken] = useState<string | null>(null);
-  const [FBpages, setFBPages] = useState<any[]>([]);
-  const [selectedFBPage, setSelectedFBPage] = useState<any | null>(null);
-  const [videoFBFile, setVideoFBFile] = useState<File | null>(null);
-  const [videoFBUrl, setVideoFBUrl] = useState<string | null>('');
-  const [postFBTitle, setPostFBTitle] = useState('');
-  const [postFBPrivacy, setPostFBPrivacy] = useState('PUBLIC'); // PUBLIC, PRIVATE, etc.
-
-  const [isFBModalOpen, setIsFBModalOpen] = useState(false); // state to manage modal visibility
-  //////////////////////////
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
       setSelectedFile(event.target.files[0]);
