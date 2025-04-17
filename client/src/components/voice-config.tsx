@@ -10,22 +10,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import axios from "axios"
 
 const voiceProviders = [
-  // {
-  //   id: "elevenlabs",
-  //   name: "ElevenLabs",
-  //   voices: [
-  //     { id: "el1", name: "Ngọc Anh (Nữ)" },
-  //     { id: "el2", name: "Minh Quân (Nam)" },
-  //     { id: "el3", name: "Thu Hà (Nữ)" },
-  //   ],
-  // },
+  {
+    id: "edge",
+    name: "Edge TTS",
+    voices: [
+      { id: "el1", name: "Nữ" },
+      { id: "el2", name: "Nam" },
+    ],
+  },
   {
     id: "google",
     name: "Google TTS",
     voices: [
-      { id: "g1", name: "Lan Hương (Nữ)" },
-      { id: "g2", name: "Hoàng Long (Nam)" },
-      { id: "g3", name: "Mai Linh (Nữ)" },
+      { id: "g1", name: "Mặc định" },
     ],
   },
   // {
@@ -110,6 +107,22 @@ const handleCreateAudio = async () => {
                 {voiceProviders.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Giọng nói</label>
+            <Select value={voice} onValueChange={setVoice}>
+              <SelectTrigger>
+                <SelectValue placeholder="Chọn giọng nói" />
+              </SelectTrigger>
+              <SelectContent>
+                {selectedProvider?.voices.map((v) => (
+                  <SelectItem key={v.id} value={v.id}>
+                    {v.name}
                   </SelectItem>
                 ))}
               </SelectContent>
