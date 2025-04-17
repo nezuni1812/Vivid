@@ -7,10 +7,12 @@ import NavBar from "./components/NavBar";
 import PrivateRoute from "./privateRoute";
 import StatPage from "./pages/StatPage";
 import Workspace from "./pages/Workspace";
+import VideoEditor from "./pages/Editor";
+import Resource from "./pages/Resource";
 
 function App() {
   return (
-    <div className="max-w-[45rem] mx-auto">
+    <div className=" mx-auto">
       <NavBar />
       <Routes>
         <Route path="/" element={<Home />} />
@@ -20,6 +22,8 @@ function App() {
         { <Route path="/channelStat/" element={<PrivateRoute><StatPage/></PrivateRoute>} /> }
         {/* <Route path="*" element={<NotFound />} /> */}
         <Route path="/workspace/:id" element={<Workspace></Workspace>} />
+        <Route path="/resource" element={<Resource></Resource>} />
+        <Route path="/editor" element={<VideoEditor/>} />
       </Routes>
     </div>
   );

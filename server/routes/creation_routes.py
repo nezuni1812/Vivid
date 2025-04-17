@@ -11,6 +11,7 @@ from io import BytesIO
 import os
 from dotenv import load_dotenv
 import uuid
+from urllib.parse import urljoin
 
 load_dotenv()
 
@@ -46,6 +47,25 @@ def get_creations():
     
     
     return jsonify(materials), 200
+
+@creation_bp.route("/creations/edit", methods=["POST"])
+def gen_on_prompt():
+    print("Generating on prompt")
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+    
+    if (data["what"] == "image" and "script" in data):
+        filename = data.get("filename", None)  
+        if (filename is not None):
+            filename = filename.split("/")[-1]
+            
+        filename = asyncio.run(get_image(data["script"], filename=filename, additional=data.get("prompt", None)))
+        print("Generating image with description:", data["prompt"], " with filename:", filename)
+        return jsonify({"what": "image", "content": filename}), 200
+    
+    # return jsonify({"what": "script", "content": "http://localhost/2098u53g84u.png"}), 200
+    return jsonify({"error": "Bad request"}), 400
     
 class Script(BaseModel):
     start_time: str
@@ -60,7 +80,7 @@ def determine_illustration_content(scripts) -> list[Script]:
         model="models/gemini-2.0-flash-exp",
         contents=[
             """
-            From the script, determine each element in the script should best be illustrated with an image or a video. 
+            From the script, determine each element in the script should best be illustrated with an image or a video. The script could be in Vietnamese so you can translate to English and infer base on the most important words in the script. 
             If it should be illustrated with an image, return the image description in great details, relating to technical concept, so a image generation AI can understand your prompt. 
             If it should be illustrated with a video, return the video description, it should be keywords, could be something broad like Nature, Tigers, People. 
             Or it could be something specific like Group of people working. 
@@ -120,12 +140,14 @@ async def get_video(description) -> str:
         print(f"Error: {result.status_code}")
     return None;
 
-async def get_image(description) -> str:
+async def get_image(description, filename=None, additional=None) -> str:
     print(f"Generating image with description: {description}")
     response = client.models.generate_content(
         model="models/gemini-2.0-flash-exp",
         contents=[
-            "Generate 1 single image that fits best the following description: ",
+            "Generate 1 single image, must be not the actual text from the prompt and you must not put text in it, that fits best the following description",
+            f"and satisfies the following requirements: {additional}" if additional else " ",
+            ": ",
             description,
             ],
         config=types.GenerateContentConfig(response_modalities=['Text', 'Image'])
@@ -136,10 +158,14 @@ async def get_image(description) -> str:
         elif part.inline_data is not None:
             print("Image generated")
             image = Image.open(BytesIO(part.inline_data.data))
-            filename = f"{uuid.uuid4().hex}.png"
+            if (filename is None):
+                filename = f"{uuid.uuid4().hex}.png"
             filepath = os.path.join(IMAGE_FOLDER, filename)
             image.save(filepath)
+            return urljoin(os.getenv("BASE_URL"), f"/images/{filename}")
             return f"{IMAGE_FOLDER}/{filename}"
+        
+    return ""
         
 def encode_image_to_data_url(image_bytes):
     mime = get_mime_type(image_bytes)

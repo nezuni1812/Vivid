@@ -12,11 +12,12 @@ from routes.script_routes import script_bp
 from routes.creation_routes import creation_bp
 
 app = Flask(__name__)
-cors = CORS(app, resources={
-    r"/*": {
-        "origins": "http://localhost:5173"
-    }
-})
+# cors = CORS(app, resources={
+#     r"/*": {
+#         "origins": "http://localhost:5173"
+#     }
+# })
+CORS(app)
 
 # Khởi tạo database
 init_db()
