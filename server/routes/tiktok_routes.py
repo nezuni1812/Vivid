@@ -50,6 +50,14 @@ def generate_code_verifier():
 def generate_code_challenge(verifier):
     return hashlib.sha256(verifier.encode('utf-8')).hexdigest()
 
+def count_utf16_runes(text):
+    """Count UTF-16 code units (runes) in a string, accounting for surrogate pairs."""
+    if not text:
+        return 0
+    # Encode to UTF-16 and count code units (2 bytes per unit, including surrogates)
+    encoded = text.encode('utf-16-le')
+    return len(encoded) // 2
+
 @tiktok_bp.route("/auth/init/", methods=["GET", "OPTIONS"])
 @cross_origin(origins=["http://localhost:5173"], methods=["GET", "OPTIONS"], allow_headers=["Content-Type"], supports_credentials=True)
 def auth_init():
@@ -170,6 +178,15 @@ def upload_video():
         video_url = request.form.get("video_url") if source_type == "PULL_FROM_URL" else None
         video_file = request.files.get("video_file") if source_type == "FILE_UPLOAD" else None
 
+        # Post info fields
+        title = request.form.get("title")
+        privacy_level = request.form.get("privacy_level", "MUTUAL_FOLLOW_FRIENDS")
+        disable_duet = request.form.get("disable_duet", "false").lower() == "true"
+        disable_comment = request.form.get("disable_comment", "false").lower() == "true"
+        disable_stitch = request.form.get("disable_stitch", "false").lower() == "true"
+        video_cover_timestamp_ms = request.form.get("video_cover_timestamp_ms", "1000")
+        is_aigc = request.form.get("is_aigc", "true").lower() == "true"
+
         if source_type == "FILE_UPLOAD" and not video_file:
             logger.error("No video file provided")
             return jsonify({"error": "No video file provided"}), 400
@@ -179,6 +196,12 @@ def upload_video():
         if publish_type not in ["UPLOAD_CONTENT", "DIRECT_POST"]:
             logger.error(f"Invalid publish_type: {publish_type}")
             return jsonify({"error": "Invalid publish_type, must be UPLOAD_CONTENT or DIRECT_POST"}), 400
+        if title and count_utf16_runes(title) > 2200:
+            logger.error(f"Title exceeds 2200 UTF-16 runes: {count_utf16_runes(title)}")
+            return jsonify({"error": "Title must not exceed 2200 UTF-16 runes"}), 400
+        if privacy_level not in ["PUBLIC_TO_EVERYONE", "MUTUAL_FOLLOW_FRIENDS", "SELF_ONLY"]:
+            logger.error(f"Invalid privacy_level: {privacy_level}")
+            return jsonify({"error": "Invalid privacy_level, must be PUBLIC_TO_EVERYONE, MUTUAL_FOLLOW_FRIENDS, or SELF_ONLY"}), 400
 
         # Validate video_url for PULL_FROM_URL
         if source_type == "PULL_FROM_URL":
@@ -212,6 +235,18 @@ def upload_video():
         # Select API URL based on publish_type
         api_url = UPLOAD_CONTENT_API_URL if publish_type == "UPLOAD_CONTENT" else DIRECT_POST_API_URL
 
+        # Build post_info (omit title if empty)
+        post_info = {
+            "privacy_level": privacy_level,
+            "disable_duet": disable_duet,
+            "disable_comment": disable_comment,
+            "disable_stitch": disable_stitch,
+            "video_cover_timestamp_ms": int(video_cover_timestamp_ms),
+            "is_aigc": is_aigc
+        }
+        if title:
+            post_info["title"] = title
+
         if source_type == "FILE_UPLOAD":
             video_size = len(video_file.read())
             video_file.seek(0)
@@ -221,14 +256,16 @@ def upload_video():
                     "video_size": video_size,
                     "chunk_size": video_size,
                     "total_chunk_count": 1
-                }
+                },
+                "post_info": post_info
             }
         else:
             payload = {
                 "source_info": {
                     "source": "PULL_FROM_URL",
                     "video_url": video_url
-                }
+                },
+                "post_info": post_info
             }
 
         logger.info(f"Initiating video upload with publish_type: {publish_type}, source_type: {source_type}, payload: {payload}")

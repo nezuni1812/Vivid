@@ -1,12 +1,23 @@
 import React, { useState } from 'react';
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { Checkbox } from "../components/ui/checkbox";
 
 const TikTokUpload: React.FC = () => {
   const [sourceType, setSourceType] = useState<'FILE_UPLOAD' | 'PULL_FROM_URL'>('FILE_UPLOAD');
   const [publishType, setPublishType] = useState<'UPLOAD_CONTENT' | 'DIRECT_POST'>('UPLOAD_CONTENT');
   const [file, setFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState('');
+  const [title, setTitle] = useState('');
+  const [privacyLevel, setPrivacyLevel] = useState('PUBLIC_TO_EVERYONE');
+  const [disableDuet, setDisableDuet] = useState(false);
+  const [disableComment, setDisableComment] = useState(false);
+  const [disableStitch, setDisableStitch] = useState(false);
+  const [videoCoverTimestampMs, setVideoCoverTimestampMs] = useState('1000');
+  const [isAigc, setIsAigc] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -28,7 +39,15 @@ const TikTokUpload: React.FC = () => {
 
     const formData = new FormData();
     formData.append('source_type', sourceType);
-    formData.append('publish_type', publishType); // Add publish_type
+    formData.append('publish_type', publishType);
+    formData.append('title', title); // Empty title is allowed
+    formData.append('privacy_level', privacyLevel);
+    formData.append('disable_duet', disableDuet.toString());
+    formData.append('disable_comment', disableComment.toString());
+    formData.append('disable_stitch', disableStitch.toString());
+    formData.append('video_cover_timestamp_ms', videoCoverTimestampMs);
+    formData.append('is_aigc', isAigc.toString());
+
     if (sourceType === 'FILE_UPLOAD' && file) {
       formData.append('video_file', file);
     } else if (sourceType === 'PULL_FROM_URL') {
@@ -71,58 +90,119 @@ const TikTokUpload: React.FC = () => {
         <CardContent>
           <form onSubmit={handleUpload} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Upload Method
-              </label>
-              <select
-                value={sourceType}
-                onChange={(e) => setSourceType(e.target.value as 'FILE_UPLOAD' | 'PULL_FROM_URL')}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              >
-                <option value="FILE_UPLOAD">Upload from File</option>
-                <option value="PULL_FROM_URL">Pull from URL</option>
-              </select>
+              <Label>Upload Method</Label>
+              <Select value={sourceType} onValueChange={(value) => setSourceType(value as 'FILE_UPLOAD' | 'PULL_FROM_URL')}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="FILE_UPLOAD">Upload from File</SelectItem>
+                  <SelectItem value="PULL_FROM_URL">Pull from URL</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Publish Type
-              </label>
-              <select
-                value={publishType}
-                onChange={(e) => setPublishType(e.target.value as 'UPLOAD_CONTENT' | 'DIRECT_POST')}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              >
-                <option value="UPLOAD_CONTENT">Upload as Draft (Inbox)</option>
-                <option value="DIRECT_POST">Direct Post (Profile)</option>
-              </select>
+              <Label>Publish Type</Label>
+              <Select value={publishType} onValueChange={(value) => setPublishType(value as 'UPLOAD_CONTENT' | 'DIRECT_POST')}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="UPLOAD_CONTENT">Upload as Draft (Inbox)</SelectItem>
+                  <SelectItem value="DIRECT_POST">Direct Post (Profile)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Title (Optional, up to 2200 characters)</Label>
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Enter video caption with #hashtags or @mentions"
+                maxLength={2200}
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Add hashtags (#) or mentions (@) for discoverability. Leave empty for no caption.
+              </p>
+            </div>
+
+            <div>
+              <Label>Privacy Level</Label>
+              <Select value={privacyLevel} onValueChange={setPrivacyLevel}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PUBLIC_TO_EVERYONE">Public</SelectItem>
+                  <SelectItem value="MUTUAL_FOLLOW_FRIENDS">Mutual Friends</SelectItem>
+                  <SelectItem value="SELF_ONLY">Private</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  checked={disableDuet}
+                  onCheckedChange={(checked) => setDisableDuet(checked as boolean)}
+                />
+                <Label>Disable Duet</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  checked={disableComment}
+                  onCheckedChange={(checked) => setDisableComment(checked as boolean)}
+                />
+                <Label>Disable Comments</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  checked={disableStitch}
+                  onCheckedChange={(checked) => setDisableStitch(checked as boolean)}
+                />
+                <Label>Disable Stitch</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  checked={isAigc}
+                  onCheckedChange={(checked) => setIsAigc(checked as boolean)}
+                />
+                <Label>Mark as AI-Generated Content</Label>
+              </div>
+            </div>
+
+            <div>
+              <Label>Video Cover Timestamp (ms)</Label>
+              <Input
+                type="number"
+                value={videoCoverTimestampMs}
+                onChange={(e) => setVideoCoverTimestampMs(e.target.value)}
+                placeholder="1000"
+                min="0"
+              />
             </div>
 
             {sourceType === 'FILE_UPLOAD' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Video File
-                </label>
-                <input
+                <Label>Video File</Label>
+                <Input
                   type="file"
                   accept="video/mp4"
                   onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                 />
               </div>
             )}
 
             {sourceType === 'PULL_FROM_URL' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Video URL
-                </label>
-                <input
+                <Label>Video URL</Label>
+                <Input
                   type="url"
                   value={videoUrl}
                   onChange={(e) => setVideoUrl(e.target.value)}
                   placeholder="https://example.com/video.mp4"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
             )}

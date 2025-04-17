@@ -15,4 +15,5 @@ boto3
 flask_cors
 PyPDF2
 python-docx
+edge_tts
 pillow
