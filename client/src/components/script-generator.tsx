@@ -22,7 +22,7 @@ const suggestedTopics = [
   "Trí tuệ nhân tạo",
 ]
 
-export default function ScriptGenerator() {
+export default function ScriptGenerator({workspace_id}:{workspace_id:string}) {
   const [topic, setTopic] = useState("")
   const [style, setStyle] = useState("general")
   const [generatedScript, setGeneratedScript] = useState("")
@@ -48,7 +48,7 @@ export default function ScriptGenerator() {
 
     try {
       const response = await axios.post("http://127.0.0.1:5000/scripts/generate", {
-        workspace_id: workspaceId,
+        workspace_id: workspace_id,
         title: topic,
         style: style,
         length: wordCount, // Sử dụng wordCount thay vì giá trị cố định 1000
@@ -155,7 +155,7 @@ export default function ScriptGenerator() {
       // Create form data
       const formData = new FormData()
       formData.append("file", selectedFile)
-      formData.append("workspace_id", "67ef5c1032c9368838561563") // Replace with actual workspace ID from context/props
+      formData.append("workspace_id", workspace_id) // Replace with actual workspace ID from context/props
       formData.append("style", style) // Add the current style
 
       formData.append("language", language);
@@ -198,7 +198,7 @@ export default function ScriptGenerator() {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <label className="text-sm font-medium">Chủ đề khoa học</label>
+        <label className="text-sm font-medium">Chủ đề khoa học {workspace_id}</label>
         <div className="flex gap-2">
           <Textarea
             placeholder="Nhập chủ đề khoa học..."

@@ -13,6 +13,8 @@ from dotenv import load_dotenv
 import uuid
 from urllib.parse import urljoin
 
+from services.storage.storage_service import upload_to_r2
+
 load_dotenv()
 
 creation_bp = Blueprint('creation', __name__)
@@ -76,6 +78,7 @@ class Script(BaseModel):
     
 def determine_illustration_content(scripts) -> list[Script]:
     
+    print("Determining illustration content")
     response = client.models.generate_content(
         model="models/gemini-2.0-flash-exp",
         contents=[
@@ -85,6 +88,7 @@ def determine_illustration_content(scripts) -> list[Script]:
             If it should be illustrated with a video, return the video description, it should be keywords, could be something broad like Nature, Tigers, People. 
             Or it could be something specific like Group of people working. 
             Make a copy of the script and add the `type` (video or image), `description` for each element in the script. Always return in JSON format')
+            There only at maximum 5 image elements.
             """,
             scripts,
         ],
@@ -95,6 +99,7 @@ def determine_illustration_content(scripts) -> list[Script]:
         )
     )
     
+    print("The amount of element with type of image:", len([script for script in response.parsed if script.type == "image"]))
     return response.parsed
 
 async def get_all_vid_segment(script_list, materials):
@@ -143,16 +148,26 @@ async def get_video(description) -> str:
 async def get_image(description, filename=None, additional=None) -> str:
     print(f"Generating image with description: {description}")
     response = client.models.generate_content(
-        model="models/gemini-2.0-flash-exp",
+    model="models/gemini-2.0-flash-exp",
         contents=[
-            "Generate 1 single image, must be not the actual text from the prompt and you must not put text in it, that fits best the following description",
-            f"and satisfies the following requirements: {additional}" if additional else " ",
-            ": ",
-            description,
+            f"""Return the image description in great details, relating to technical concept about the following concept, so a image generation AI can understand your prompt: {description}""",
             ],
+        config=types.GenerateContentConfig(response_modalities=['Text'])
+    )
+    
+    prompt_content = [
+        f"""Generate 1 single image about the following description""",
+        f"and satisfies the following requirements: {additional}" if additional else " ",
+        ": ",
+        response.text,
+    ]
+    print("Prompt content:", prompt_content)
+    finalresponse = client.models.generate_content(
+        model="models/gemini-2.0-flash-exp",
+        contents=prompt_content,
         config=types.GenerateContentConfig(response_modalities=['Text', 'Image'])
     )
-    for part in response.candidates[0].content.parts:
+    for part in finalresponse.candidates[0].content.parts:
         if part.text is not None:
             print(part.text)
         elif part.inline_data is not None:

@@ -47,7 +47,7 @@ class PublishedClip(Document):
 class Script(Document):
     workspace_id = ReferenceField(Workspace, required=True)
     title = StringField(required=True)
-    source_content = StringField 
+    source_content = StringField() 
     generated_script = StringField()  # AI generated script
     language = StringField(default="en")
     style = IntField(default=1)  # 1: serious, 2: fun
@@ -59,6 +59,7 @@ class Script(Document):
 
 class Resource(Document):
     workspace_id = ReferenceField(Workspace, required=True)
+    status = StringField(default="processing", choices=["draft", "processing", "completed"])
     resource_url = StringField(required=True)
     resource_type = StringField(required=True, choices=["image", "video", "audio"])
     created_at = DateTimeField(default=datetime.utcnow)
