@@ -1,9 +1,11 @@
 "use client"
-import { useWorkspace } from "../context/WorkspaceContext";
-import { useState } from "react"
+import { useWorkspace } from "../context/WorkspaceContext"
+import type React from "react"
+
+import { useState, useRef } from "react"
 import { Button } from "./ui/button"
 import { Slider } from "./ui/slider"
-import { Upload, Volume2 } from "lucide-react"
+import { Upload, Volume2, Loader2, X } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
@@ -21,9 +23,7 @@ const voiceProviders = [
   {
     id: "gtts",
     name: "Google TTS",
-    voices: [
-      { id: "default", name: "Mặc định" },
-    ],
+    voices: [{ id: "default", name: "Mặc định" }],
   },
   // {
   //   id: "amazon",
@@ -47,15 +47,20 @@ export default function VoiceConfig() {
   const [showAudioPreview, setShowAudioPreview] = useState(false)
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false)
   const [audioUrl, setAudioUrl] = useState<string | null>(null) // Lưu URL âm thanh thực tế
-  const { scriptId } = useWorkspace();
-  
+  const [selectedVoiceFile, setSelectedVoiceFile] = useState<File | null>(null)
+  const [isUploadingVoice, setIsUploadingVoice] = useState(false)
+  const [uploadVoiceError, setUploadVoiceError] = useState<string | null>(null)
+  const [uploadedVoiceUrl, setUploadedVoiceUrl] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const { scriptId } = useWorkspace()
+
   const selectedProvider = voiceProviders.find((p) => p.id === provider)
 
   const handlePlay = () => {
     setIsPlaying(!isPlaying)
   }
 
-const handleCreateAudio = async () => {
+  const handleCreateAudio = async () => {
     if (!scriptId) {
       alert("Vui lòng tạo kịch bản trước khi tạo âm thanh.")
       return
@@ -72,7 +77,7 @@ const handleCreateAudio = async () => {
         speed: speed[0],
         pitch: pitch[0],
         volume: volume,
-        engine: engine, 
+        engine: engine,
         gender: gender,
       })
 
@@ -88,6 +93,67 @@ const handleCreateAudio = async () => {
       alert(error.response?.data?.error || "Đã xảy ra lỗi khi tạo âm thanh.")
     } finally {
       setIsGeneratingAudio(false)
+    }
+  }
+
+  const handleVoiceFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Kiểm tra định dạng file
+      const fileExt = file.name.split(".").pop()?.toLowerCase()
+      if (fileExt === "mp3" || fileExt === "wav") {
+        setSelectedVoiceFile(file)
+      } else {
+        alert("Chỉ chấp nhận file .mp3 hoặc .wav")
+        e.target.value = ""
+      }
+    }
+  }
+
+  const removeSelectedVoiceFile = () => {
+    setSelectedVoiceFile(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
+
+  const handleUploadVoiceFile = async () => {
+    if (!selectedVoiceFile) {
+      alert("Vui lòng chọn một tệp âm thanh để tải lên")
+      return
+    }
+
+    if (!scriptId) {
+      alert("Vui lòng tạo kịch bản trước khi tải lên giọng nói")
+      return
+    }
+
+    setIsUploadingVoice(true)
+    setUploadVoiceError(null)
+
+    try {
+      // Create form data
+      const formData = new FormData()
+      formData.append("file", selectedVoiceFile)
+      formData.append("script_id", scriptId)
+
+      // Send to server
+      const response = await axios.post("http://127.0.0.1:5000/scripts/upload-voice", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
+
+      // Handle success
+      if (response.data && response.data.voice_url) {
+        setUploadedVoiceUrl(response.data.voice_url)
+        alert("Tải lên giọng nói thành công!")
+      }
+    } catch (error: any) {
+      console.error("Error uploading voice file:", error)
+      setUploadVoiceError(error.response?.data?.error || "Đã xảy ra lỗi khi xử lý tệp âm thanh")
+    } finally {
+      setIsUploadingVoice(false)
     }
   }
 
@@ -205,12 +271,7 @@ const handleCreateAudio = async () => {
               <div className="space-y-2 mt-4">
                 <label className="text-sm font-medium">Xem trước âm thanh</label>
                 <div className="border rounded-md p-4 bg-gray-50">
-                  <audio
-                    key={audioUrl}
-                    src={audioUrl || "#"}
-                    controls
-                    className="w-full"
-                  />
+                  <audio key={audioUrl} src={audioUrl || "#"} controls className="w-full" />
                   <p className="text-xs text-gray-500 mt-2">
                     Bạn có thể nghe thử âm thanh được tạo từ kịch bản đã phê duyệt
                   </p>
@@ -220,28 +281,87 @@ const handleCreateAudio = async () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="human">
-          <div className="space-y-6">
-            <div className="border-2 border-dashed rounded-lg p-8 text-center">
-              <div className="mx-auto w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                <Upload className="h-6 w-6 text-gray-500" />
+        <TabsContent value="human" className="space-y-6">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Tải lên giọng người thật</label>
+            <div
+              className="border-2 border-dashed rounded-md p-4 text-center cursor-pointer hover:bg-gray-50"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleVoiceFileChange}
+                accept=".mp3,.wav"
+                className="hidden"
+              />
+              {!selectedVoiceFile ? (
+                <>
+                  <Upload className="h-6 w-6 mx-auto text-gray-400" />
+                  <p className="mt-2 text-sm text-gray-500">Nhấp để tải lên hoặc kéo và thả file .mp3, .wav</p>
+                  <p className="text-xs text-gray-400 mt-1">Kích thước tối đa: 50MB</p>
+                </>
+              ) : (
+                <div className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                  <div className="flex items-center">
+                    <Volume2 className="h-5 w-5 text-blue-500 mr-2" />
+                    <span className="text-sm font-medium truncate max-w-xs">{selectedVoiceFile.name}</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      removeSelectedVoiceFile()
+                    }}
+                  >
+                    <X className="h-4 w-4 text-gray-500" />
+                  </Button>
+                </div>
+              )}
+            </div>
+            {selectedVoiceFile && (
+              <div className="mt-2">
+                <Button
+                  onClick={handleUploadVoiceFile}
+                  disabled={isUploadingVoice}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                >
+                  {isUploadingVoice ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Đang xử lý tệp...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Tải lên giọng nói
+                    </>
+                  )}
+                </Button>
+                {uploadVoiceError && <p className="text-red-500 text-sm mt-1">{uploadVoiceError}</p>}
               </div>
-              <h3 className="text-lg font-medium">Tải lên file âm thanh</h3>
-              <p className="text-sm text-gray-500 mt-2 mb-4">
-                Kéo và thả file MP3 hoặc WAV vào đây, hoặc nhấn vào nút bên dưới để chọn file
-              </p>
-              <Button variant="outline">Chọn file</Button>
-            </div>
+            )}
+          </div>
 
-            <div className="text-sm text-gray-500">
-              <p>Lưu ý:</p>
-              <ul className="list-disc pl-5 space-y-1 mt-2">
-                <li>Hỗ trợ định dạng MP3, WAV</li>
-                <li>Kích thước tối đa: 50MB</li>
-                <li>Thời lượng tối đa: 30 phút</li>
-                <li>Chất lượng âm thanh tốt nhất: 44.1kHz, 16-bit</li>
-              </ul>
+          {uploadedVoiceUrl && (
+            <div className="space-y-2 mt-4">
+              <label className="text-sm font-medium">Xem trước giọng nói đã tải lên</label>
+              <div className="border rounded-md p-4 bg-gray-50">
+                <audio key={uploadedVoiceUrl} src={uploadedVoiceUrl} controls className="w-full" />
+                <p className="text-xs text-gray-500 mt-2">Giọng nói đã tải lên sẽ được sử dụng cho kịch bản của bạn</p>
+              </div>
             </div>
+          )}
+
+          <div className="text-sm text-gray-500">
+            <p>Lưu ý:</p>
+            <ul className="list-disc pl-5 space-y-1 mt-2">
+              <li>Hỗ trợ định dạng MP3, WAV</li>
+              <li>Kích thước tối đa: 50MB</li>
+              <li>Thời lượng tối đa: 30 phút</li>
+              <li>Chất lượng âm thanh tốt nhất: 44.1kHz, 16-bit</li>
+            </ul>
           </div>
         </TabsContent>
       </Tabs>
