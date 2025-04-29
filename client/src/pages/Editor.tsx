@@ -95,8 +95,8 @@ export default function CesdkEditor() {
       engine.block.setWidth(page, 1280);
       engine.block.setHeight(page, 720);
 
-      engine.block.setDuration(page, 20);
-      
+      // engine.block.setDuration(page, 20);
+
       engine.block.appendChild(page, track);
       for (const url of videoUrls) {
         const video2 = cesdkInstance.engine.block.create("graphic");
@@ -121,6 +121,7 @@ export default function CesdkEditor() {
     loadCesdk();
 
     return () => {
+      console.log("Cleaning up CESDK instance...");
       if (cesdkInstance) {
         console.log("Disposing CESDK instance...");
         cesdkInstance.dispose?.();
@@ -171,8 +172,8 @@ export default function CesdkEditor() {
     <>
       <div
         ref={containerRef}
-        style={{ width: "100vw", height: "100vh", overflow: "hidden" }}
-        className="relative left-[50%] translate-x-[-50%]"
+        style={{ width: "100%", height: "100%" }}
+        className=""
       />
       <button onClick={AddVideo}>Add videos</button>
     </>

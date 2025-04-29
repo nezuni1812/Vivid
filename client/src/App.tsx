@@ -12,20 +12,35 @@ import Resource from "./pages/Resource";
 
 function App() {
   return (
-    <div className=" mx-auto">
-      <NavBar />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/homepage" element={
-          <PrivateRoute><HomePage/></PrivateRoute>} />
-        { <Route path="/channelStat/" element={<PrivateRoute><StatPage/></PrivateRoute>} /> }
-        {/* <Route path="*" element={<NotFound />} /> */}
-        <Route path="/workspace/:id" element={<Workspace></Workspace>} />
-        <Route path="/resource" element={<Resource></Resource>} />
-        <Route path="/editor" element={<VideoEditor/>} />
-      </Routes>
-    </div>
+    <WorkspaceProvider>
+      <div className="mx-auto">
+        {shouldShowNavbar && <NavBar />}
+        <div className={shouldShowNavbar ? "content-with-navbar" : ""}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/create-video" element={<CreateVideo />} />
+            <Route path="/homepage" element={
+              <PrivateRoute><HomePage/></PrivateRoute>} />
+            { <Route path="/channelStat/" element={<PrivateRoute><StatPage/></PrivateRoute>} /> }
+            {/* <Route path="*" element={<NotFound />} /> */}
+            <Route path="/tiktok-login" element={<TikTokLogin />} />
+            <Route path="/tiktok-callback" element={<TikTokCallback />} />
+            <Route path="/tiktok-upload" element={<TikTokUpload />} />
+            <Route
+              path="/tiktok-stats"
+              element={<TikTokStats />}
+            />
+            <Route path="/workspace/:id" element={<Workspace></Workspace>} />
+            {/* <Route path="/resource" element={<Resource></Resource>} /> */}
+            <Route path="/editor" element={<VideoEditor/>} />
+
+            <Route path="/facebook-stats" element={<FacebookStatPage />} />
+
+          </Routes>
+        </div>
+      </div>
+    </WorkspaceProvider>
   );
 }
 
