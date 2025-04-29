@@ -7,7 +7,6 @@ interface PrivateRouteProps {
 
 const PrivateRoute = ({ children }: PrivateRouteProps) => {
   const isAuthenticated = !!localStorage.getItem("currentUser");
-
   return isAuthenticated ? children : <Navigate to="/" />;
 };
 

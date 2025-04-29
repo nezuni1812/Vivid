@@ -1,3 +1,4 @@
+import secrets
 import asyncio
 import os
 from flask import Flask, send_from_directory
@@ -10,25 +11,39 @@ from routes.published_clip_routes import published_clip_bp
 from routes.audio_routes import audio_bp
 from routes.script_routes import script_bp
 from routes.creation_routes import creation_bp
+from routes.tiktok_routes import tiktok_bp 
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 app = Flask(__name__)
-# cors = CORS(app, resources={
-#     r"/*": {
-#         "origins": "http://localhost:5173"
-#     }
-# })
-CORS(app)
+app.secret_key = secrets.token_urlsafe(64)
+app.config['SESSION_TYPE'] = 'filesystem'  # Use Redis in production
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = os.getenv("FLASK_ENV") == "production"
+app.config['SESSION_COOKIE_HTTPONLY'] = True
 
-# Khởi tạo database
+CORS_ORIGIN = os.getenv("CORS_ORIGIN", "http://localhost:5173")
+cors = CORS(app, resources={
+    r"/*": {
+        "origins": [CORS_ORIGIN],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "supports_credentials": True,
+        "allow_headers": ["Content-Type", "Authorization"],
+        "expose_headers": ["Set-Cookie"]
+    }
+})
+
 init_db()
 
-# Đăng ký các blueprint
 app.register_blueprint(clip_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(workspace_bp)
 app.register_blueprint(published_clip_bp)
 app.register_blueprint(audio_bp)
 app.register_blueprint(script_bp)
+app.register_blueprint(tiktok_bp)  # Register TikTok Blueprint
 app.register_blueprint(creation_bp)
 
 
@@ -42,9 +57,4 @@ def hello_world():
     return "<p>Hello, World!</p>"
 
 if __name__ == "__main__":
-    # Chạy hàm foo() trong Flask
-    # loop = asyncio.new_event_loop()
-    # asyncio.set_event_loop(loop)
-    # loop.run_until_complete(foo())
-    # loop.close()
-    app.run(debug=True)
+    app.run(debug=True, port=5000, use_reloader=False)

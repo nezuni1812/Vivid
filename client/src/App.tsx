@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation  } from "react-router-dom";
 import "./App.css";
 import Home from "./pages/Login";
 import About from "./pages/About";
@@ -6,11 +6,22 @@ import HomePage from "./pages/HomePage";
 import NavBar from "./components/NavBar";
 import PrivateRoute from "./privateRoute";
 import StatPage from "./pages/StatPage";
+import CreateVideo from "./pages/CreateVideo"
+import TikTokLogin from "./pages/TikTokLogin";
+import TikTokCallback from "./pages/TikTokCallback"; 
+import TikTokStats from "./pages/TikTokStats";
+import TikTokUpload from "./pages/TikTokUpload";
+import { WorkspaceProvider } from "./context/WorkspaceContext";
 import Workspace from "./pages/Workspace";
 import VideoEditor from "./pages/Editor";
 import Resource from "./pages/Resource";
+import FacebookStatPage from './pages/FacebookStatPage';
 
 function App() {
+  const location = useLocation()
+  const noNavbarRoutes = ["/", "/login"]
+  const shouldShowNavbar = !noNavbarRoutes.includes(location.pathname)
+
   return (
     <WorkspaceProvider>
       <div className="mx-auto">
@@ -32,7 +43,7 @@ function App() {
               element={<TikTokStats />}
             />
             <Route path="/workspace/:id" element={<Workspace></Workspace>} />
-            {/* <Route path="/resource" element={<Resource></Resource>} /> */}
+            <Route path="/resource" element={<Resource></Resource>} />
             <Route path="/editor" element={<VideoEditor/>} />
 
             <Route path="/facebook-stats" element={<FacebookStatPage />} />

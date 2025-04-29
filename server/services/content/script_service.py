@@ -17,20 +17,21 @@ def sanitize_text(text):
     text = ' '.join(text.split())
     return text
 
-def create_script_with_gemini(topic, wiki_data=None, lang = "en", style = 1, long = "100"):
+def create_script_with_gemini(topic, style, length,  lang):
     """Tạo kịch bản với Gemini dựa trên dữ liệu Wiki hoặc khái niệm gốc"""
     client = genai.Client()
     if style == 1:
-        style = "serious voice for scientific documents"
-        target_audience = "adults"
+        style =  "fun voice for kids"
+        target_audience =  "children"
     elif style == 2:
-        style = "fun voice for kids"
-        target_audience = "children"
+        style = "serious voice for educational content"
+        target_audience = "students"
+    elif style == 3:
+        style = "serious voice for scientific documents"
+        target_audience = "scientists"
 
-    if wiki_data:
-        prompt = f"Write a {long} words science text in the language is {lang} about {wiki_data}. The text should be {style} (e.g., humorous, serious, educational, easy to understand) and written for reading aloud. Use correct punctuation and grammar, ensuring a clear topic sentence, detailed explanation with definitions, analysis, examples, or comparisons, a concluding summary highlighting its importance or applications. The target audience is {target_audience}. Exclude any references to visuals, sound effects, video elements, calls to subscribe, or future videos. Focus on clear and engaging prose suitable for an audio format. The text should conclude naturally with a summary of the topic.  **Do not include any headers, subheadings, bullet points, numbered lists, or other formatting markers.  The text should be a single, continuous paragraph or a series of short, cohesive paragraphs.**"
-    else:    
-        prompt = f"Write a {long} words science text in the language is {lang} about '{topic}'. The text should be {style} (e.g., humorous, serious, educational, easy to understand) and written for reading aloud. Use correct punctuation and grammar, ensuring a clear topic sentence, detailed explanation with definitions, analysis, examples, or comparisons, a concluding summary highlighting its importance or applications. The target audience is {target_audience}. Exclude any references to visuals, sound effects, video elements, calls to subscribe, or future videos. Focus on clear and engaging prose suitable for an audio format. The text should conclude naturally with a summary of the topic.  **Do not include any headers, subheadings, bullet points, numbered lists, or other formatting markers.  The text should be a single, continuous paragraph or a series of short, cohesive paragraphs.**" 
+    prompt = f"Write a {length} words science text in the language {lang} about {topic}. The text should be {style} and written for reading aloud. Use correct punctuation and grammar, ensuring a clear topic sentence, detailed explanation with definitions, analysis, examples, or comparisons, a concluding summary highlighting its importance or applications. The target audience is {target_audience}. Exclude any references to visuals, sound effects, video elements, calls to subscribe, or future videos. Focus on clear and engaging prose suitable for an audio format. The text should conclude naturally with a summary of the topic.  **Do not include any headers, subheadings, bullet points, numbered lists, or other formatting markers.  The text should be a single, continuous paragraph or a series of short, cohesive paragraphs.**"
+
     try:    
         response = client.models.generate_content(
             model="gemini-2.0-flash",

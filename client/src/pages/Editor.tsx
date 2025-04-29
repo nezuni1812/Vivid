@@ -1,5 +1,6 @@
 // CesdkEditor.jsx
 import { useEffect, useRef } from "react";
+import { Button } from "../components/ui/button";
 
 export default function CesdkEditor() {
   const containerRef = useRef(null);
@@ -73,7 +74,7 @@ export default function CesdkEditor() {
 
       // Set default video timeline
       const videoUrls = [
-        "https://videos.pexels.com/video-files/5125962/5125962-hd_1366_720_60fps.mp4",
+        "https://videos.pexels.com/video-files/5125962/5125962-uhd_2732_1440_30fps.mp4",
         "https://videos.pexels.com/video-files/6976105/6976105-hd_960_720_25fps.mp4",
         "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/temp_images/c5c18475a432489ba61dc6d8c0f0a037.png",
         "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/temp_images/b388e30ea40445edadece16e0ef846a7.png",
@@ -91,7 +92,7 @@ export default function CesdkEditor() {
       mainTrack = track;
       mainEngine = engine;
       const page = engine.scene.getCurrentPage();
-      
+
       engine.block.setWidth(page, 1280);
       engine.block.setHeight(page, 720);
 
@@ -104,10 +105,14 @@ export default function CesdkEditor() {
           video2,
           engine.block.createShape("rect")
         );
-        const videoFill2 = cesdkInstance.engine.block.createFill(url.endsWith("mp4") ? "video" : "image");
+        const videoFill2 = cesdkInstance.engine.block.createFill(
+          url.endsWith("mp4") ? "video" : "image"
+        );
         cesdkInstance.engine.block.setString(
           videoFill2,
-          url.endsWith("mp4") ? "fill/video/fileURI" : "fill/image/imageFileURI",
+          url.endsWith("mp4")
+            ? "fill/video/fileURI"
+            : "fill/image/imageFileURI",
           // "https://videos.pexels.com/video-files/5125962/5125962-hd_1366_720_60fps.mp4"
           url
         );
@@ -128,6 +133,59 @@ export default function CesdkEditor() {
       }
     };
   }, []);
+
+  const ExportVid = async () => {
+    const scene = mainEngine.scene.get();
+    const page = mainEngine.scene.getCurrentPage();
+
+    // Video Export
+
+    const progressCallback = (
+      renderedFrames: any,
+      encodedFrames: any,
+      totalFrames: any
+    ) => {
+      console.log(
+        "Rendered",
+        renderedFrames,
+        "frames and encoded",
+        encodedFrames,
+        "frames out of",
+        totalFrames
+      );
+    };
+    const videoOptions = {
+      h264Profile: 77,
+      h264Level: 52,
+      videoBitrate: 0,
+      audioBitrate: 0,
+      timeOffset: 0,
+      // duration: 10,
+      framerate: 30,
+      targetWidth: 1920,
+      targetHeight: 1080,
+    };
+    const videoBlob = await mainEngine.block.exportVideo(
+      page,
+      "video/mp4",
+      progressCallback,
+      videoOptions
+    );
+
+    console.log("Video Blob:", videoBlob);
+    // Create a link element
+    const link = document.createElement('a');
+
+    // Set the download attribute with the file name
+    link.download = 'test.mp4';
+
+    // Create a URL for the Blob and set it as the href
+    link.href = URL.createObjectURL(videoBlob);
+
+    // Programmatically trigger the download
+    link.click();
+    console.log("Video exported successfully!");
+  };
 
   const AddVideo = () => {
     console.log("AddVideo called");
@@ -175,7 +233,15 @@ export default function CesdkEditor() {
         style={{ width: "100%", height: "100%" }}
         className=""
       />
-      <button onClick={AddVideo}>Add videos</button>
+      {/* <button onClick={AddVideo}>Add videos</button> */}
+      <Button
+        variant="outline"
+        size="icon"
+        className="mr-2"
+        onClick={ExportVid}
+      >
+        <p>Export video</p>
+      </Button>
     </>
   );
 }

@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import type React from "react";
+
+import { useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import {
@@ -19,8 +21,8 @@ import {
 import { ArrowLeft, ArrowRight, Save } from "lucide-react";
 import ScriptGenerator from "../components/script-generator";
 import VoiceConfig from "../components/voice-config";
-// import ImageGenerator from "../components/image-generator";
-// import VideoEditor from "../components/video-editor";
+import ImageGenerator from "../components/image-generator";
+import VideoEditor from "../components/video-editor";
 import PublishOptions from "../components/publish-options";
 import { useNavigate } from "react-router-dom";
 import { useWorkspace } from "../context/WorkspaceContext";
@@ -40,7 +42,7 @@ export default function CreateVideo() {
   const imagesRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
 
-  // const { scriptId, workspaceId } = useWorkspace(); // Get scriptId from context
+  const { scriptId, workspaceId } = useWorkspace(); // Get scriptId from context
   const { id: workspace_id } = useParams();
 
   const scrollToSection = (ref: React.RefObject<HTMLDivElement | null>) => {
@@ -48,13 +50,6 @@ export default function CreateVideo() {
       ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
-  
-  useEffect(() => {
-    console.log("Component mounted or updated");
-    return () => {
-      console.log("Cleanup function called");
-    }
-  })
 
   return (
     <>

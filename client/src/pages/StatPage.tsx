@@ -56,7 +56,7 @@ type SortDirection = "asc" | "desc"
 const StatPage = () => {
 		const location = useLocation()
 		const accessToken = localStorage.getItem("accessToken")
-		const [videos, setVideos] = useState<VideoItem[]>([])
+		const [publishedVideo, setVideos] = useState<VideoItem[]>([])
 		const [loading, setLoading] = useState(true)
 		const [error, setError] = useState<string | null>(null)
 
@@ -80,12 +80,12 @@ const StatPage = () => {
 		const [currentPage, setCurrentPage] = useState(1)
 		const videosPerPage = 10
 
-		const totalViews = videos.reduce((acc, video) => acc + Number.parseInt(video.viewCount), 0)
-		const totalComments = videos.reduce((acc, video) => acc + Number.parseInt(video.commentCount), 0)
-		const totalLikes = videos.reduce((acc, video) => acc + Number.parseInt(video.likeCount || "0"), 0)
+		const totalViews = publishedVideo.reduce((acc, video) => acc + Number.parseInt(video.viewCount), 0)
+		const totalComments = publishedVideo.reduce((acc, video) => acc + Number.parseInt(video.commentCount), 0)
+		const totalLikes = publishedVideo.reduce((acc, video) => acc + Number.parseInt(video.likeCount || "0"), 0)
 
 		// Dữ liệu cho biểu đồ cột
-		const chartData = videos.map((video) => ({
+		const chartData = publishedVideo.map((video) => ({
 				name: video.title.length > 20 ? video.title.substring(0, 20) + "..." : video.title,
 				views: Number.parseInt(video.viewCount),
 		}))
@@ -114,7 +114,7 @@ const StatPage = () => {
 				const fetchVideos = async () => {
 						try {
 								if (!accessToken) {
-										setError("Access token not found. Please login again.")
+										setError("Vui lòng đăng nhập tài khoản Youtube để xem thống kê")
 										setLoading(false)
 										return
 								}
@@ -133,7 +133,7 @@ const StatPage = () => {
 								const channelCreatedAt = channelData.items?.[0]?.snippet?.publishedAt
 
 								if (!channelId) {
-										setError("Không tìm thấy kênh YouTube.")
+										setError("Không tìm thấy kênh YouTube. Có thể tài khoản này chưa đăng kí kênh Youtube")
 										setLoading(false)
 										return
 								}
@@ -144,25 +144,40 @@ const StatPage = () => {
 										createdAt: channelCreatedAt,
 								})
 
-								// Lấy playlistId của video uploads
-								const uploadsListId = channelData.items[0].contentDetails.relatedPlaylists.uploads
+								// // Lấy playlistId của video uploads
+								// const uploadsListId = channelData.items[0].contentDetails.relatedPlaylists.uploads
 
-								// Lấy danh sách video trong uploads playlist
-								const playlistRes = await fetch(
-										`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${uploadsListId}`,
-										{
-												headers: {
-														Authorization: `Bearer ${accessToken}`,
-												},
-										},
-								)
-								const playlistData = await playlistRes.json()
+								// // Lấy danh sách video trong uploads playlist
+								// const playlistRes = await fetch(
+								// 		`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${uploadsListId}`,
+								// 		{
+								// 				headers: {
+								// 						Authorization: `Bearer ${accessToken}`,
+								// 				},
+								// 		},
+								// )
+								// const playlistData = await playlistRes.json()
 
-								const videoIds = playlistData.items.map((item: any) => item.snippet.resourceId.videoId)
+								// const videoIds = playlistData.items.map((item: any) => item.snippet.resourceId.videoId)
+                
+                // Lấy các id video đã published của người dùng từ database
+                const currentUser = localStorage.getItem("currentUser")
+                const userId = currentUser ? JSON.parse(currentUser).user_id : null;
+                const response = await fetch(
+                  `http://localhost:5000/published-clips?user_id=${userId}&platform=Youtube`,
+                  {
+                    method: "GET",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                  }
+                );
+                const videos = await response.json()
 
+                const videoIds = videos.map((video: any) => video.external_id).join(",")
 								// Lấy thông tin chi tiết video
 								const videoStatsRes = await fetch(
-										`https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoIds.join(",")}`,
+										`https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoIds}`,
 										{
 												headers: {
 														Authorization: `Bearer ${accessToken}`,
@@ -170,7 +185,6 @@ const StatPage = () => {
 										},
 								)
 								const statsData = await videoStatsRes.json()
-
 								const videoList: VideoItem[] = statsData.items.map((item: any) => ({
 										id: item.id,
 										title: item.snippet.title,
@@ -180,7 +194,6 @@ const StatPage = () => {
 										commentCount: item.statistics.commentCount || "0",
 										likeCount: item.statistics.likeCount || "0",
 								}))
-
 								setVideos(videoList)
 								setLoading(false)
 						} catch (err) {
@@ -198,14 +211,14 @@ const StatPage = () => {
 						fetchAnalyticsData()
 						fetchVideoAnalytics()
 				}
-		}, [channelInfo, selectedPeriod, customStartDate, customEndDate])
+		}, [channelInfo, selectedPeriod, customStartDate, customEndDate, publishedVideo])
 
 		useEffect(() => {
 				setCurrentPage(1)
 		}, [selectedPeriod, customStartDate, customEndDate, sortField, sortDirection])
 
 		const fetchAnalyticsData = async () => {
-				if (!accessToken || !channelInfo) return
+				if (!accessToken || !channelInfo || publishedVideo.length === 0) return
 
 				try {
 						setChartLoading(true)
@@ -223,8 +236,10 @@ const StatPage = () => {
 								startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
 						}
 
+            const videoIds = publishedVideo.map((video) => video.id).join(",")
+            console.log("videoIds: ", videoIds) 
 						const analyticsRes = await fetch(
-								`https://youtubeanalytics.googleapis.com/v2/reports?dimensions=day&metrics=views,estimatedMinutesWatched,subscribersGained&sort=day&startDate=${startDate}&endDate=${endDate}&ids=channel==${channelInfo.id}`,
+								`https://youtubeanalytics.googleapis.com/v2/reports?dimensions=day&metrics=views,estimatedMinutesWatched,subscribersGained&sort=day&startDate=${startDate}&endDate=${endDate}&ids=channel==${channelInfo.id}&filters=video==${videoIds}`,
 								{
 										headers: {
 												Authorization: `Bearer ${accessToken}`,
@@ -275,7 +290,7 @@ const StatPage = () => {
 		}
 
 		const fetchVideoAnalytics = async () => {
-				if (!accessToken || !channelInfo || videos.length === 0) return
+				if (!accessToken || !channelInfo || publishedVideo.length === 0) return
 
 				try {
 						setTableLoading(true)
@@ -293,7 +308,7 @@ const StatPage = () => {
 								startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
 						}
 
-						const videoIds = videos.map((video) => video.id).join(",")
+						const videoIds = publishedVideo.map((video) => video.id).join(",")
 
 						const videoAnalyticsRes = await fetch(
 								`https://youtubeanalytics.googleapis.com/v2/reports?dimensions=video&metrics=views,estimatedMinutesWatched,subscribersGained&sort=-views&startDate=${startDate}&endDate=${endDate}&ids=channel==${channelInfo.id}&filters=video==${videoIds}`,
@@ -316,7 +331,7 @@ const StatPage = () => {
 								videoAnalyticsData.rows.forEach((row: any) => {
 										const [videoId, views, watchTimeMinutes, subscribers] = row
 
-										const videoInfo = videos.find((v) => v.id === videoId)
+										const videoInfo = publishedVideo.find((v) => v.id === videoId)
 
 										if (videoInfo) {
 												formattedVideoData.push({
@@ -387,7 +402,7 @@ const StatPage = () => {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
           <div className="bg-blue-100 p-4 rounded shadow text-center">
             <p className="text-sm text-gray-500">Tổng video</p>
-            <p className="text-xl font-bold">{videos.length}</p>
+            <p className="text-xl font-bold">{publishedVideo.length}</p>
           </div>
           <div className="bg-blue-100 p-4 rounded shadow text-center">
             <p className="text-sm text-gray-500">Tổng lượt xem</p>
@@ -674,7 +689,7 @@ const StatPage = () => {
         {/* Video Cards */}
         <h2 className="text-xl font-bold mb-3">Video gần đây</h2>
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-          {videos.map((video) => (
+          {publishedVideo.map((video) => (
             <div
               key={video.id}
               className="border rounded-lg shadow p-4 bg-white hover:shadow-lg transition w-full max-w-[360px] mx-auto"

@@ -39,5 +39,18 @@ def delete_published_clip(published_clip_id):
 def list_published_clips():
     clip_id = request.args.get("clip_id")
     platform = request.args.get("platform")
-    response, status_code = PublishedClipController.list_published_clips(clip_id, platform)
+    user_id = request.args.get("user_id")
+    
+    # If user_id is provided, use the new method
+    if user_id:
+        response, status_code = PublishedClipController.get_user_published_clips(
+            user_id, 
+            platform
+        )
+    else:
+        response, status_code = PublishedClipController.list_published_clips(
+            clip_id, 
+            platform
+        )
+    
     return jsonify(response), status_code

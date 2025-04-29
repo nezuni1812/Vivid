@@ -21,6 +21,12 @@ def get_workspace(workspace_id):
     response, status_code = WorkspaceController.get_workspace(workspace_id)
     return jsonify(response), status_code
 
+@workspace_bp.route("/workspaces/<workspace_id>/get", methods=["GET"])
+def get_workspace_data(workspace_id):
+    kind = request.args.get("kind")
+    response, status_code = WorkspaceController.get_workspace_data(workspace_id, kind)
+    return jsonify(response), status_code
+
 @workspace_bp.route("/workspaces/<workspace_id>", methods=["PUT"])
 def update_workspace(workspace_id):
     data = request.get_json()
