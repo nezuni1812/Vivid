@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Video, ChevronDown, User, LogOut } from "lucide-react";
+import { Menu, X, Video, ChevronDown, User, LogOut, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
 
@@ -48,6 +48,7 @@ const NavBar = () => {
   const changeGoogleAccount = async () => {
     try {
       await signIn();
+      window.location.reload();
     } catch (error) {
       console.error("Error changing Google account:", error);
     }
@@ -121,14 +122,8 @@ const NavBar = () => {
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               className="flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors"
             >
-              <img
-                src={photoURL || "/placeholder.svg"}
-                alt="avatar"
-                className="w-8 h-8 rounded-full object-cover"
-              />
-              <span className="text-sm font-medium text-gray-700">
-                {userName || "Tài khoản"}
-              </span>
+              <img src={photoURL || "/placeholder.svg"} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
+              <span className="text-sm font-medium text-gray-700">{userName || "Tài khoản"}</span>
               <ChevronDown className="w-4 h-4 text-gray-500" />
             </button>
 
@@ -143,13 +138,12 @@ const NavBar = () => {
               >
                 {isSignedIn ? (
                   <>
-                    <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-200">
-                      {userEmail}
-                    </div>
+                    {/* <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-200">{userEmail}</div> */}
                     <button
                       onClick={changeGoogleAccount}
                       className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                     >
+                      <RefreshCw className="w-4 h-4 mr-2" />
                       Thay đổi tài khoản
                     </button>
                     <button
@@ -161,21 +155,13 @@ const NavBar = () => {
                     </button>
                   </>
                 ) : (
-                  <>
-                    <button
-                      onClick={handleChannelSignIn}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                    >
-                      Đăng nhập với Google
-                    </button>
-                    <button
-                      onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
-                    >
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Đăng xuất
-                    </button>
-                  </>
+                  <button
+                    onClick={handleChannelSignIn}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    <User className="w-4 h-4 mr-2 inline" />
+                    Đăng nhập
+                  </button>
                 )}
               </motion.div>
             )}
