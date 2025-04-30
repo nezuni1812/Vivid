@@ -53,7 +53,7 @@ type TimePeriod = "7" | "30" | "90" | "365" | "all" | "custom"
 type SortField = "publishedAt" | "views" | "watchTimeHours" | "subscribers"
 type SortDirection = "asc" | "desc"
 
-const YoutubeStatPage = () => {
+const StatPage = () => {
 		const location = useLocation()
 		const accessToken = localStorage.getItem("accessToken")
 		const [publishedVideo, setVideos] = useState<VideoItem[]>([])
@@ -710,4 +710,4 @@ const YoutubeStatPage = () => {
     )
 }
 
-export default YoutubeStatPage
+export default StatPage
