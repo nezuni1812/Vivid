@@ -52,7 +52,7 @@ export default function VoiceConfig() {
   const [uploadVoiceError, setUploadVoiceError] = useState<string | null>(null)
   const [uploadedVoiceUrl, setUploadedVoiceUrl] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const { scriptId } = useWorkspace()
+  const { scriptId, workspaceId } = useWorkspace()
 
   const selectedProvider = voiceProviders.find((p) => p.id === provider)
 
@@ -101,7 +101,7 @@ export default function VoiceConfig() {
     if (file) {
       // Kiểm tra định dạng file
       const fileExt = file.name.split(".").pop()?.toLowerCase()
-      if (fileExt === "mp3" || fileExt === "wav") {
+      if (fileExt === "mp3" || fileExt === "wav" || fileExt === "m4a") {
         setSelectedVoiceFile(file)
       } else {
         alert("Chỉ chấp nhận file .mp3 hoặc .wav")
@@ -119,34 +119,45 @@ export default function VoiceConfig() {
 
   const handleUploadVoiceFile = async () => {
     if (!selectedVoiceFile) {
-      alert("Vui lòng chọn một tệp âm thanh để tải lên")
+      alert("Vui lòng chọn tệp âm thanh và tạo kịch bản trước")
       return
     }
-
-    if (!scriptId) {
-      alert("Vui lòng tạo kịch bản trước khi tải lên giọng nói")
+  
+    if (!workspaceId) {
+      alert("Không tìm thấy workspace ID")
       return
     }
 
     setIsUploadingVoice(true)
     setUploadVoiceError(null)
-
+  
     try {
-      // Create form data
       const formData = new FormData()
-      formData.append("file", selectedVoiceFile)
-      formData.append("script_id", scriptId)
-
-      // Send to server
-      const response = await axios.post("http://127.0.0.1:5000/scripts/upload-voice", formData, {
+      // Đổi tên từ 'file' thành 'audio_file'
+      formData.append("audio_file", selectedVoiceFile)
+      
+      // Cần workspaceId thay vì scriptId
+      formData.append("workspace_id", workspaceId) // Lấy từ context
+      
+      // Thêm language (tùy chọn)
+      formData.append("language", "vietnamese")
+  
+      const response = await axios.post("http://127.0.0.1:5000/generate-audio-from-file", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       })
-
-      // Handle success
-      if (response.data && response.data.voice_url) {
-        setUploadedVoiceUrl(response.data.voice_url)
+  
+      // Đổi việc kiểm tra từ 'voice_url' thành 'audio_url'
+      if (response.data && response.data.audio_url) {
+        setUploadedVoiceUrl(response.data.audio_url)
+        
+        // Có thể cập nhật scriptId từ kết quả trả về
+        if (response.data.script_id) {
+          // Update script ID in context
+          // setScriptId(response.data.script_id)
+        }
+        
         alert("Tải lên giọng nói thành công!")
       }
     } catch (error: any) {
@@ -292,7 +303,7 @@ export default function VoiceConfig() {
                 type="file"
                 ref={fileInputRef}
                 onChange={handleVoiceFileChange}
-                accept=".mp3,.wav"
+                accept=".mp3,.wav,.m4a"
                 className="hidden"
               />
               {!selectedVoiceFile ? (

@@ -17,3 +17,5 @@ PyPDF2
 python-docx
 edge_tts
 pillow
+openai-whisper
+whisper

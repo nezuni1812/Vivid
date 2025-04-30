@@ -1,6 +1,10 @@
 from services.audio.audio_service import process_script_to_audio_and_timings
+from services.audio.speech_to_text_service import analyze_audio
 from services.storage.storage_service import upload_to_r2, delete_from_r2
+from controllers.script_controller import ScriptController
 import os
+import json  # Thêm dòng này vào đầu file
+
 from datetime import datetime
 from models.models import Audio, Script, Workspace
 
@@ -138,5 +142,52 @@ class AudioController:
                 if os.path.exists(temp_file):
                     os.remove(temp_file)
 
+        except Exception as e:
+            return {"error": str(e)}, 500
+        
+
+
+    @staticmethod
+    async def speech_to_text(workspace_id, audio_file, language_value):
+        try:
+            # Phân tích file âm thanh
+            result_text, timings_string = analyze_audio(audio_file, language_value)
+            
+            # Tạo title từ tên file
+            title = os.path.basename(audio_file).split('.')[0]
+            
+            # Tạo script từ văn bản đã nhận dạng
+            script_result = await ScriptController.create_script_from_text(
+                workspace_id=workspace_id,
+                title=title,
+                content=result_text,
+                language=language_value
+            )
+            
+            # Lấy script_id từ kết quả trả về
+            script_id = script_result[0].get("script_id")
+            
+            # Upload to storage
+            file_name = f"audios/{workspace_id}/{title.replace(' ', '_')}.mp3"
+            audio_url = await upload_to_r2(audio_file, file_name)
+
+            # Save to database
+            audio = Audio(
+                workspace_id=workspace_id,
+                script_id=script_id,  # Sử dụng script_id đã lấy ở trên
+                audio_url=audio_url,
+                timings=timings_string,
+                status="completed"
+            )
+            audio.save()
+
+            return {
+                "status": "success",
+                "script_id": script_id,
+                "audio_url": audio_url,
+                "text": result_text,
+                "timings": eval(timings_string)  
+            }, 200
+            
         except Exception as e:
             return {"error": str(e)}, 500

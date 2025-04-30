@@ -6,6 +6,7 @@ import os
 from werkzeug.utils import secure_filename
 from docx import Document
 from flask_cors import cross_origin
+import tempfile 
 
 audio_bp = Blueprint('audio', __name__)
 
@@ -89,6 +90,65 @@ def get_audio(audio_id):
             # "status": audio.status,
             # "created_at": audio.created_at.isoformat()
         }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+
+@audio_bp.route("/generate-audio-from-file", methods=["POST", "OPTIONS"])
+@cross_origin(origins=["http://localhost:5173"], methods=["POST", "OPTIONS"], allow_headers=["Content-Type"])
+def generate_audio_from_file():
+    """Generate script and audio from uploaded audio file"""
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
+
+    try:
+        # Kiểm tra workspace_id
+        if 'workspace_id' not in request.form:
+            return jsonify({"error": "Missing workspace_id"}), 400
+            
+        workspace_id = request.form['workspace_id']
+        language = request.form.get('language', 'vietnamese')  # Mặc định là tiếng Việt
+        
+        # Kiểm tra file
+        if 'audio_file' not in request.files:
+            return jsonify({"error": "No audio file provided"}), 400
+            
+        file = request.files['audio_file']
+        if file.filename == '':
+            return jsonify({"error": "No file selected"}), 400
+            
+        # Kiểm tra định dạng file
+        allowed_extensions = {'mp3', 'wav', 'ogg', 'm4a', 'flac'}
+        file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
+        
+        if file_ext not in allowed_extensions:
+            return jsonify({"error": f"File type not supported. Please upload {', '.join(allowed_extensions)}"}), 400
+        
+        # Lưu file tạm
+        temp_dir = tempfile.gettempdir()
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(temp_dir, filename)
+        file.save(filepath)
+        
+        # Xử lý file âm thanh
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        result, status = loop.run_until_complete(
+            AudioController.speech_to_text(
+                workspace_id=workspace_id,
+                audio_file=filepath,
+                language_value=language
+            )
+        )
+        
+        loop.close()
+        
+        # Xóa file tạm
+        os.unlink(filepath)
+        
+        return jsonify(result), status
+        
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
