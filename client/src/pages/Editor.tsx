@@ -74,16 +74,29 @@ export default function CesdkEditor() {
 
       // Set default video timeline
       const videoUrls = [
-        "https://videos.pexels.com/video-files/5125962/5125962-uhd_2732_1440_30fps.mp4",
-        "https://videos.pexels.com/video-files/6976105/6976105-hd_960_720_25fps.mp4",
-        "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/temp_images/c5c18475a432489ba61dc6d8c0f0a037.png",
-        "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/temp_images/b388e30ea40445edadece16e0ef846a7.png",
-        "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/temp_images/07d3290668134cc2a21d55dbaa9f76b7.png",
-        "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/temp_images/d5d87d9faf2a421f918cabc1840f23bc.png",
-        "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/temp_images/7e21dd47f3b848e49e050d5fb46ce76c.png",
-        "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/temp_images/ceb5f4361e8b4e73afb9c212ed9c5641.png",
-        "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/temp_images/aaad8326507d48d38a6ff8c6e4a91f5a.png",
-        // "https://cdn.img.ly/assets/demo/v2.mp4",
+        "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/836cb7493a764771821f719fd936d3bf.png",
+        "https://videos.pexels.com/video-files/3139886/3139886-hd_720_1280_30fps.mp4",
+        "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/4326b0f984a544dfaec15b8fe5193365.png",
+        "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/7ab96f7e287843e2b2dcd015cf785139.png",
+        "https://videos.pexels.com/video-files/31801617/13549114_1920_1080_25fps.mp4",
+        "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/5a0379e1332d48f49fb0fe8016262a81.png",
+        "https://videos.pexels.com/video-files/5465034/5465034-uhd_2160_3840_25fps.mp4",
+        "https://videos.pexels.com/video-files/4990320/4990320-hd_1920_1080_30fps.mp4",
+        "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/b1d10f355ec647e29b24f58171adf5da.png",
+        "https://videos.pexels.com/video-files/5847513/5847513-hd_1080_1920_24fps.mp4",
+        "https://videos.pexels.com/video-files/7647252/7647252-uhd_2560_1440_24fps.mp4",
+        "https://videos.pexels.com/video-files/7955159/7955159-hd_2048_1080_25fps.mp4",
+        "https://videos.pexels.com/video-files/25935014/11922020_720_1280_15fps.mp4",
+        
+        // "https://videos.pexels.com/video-files/5125962/5125962-uhd_2732_1440_30fps.mp4",
+        // "https://videos.pexels.com/video-files/6976105/6976105-hd_960_720_25fps.mp4",
+        // "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/temp_images/c5c18475a432489ba61dc6d8c0f0a037.png",
+        // "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/temp_images/b388e30ea40445edadece16e0ef846a7.png",
+        // "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/temp_images/07d3290668134cc2a21d55dbaa9f76b7.png",
+        // "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/temp_images/d5d87d9faf2a421f918cabc1840f23bc.png",
+        // "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/temp_images/7e21dd47f3b848e49e050d5fb46ce76c.png",
+        // "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/temp_images/ceb5f4361e8b4e73afb9c212ed9c5641.png",
+        // "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/temp_images/aaad8326507d48d38a6ff8c6e4a91f5a.png",
       ];
 
       let engine = cesdkInstance.engine;

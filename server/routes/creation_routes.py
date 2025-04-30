@@ -177,7 +177,7 @@ async def get_image(description, filename=None, additional=None) -> str:
                 filename = f"{uuid.uuid4().hex}.png"
             filepath = os.path.join(IMAGE_FOLDER, filename)
             image.save(filepath)
-            image_url = await upload_to_r2(f"/images/{filename}", filename)
+            image_url = await upload_to_r2(filepath, filename)
             print("Image URL:", image_url)
             return image_url
             return urljoin(os.getenv("BASE_URL"), f"/images/{filename}")
