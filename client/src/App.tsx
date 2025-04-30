@@ -5,7 +5,7 @@ import About from "./pages/About";
 import HomePage from "./pages/HomePage";
 import NavBar from "./components/NavBar";
 import PrivateRoute from "./privateRoute";
-import StatPage from "./pages/StatPage";
+import AnalyticsPage from "./pages/Stats";
 import CreateVideo from "./pages/CreateVideo"
 import TikTokLogin from "./pages/TikTokLogin";
 import TikTokCallback from "./pages/TikTokCallback"; 
@@ -16,6 +16,7 @@ import Workspace from "./pages/Workspace";
 import VideoEditor from "./pages/Editor";
 import Resource from "./pages/Resource";
 import FacebookStatPage from './pages/FacebookStatPage';
+import { AuthProvider } from "./context/AuthContext";
 
 function App() {
   const location = useLocation()
@@ -23,35 +24,36 @@ function App() {
   const shouldShowNavbar = !noNavbarRoutes.includes(location.pathname)
 
   return (
-    <WorkspaceProvider>
-      <div className="mx-auto">
-        {shouldShowNavbar && <NavBar />}
-        <div className={shouldShowNavbar ? "content-with-navbar" : ""}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/create-video" element={<CreateVideo />} />
-            <Route path="/homepage" element={
-              <PrivateRoute><HomePage/></PrivateRoute>} />
-            { <Route path="/channelStat/" element={<PrivateRoute><StatPage/></PrivateRoute>} /> }
-            {/* <Route path="*" element={<NotFound />} /> */}
-            <Route path="/tiktok-login" element={<TikTokLogin />} />
-            <Route path="/tiktok-callback" element={<TikTokCallback />} />
-            <Route path="/tiktok-upload" element={<TikTokUpload />} />
-            <Route
-              path="/tiktok-stats"
-              element={<TikTokStats />}
-            />
-            <Route path="/workspace/:id" element={<Workspace></Workspace>} />
-            <Route path="/resource" element={<Resource></Resource>} />
-            <Route path="/editor" element={<VideoEditor/>} />
+    <AuthProvider>
+      <WorkspaceProvider>
+        <div className="mx-auto">
+          {shouldShowNavbar && <NavBar />}
+          <div className={shouldShowNavbar ? "content-with-navbar" : ""}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/create-video" element={<CreateVideo />} />
+              <Route path="/analytics" element={<AnalyticsPage />} />
+              <Route path="/homepage" element={
+                <PrivateRoute><HomePage/></PrivateRoute>} />
+              <Route path="/tiktok-login" element={<TikTokLogin />} />
+              <Route path="/tiktok-callback" element={<TikTokCallback />} />
+              <Route path="/tiktok-upload" element={<TikTokUpload />} />
+              <Route
+                path="/tiktok-stats"
+                element={<TikTokStats />}
+              />
+              <Route path="/workspace/:id" element={<Workspace></Workspace>} />
+              <Route path="/resource" element={<Resource></Resource>} />
+              <Route path="/editor" element={<VideoEditor/>} />
 
-            <Route path="/facebook-stats" element={<FacebookStatPage />} />
+              <Route path="/facebook-stats" element={<FacebookStatPage />} />
 
-          </Routes>
+            </Routes>
+          </div>
         </div>
-      </div>
-    </WorkspaceProvider>
+      </WorkspaceProvider>
+    </AuthProvider>
   );
 }
 

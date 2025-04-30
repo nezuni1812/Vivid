@@ -1,20 +1,11 @@
 "use client";
 
 import type React from "react";
-
 import { useState, useEffect } from "react";
 import { FiPlus } from "react-icons/fi";
 import { FaFolder } from "react-icons/fa";
-import { gapi } from "gapi-script";
-import { signInWithGoogle } from "../services/auth";
-import {
-  AllContent,
-  CreatedContent,
-  ProcessingContent,
-  StatsContent,
-} from "./tabsContent";
 import { useNavigate } from "react-router-dom";
-import Modal from 'react-modal';
+import Modal from "react-modal";
 import {
   Card,
   CardContent,
@@ -22,20 +13,21 @@ import {
   CardHeader,
   CardTitle,
 } from "../components/ui/card";
-import { Video, BarChart2, Facebook} from "lucide-react";
+import { Video, BarChart2 } from "lucide-react";
 import VideoList from "../components/video-list";
 import StatsChart from "../components/stats-chart";
-
-// import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../component/ui/dialog"
-import { Button } from "../components/ui/button"
-import { Input } from "../components/ui/input"
-import { Label } from "../components/ui/label"
-import { Textarea } from "../components/ui/textarea"
-import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
-import { Progress } from "../components/ui/progress"
-
-import FacebookUploader from "../components/facebook-upload"; 
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Textarea } from "../components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { useAuth } from "../context/AuthContext";
+import FacebookUploader from "../components/facebook-upload";
+import {
+  AllContent,
+  CreatedContent,
+  ProcessingContent
+} from "./tabsContent";
 
 interface Workspace {
   _id: string;
@@ -44,7 +36,7 @@ interface Workspace {
   created_at: string;
   updated_at: string;
 }
-declare const FB: any;
+
 const videos = [
   { title: "Video Title 1", thumbnail: "" },
   { title: "Video Title 2", thumbnail: "" },
@@ -54,19 +46,10 @@ const videos = [
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  const { isSignedIn, userEmail, accessToken, signIn } = useAuth();
 
   const [activeTab, setActiveTab] = useState("all");
-  const [videoFile, setVideoFile] = useState<File | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isChannelSignedIn, setIsChannelSignedIn] = useState(false);
-  const [userEmail, setUserEmail] = useState("");
-  const [accessToken, setAccessToken] = useState("");
-
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [userName, setUserName] = useState("");
-  const [photoURL, setPhotoURL] = useState("");
-
-  // Workspace states
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
@@ -79,62 +62,11 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const updateUserChannelInfo = (user: any) => {
-    if (user && user.isSignedIn()) {
-      const profile = user.getBasicProfile();
-      setUserEmail(profile.getEmail());
-      setIsChannelSignedIn(true);
-    } else {
-      setUserEmail("");
-      setIsChannelSignedIn(false);
-    }
-  };
-
-  // Load Google API client
-  useEffect(() => {
-    function start() {
-      gapi.load("client:auth2", () => {
-        gapi.client
-          .init({
-            clientId: import.meta.env.VITE_CLIENT_ID,
-            scope:
-              "https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly",
-          })
-          .then(() => {
-            // setIsChannelSignedIn(gapi.auth2.getAuthInstance().isSignedIn.get())
-            const auth = gapi.auth2.getAuthInstance()
-            const accessToken = localStorage.getItem("accessToken") || null;
-            if (accessToken) {
-              setAccessToken(accessToken)
-              updateUserChannelInfo(auth.currentUser.get())
-            }
-            
-            
-
-            // Lắng nghe khi thay đổi tài khoản
-            auth.currentUser.listen(updateUserChannelInfo);
-          });
-      });
-    }
-    start();
-
-    const storedUser = localStorage.getItem("currentUser");
-    if (storedUser) {
-      const parsed = JSON.parse(storedUser);
-      setUserName(parsed.username || "");
-      setPhotoURL(parsed.photoURL || "");
-    }
-
-    // Fetch workspaces when component mounts
-    fetchWorkspaces();
-  }, []);
-
   // Fetch workspaces from MongoDB
   const fetchWorkspaces = async () => {
     setIsWorkspaceLoading(true);
     const storedUser = localStorage.getItem("currentUser");
     const userId = storedUser ? JSON.parse(storedUser).user_id : null;
-    // console.log("userId: ", userId)
     try {
       const response = await fetch(
         `http://localhost:5000/workspaces?user_id=${userId}`,
@@ -194,11 +126,11 @@ const HomePage: React.FC = () => {
         description: newWorkspace.description,
         created_at: newWorkspace.created_at,
         updated_at: newWorkspace.updated_at,
-      }
-      setWorkspaces([...workspaces, newWorkspaceObj])
-      setIsCreateModalOpen(false)
-      setNewWorkspaceName("")
-      setNewWorkspaceDescription("")
+      };
+      setWorkspaces([...workspaces, newWorkspaceObj]);
+      setIsCreateModalOpen(false);
+      setNewWorkspaceName("");
+      setNewWorkspaceDescription("");
     } catch (error) {
       console.error("Error creating workspace:", error);
     }
@@ -209,62 +141,65 @@ const HomePage: React.FC = () => {
     navigate(`/workspace/${workspaceId}`);
   };
 
-  const changeGoogleAccount = async () => {
-    try {
-      const user = await signInWithGoogle();
-      setUserName(user.username || "");
-      setPhotoURL(user.photoURL || "");
-
-      // Đăng xuât tài khoản kênh hiện tại
-      const auth = gapi.auth2.getAuthInstance();
-      auth.signOut();
-      window.location.reload();
-    } catch (error) {}
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("currentUser");
-    localStorage.removeItem("accessToken");
-    gapi.auth2.getAuthInstance().signOut();
-    window.location.href = "/"; // Redirect về trang login
-  };
-
   const handleChannelSignIn = async () => {
-    const auth = gapi.auth2.getAuthInstance();
-    await auth.signIn();
-
-    const user = auth.currentUser.get();
-    const authResponse = user.getAuthResponse();
-    if (authResponse && authResponse.access_token) {
-      setAccessToken(authResponse.access_token);
-      localStorage.setItem("accessToken", authResponse.access_token);
-    } else {
-      console.error("Failed to get access token");
+    try {
+      await signIn();
+    } catch (error) {
+      console.error("Error signing in:", error);
+      alert("Failed to sign in. Please try again.");
     }
-
-    setIsChannelSignedIn(auth.isSignedIn.get());
   };
 
   async function checkYouTubeChannel() {
-    const response = await fetch(
-      "https://www.googleapis.com/youtube/v3/channels?part=id&mine=true",
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Accept: "application/json",
-        },
-      }
-    );
-    const data = await response.json();
+    if (!accessToken) {
+      console.error("No access token available");
+      return false;
+    }
 
-    if (data.items && data.items.length > 0) {
-      return true; // Có kênh
-    } else {
-      return false; // Không có kênh
+    try {
+      console.log("Checking YouTube channel with accessToken:", accessToken);
+      const response = await fetch(
+        "https://www.googleapis.com/youtube/v3/channels?part=id,snippet&mine=true&maxResults=50",
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: "application/json",
+          },
+        }
+      );
+      const data = await response.json();
+      console.log("YouTube API Response:", data);
+
+      if (!response.ok) {
+        console.error("API Error:", data.error?.message || "Unknown error", data.error?.code);
+        if (data.error?.code === 401) {
+          console.warn("Invalid or expired access token. Triggering re-authentication.");
+          await handleChannelSignIn();
+        }
+        return false;
+      }
+
+      if (data.items && data.items.length > 0) {
+        console.log(
+          "Found channels:",
+          data.items.map((item: any) => item.snippet.title)
+        );
+        return true;
+      }
+      console.warn("No channels found for this account.");
+      return false;
+    } catch (error) {
+      console.error("Error checking YouTube channel:", error);
+      return false;
     }
   }
 
   const handleUpload = async () => {
+    if (!isSignedIn || !accessToken) {
+      await handleChannelSignIn();
+      return;
+    }
+
     const hasChannel = await checkYouTubeChannel();
 
     if (!hasChannel) {
@@ -282,38 +217,20 @@ const HomePage: React.FC = () => {
   // Upload video to YouTube
   const uploadVideo = async () => {
     if (!selectedFile) {
-      alert("Please select a video file first.");
+      alert("Vui lòng chọn một tệp video trước.");
       return;
     }
 
-    const token = gapi.auth2
-      .getAuthInstance()
-      .currentUser.get()
-      .getAuthResponse().access_token;
-
-    // Thay đổi thông tin video ở đây
     const metadata = {
       snippet: {
-        title: "Demo video", // tên video
-        description: "This is a test video upload via YouTube API.", // mô tả video
-        tags: ["API"  , "Video Generation", "test", "AI", ], // tags video, thêm tag "Shorts" để biến nó thành Shorts
-        // categoryId: "",  // danh mục video để phân loại, giúp youtube recommend dễ hơn, chi tiết: https://gist.github.com/dgp/1b24bf2961521bd75d6c
+        title: "Demo video",
+        description: "This is a test video upload via YouTube API.",
+        tags: ["API", "Video Generation", "test", "AI"],
       },
       status: {
-        privacyStatus: "private", // trạng thái video(public, private, unlisted)
+        privacyStatus: "private",
       },
     };
-    // Lấy video từ URL thay vì chọn file từ thiết bị
-    // const videoResponse = await fetch("https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4");
-    // console.log("videoResponse: ", videoResponse)
-    // const videoBlob = await videoResponse.blob();
-    // console.log("videoBlob: ", videoBlob)
-    // const form = new FormData();
-    // form.append(
-    //   "metadata",
-    //   new Blob([JSON.stringify(metadata)], { type: "application/json" })
-    // );
-    // form.append("file", videoBlob);
 
     const form = new FormData();
     form.append(
@@ -328,7 +245,7 @@ const HomePage: React.FC = () => {
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${accessToken}`,
           },
           body: form,
         }
@@ -337,14 +254,16 @@ const HomePage: React.FC = () => {
       const data = await response.json();
       if (data.id) {
         alert(
-          "Upload successful! Video link: " +
+          "Tải lên thành công! Link video: " +
             `https://www.youtube.com/watch?v=${data.id}`
         );
       } else {
         console.error("Upload failed:", data);
+        alert("Tải lên thất bại. Vui lòng thử lại.");
       }
     } catch (error) {
       console.error("Error uploading video:", error);
+      alert("Lỗi khi tải lên video. Vui lòng thử lại.");
     }
   };
 
@@ -355,8 +274,7 @@ const HomePage: React.FC = () => {
       id: "processing",
       label: "Video đang xử lý",
       content: <ProcessingContent />,
-    },
-    { id: "stats", label: "Thống kê", content: <StatsContent /> },
+    }
   ];
 
   // Tìm tab đang active
@@ -372,63 +290,12 @@ const HomePage: React.FC = () => {
     });
   };
 
+  useEffect(() => {
+    fetchWorkspaces();
+  }, []);
+
   return (
     <div className="w-full bg-gray-100 text-black text-center p-4 min-h-screen overflow-y-auto">
-      {/* Header */}
-      <header className="bg-white p-4 flex items-center justify-between shadow-md">
-        <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="Logo" className="h-8" />
-          {/* <h1 className="text-xl font-bold">Vivid</h1> */}
-        </div>
-        <input
-          type="text"
-          placeholder="Tìm kiếm tên video"
-          className="border p-2 rounded w-1/3"
-        />
-        <div className="relative">
-          <div
-            className="flex items-center gap-3 bg-gray-100 px-4 py-2 rounded-lg cursor-pointer shadow-sm hover:bg-gray-200 transition"
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-          >
-            <img
-              src={photoURL || "/placeholder.svg"}
-              alt="avatar"
-              className="w-8 h-8 rounded-full object-cover"
-            />
-            <span className="font-medium text-sm">{userName}</span>
-          </div>
-
-          {dropdownOpen && (
-            <div className="absolute right-0 mt-2 shadow-lg z-10 w-48 overflow-hidden pn-2 bg-white rounded">
-              <button
-                onClick={() => {
-                  setDropdownOpen(false);
-                  changeGoogleAccount();
-                }}
-                className="px-4 py-2 text-sm text-left hover:bg-gray-200 w-full"
-              >
-                Thay đổi tài khoản
-              </button>
-              <button
-                onClick={() => {
-                  setDropdownOpen(false);
-                  handleLogout();
-                }}
-                className="px-4 py-2 text-sm text-left hover:bg-gray-200 w-full"
-              >
-                Đăng xuất
-              </button>
-            </div>
-          )}
-        </div>
-      </header>
-
-      {/* Banner */}
-      <div className="bg-gradient-to-r from-red-500 to-purple-500 text-white text-center p-6 mt-4 rounded-md">
-        <h2 className="text-2xl font-bold">How can we help you today?</h2>
-        <p> </p>
-      </div>
-
       {/* Tabs and Actions */}
       <div className="flex justify-between items-center p-4 border-b">
         <div className="flex gap-6">
@@ -451,18 +318,16 @@ const HomePage: React.FC = () => {
                 : tab === "created"
                 ? "Video đã tạo"
                 : tab === "processing"
-                ? "Video đang xử lý"
-                : "Thống kê"}
+                ? "Video đang xử lý" : ""}
             </button>
           ))}
         </div>
         <div className="p-4">
           <h1 className="text-xl font-bold mb-4">Video Upload</h1>
-
-          {!isChannelSignedIn ? (
+          {!isSignedIn ? (
             <button
               onClick={handleChannelSignIn}
-              className="px-4 py-2 bg-blue-500 text-black rounded"
+              className="px-4 py-2 bg-blue-500 text-white rounded"
             >
               Sign in with Google
             </button>
@@ -482,18 +347,18 @@ const HomePage: React.FC = () => {
                 Upload to YouTube
               </button>
 
-              <button
+              {/* <button
                 onClick={handleChannelSignIn}
                 className="bg-red-500 text-black px-4 py-2 rounded m-2"
               >
                 Chuyển tài khoản
-              </button>
+              </button> */}
             </>
           )}
         </div>
         <FacebookUploader />
         <button
-          onClick={() => navigate('/facebook-stats')}
+          onClick={() => navigate("/facebook-stats")}
           className="bg-blue-500 text-white px-4 py-2 rounded"
         >
           Xem thống kê Facebook Page
@@ -550,8 +415,6 @@ const HomePage: React.FC = () => {
       </div>
 
       {/* Video Sections */}
-
-      {/* Layout hiển thị số video */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-8">
         <Card>
           <CardHeader className="pb-2">
@@ -592,6 +455,7 @@ const HomePage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
       <div className="p-6">
         <h3 className="text-lg font-semibold mb-2">Video gần đây</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -621,7 +485,6 @@ const HomePage: React.FC = () => {
           ))}
         </div>
 
-        {/* Thêm hai phần mới */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
           <div className="lg:col-span-2">
             <Card className="h-full">
@@ -700,7 +563,7 @@ const HomePage: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>  
+        </div>
       )}
     </div>
   );
