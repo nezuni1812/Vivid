@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Video, ChevronDown, User, LogOut, RefreshCw } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Menu, X, Video, ChevronDown, LogOut, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
 
@@ -11,7 +11,8 @@ const NavBar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const location = useLocation();
-  const { isSignedIn, userName, photoURL, userEmail, signIn, signOut } = useAuth();
+  const navigate = useNavigate();
+  const { isSignedIn, userName, photoURL, userEmail, signIn, signOut, isLoading } = useAuth();
 
   // Check if the link is active
   const isActive = (path: string) => {
@@ -34,21 +35,19 @@ const NavBar = () => {
     };
   }, []);
 
-  // Handle Google sign-in
-  const handleChannelSignIn = async () => {
-    try {
-      await signIn();
-      setIsProfileOpen(false);
-    } catch (error) {
-      console.error("Error signing in:", error);
+  // Redirect to login page if not signed in, but only after auth state is loaded
+  useEffect(() => {
+    if (!isLoading && !isSignedIn && location.pathname !== "/") {
+      navigate("/");
     }
-  };
+  }, [isLoading, isSignedIn, location.pathname, navigate]);
 
-  // Change Google account (sign out and sign in again)
+  // Change Google account
   const changeGoogleAccount = async () => {
     try {
       await signIn();
       window.location.reload();
+      setIsProfileOpen(false);
     } catch (error) {
       console.error("Error changing Google account:", error);
     }
@@ -57,7 +56,7 @@ const NavBar = () => {
   // Handle logout
   const handleLogout = () => {
     signOut();
-    window.location.href = "/";
+    navigate("/");
     setIsProfileOpen(false);
   };
 
@@ -100,35 +99,44 @@ const NavBar = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isActive(link.path)
-                    ? "bg-blue-50 text-blue-600"
-                    : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                }`}
-              >
-                {link.name}
-              </Link>
-            ))}
-          </div>
+          {isSignedIn && (
+            <div className="hidden md:flex items-center space-x-1">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isActive(link.path)
+                      ? "bg-blue-50 text-blue-600"
+                      : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  }`}
+                >
+                  {link.name}
+                </Link>
+              ))}
+            </div>
+          )}
 
           {/* User Profile */}
           <div className="relative profile-dropdown">
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               className="flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors"
+              disabled={!isSignedIn}
             >
-              <img src={photoURL || "/placeholder.svg"} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
-              <span className="text-sm font-medium text-gray-700">{userName || "Tài khoản"}</span>
+              <img
+                src={photoURL || "/placeholder.svg"}
+                alt="avatar"
+                className="w-8 h-8 rounded-full object-cover"
+              />
+              <span className="text-sm font-medium text-gray-700">
+                {userName || "Tài khoản"}
+              </span>
               <ChevronDown className="w-4 h-4 text-gray-500" />
             </button>
 
             {/* Dropdown Menu */}
-            {isProfileOpen && (
+            {isProfileOpen && isSignedIn && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -136,33 +144,20 @@ const NavBar = () => {
                 transition={{ duration: 0.2 }}
                 className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200"
               >
-                {isSignedIn ? (
-                  <>
-                    {/* <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-200">{userEmail}</div> */}
-                    <button
-                      onClick={changeGoogleAccount}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                    >
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                      Thay đổi tài khoản
-                    </button>
-                    <button
-                      onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
-                    >
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Đăng xuất
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={handleChannelSignIn}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    <User className="w-4 h-4 mr-2 inline" />
-                    Đăng nhập
-                  </button>
-                )}
+                <button
+                  onClick={changeGoogleAccount}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Thay đổi tài khoản
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Đăng xuất
+                </button>
               </motion.div>
             )}
           </div>
@@ -186,20 +181,21 @@ const NavBar = () => {
             className="md:hidden mt-4 pb-4"
           >
             <div className="flex flex-col space-y-2">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className={`px-4 py-2 rounded-md text-sm font-medium ${
-                    isActive(link.path)
-                      ? "bg-blue-50 text-blue-600"
-                      : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                  }`}
-                  onClick={() => setIsOpen(false)}
-                >
-                  {link.name}
-                </Link>
-              ))}
+              {isSignedIn &&
+                navLinks.map((link) => (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    className={`px-4 py-2 rounded-md text-sm font-medium ${
+                      isActive(link.path)
+                        ? "bg-blue-50 text-blue-600"
+                        : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                    }`}
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {link.name}
+                  </Link>
+                ))}
               <hr className="my-2 border-gray-200" />
               {isSignedIn ? (
                 <>
@@ -209,8 +205,9 @@ const NavBar = () => {
                       changeGoogleAccount();
                       setIsOpen(false);
                     }}
-                    className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                    className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center w-full text-left"
                   >
+                    <RefreshCw className="w-4 h-4 mr-2" />
                     Thay đổi tài khoản
                   </button>
                   <button
@@ -224,29 +221,7 @@ const NavBar = () => {
                     Đăng xuất
                   </button>
                 </>
-              ) : (
-                <>
-                  <button
-                    onClick={() => {
-                      handleChannelSignIn();
-                      setIsOpen(false);
-                    }}
-                    className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                  >
-                    Đăng nhập với Google
-                  </button>
-                  <button
-                    onClick={() => {
-                      handleLogout();
-                      setIsOpen(false);
-                    }}
-                    className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center w-full text-left"
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Đăng xuất
-                  </button>
-                </>
-              )}
+              ) : null}
             </div>
           </motion.div>
         )}

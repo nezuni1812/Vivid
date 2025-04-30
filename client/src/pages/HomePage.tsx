@@ -26,8 +26,7 @@ import FacebookUploader from "../components/facebook-upload";
 import {
   AllContent,
   CreatedContent,
-  ProcessingContent,
-  StatsContent,
+  ProcessingContent
 } from "./tabsContent";
 
 interface Workspace {
@@ -142,11 +141,16 @@ const HomePage: React.FC = () => {
     navigate(`/workspace/${workspaceId}`);
   };
 
-  async function checkYouTubeChannel() {
-    if (!accessToken) {
-      console.error("No access token available");
-      return false;
+  const handleChannelSignIn = async () => {
+    try {
+      await signIn();
+    } catch (error) {
+      console.error("Error signing in:", error);
+      alert("Failed to sign in. Please try again.");
     }
+  };
+
+  async function checkYouTubeChannel() {
     try {
       const response = await fetch(
         "https://www.googleapis.com/youtube/v3/channels?part=id&mine=true",
@@ -158,7 +162,17 @@ const HomePage: React.FC = () => {
         }
       );
       const data = await response.json();
-      return data.items && data.items.length > 0;
+      if (!response.ok) {
+        console.error("API Error:", data.error?.message || "Unknown error");
+        return false;
+      }
+
+      if (data.items && data.items.length > 0) {
+        console.log("Found channels:", data.items.map((item: any) => item.snippet.title));
+        return true;
+      }
+      console.warn("No channels found for this account.");
+      return false;
     } catch (error) {
       console.error("Error checking YouTube channel:", error);
       return false;
@@ -166,23 +180,12 @@ const HomePage: React.FC = () => {
   }
 
   const handleUpload = async () => {
-    if (!isSignedIn) {
-      try {
-        await signIn(); // Trigger sign-in and wait for context to update
-      } catch (error) {
-        console.error("Sign-in failed:", error);
-        alert("Đăng nhập thất bại! Vui lòng thử lại.");
-        return;
-      }
-    }
-
-    if (!accessToken) {
-      alert("Không thể lấy access token. Vui lòng đăng nhập lại.");
+    if (!isSignedIn || !accessToken) {
+      await handleChannelSignIn();
       return;
     }
 
     const hasChannel = await checkYouTubeChannel();
-
     if (!hasChannel) {
       alert(
         "Tài khoản của bạn chưa có kênh YouTube. Vui lòng tạo kênh trước."
@@ -191,7 +194,6 @@ const HomePage: React.FC = () => {
       return;
     }
 
-    // Nếu có kênh, tiếp tục upload video
     await uploadVideo();
   };
 
@@ -199,11 +201,6 @@ const HomePage: React.FC = () => {
   const uploadVideo = async () => {
     if (!selectedFile) {
       alert("Vui lòng chọn một tệp video trước.");
-      return;
-    }
-
-    if (!accessToken) {
-      alert("Không thể lấy access token. Vui lòng đăng nhập lại.");
       return;
     }
 
@@ -260,8 +257,7 @@ const HomePage: React.FC = () => {
       id: "processing",
       label: "Video đang xử lý",
       content: <ProcessingContent />,
-    },
-    { id: "stats", label: "Thống kê", content: <StatsContent /> },
+    }
   ];
 
   // Tìm tab đang active
@@ -279,10 +275,8 @@ const HomePage: React.FC = () => {
 
   // Fetch workspaces when component mounts
   useEffect(() => {
-    if (isSignedIn) {
-      fetchWorkspaces();
-    }
-  }, [isSignedIn]);
+    fetchWorkspaces();
+  }, []);
 
   return (
     <div className="w-full bg-gray-100 text-black text-center p-4 min-h-screen overflow-y-auto">
@@ -308,25 +302,42 @@ const HomePage: React.FC = () => {
                 : tab === "created"
                 ? "Video đã tạo"
                 : tab === "processing"
-                ? "Video đang xử lý"
-                : "Thống kê"}
+                ? "Video đang xử lý" : ""}
             </button>
           ))}
         </div>
         <div className="p-4">
           <h1 className="text-xl font-bold mb-4">Video Upload</h1>
-          <input
-            type="file"
-            accept="video/*"
-            onChange={handleFileChange}
-            className="mb-2"
-          />
-          <button
-            onClick={handleUpload}
-            className="px-4 py-2 bg-green-500 text-black rounded"
-          >
-            Upload to YouTube
-          </button>
+          {!isSignedIn ? (
+            <button
+              onClick={handleChannelSignIn}
+              className="px-4 py-2 bg-blue-500 text-white rounded"
+            >
+              Sign in with Google
+            </button>
+          ) : (
+            <>
+              <p>Tài khoản: {userEmail}</p>
+              <input
+                type="file"
+                accept="video/*"
+                onChange={handleFileChange}
+                className="mb-2"
+              />
+              <button
+                onClick={handleUpload}
+                className="px-4 py-2 bg-green-500 text-white rounded"
+              >
+                Upload to YouTube
+              </button>
+              <button
+                onClick={handleChannelSignIn}
+                className="bg-red-500 text-white px-4 py-2 rounded m-2"
+              >
+                Chuyển tài khoản
+              </button>
+            </>
+          )}
         </div>
         <FacebookUploader />
         <button

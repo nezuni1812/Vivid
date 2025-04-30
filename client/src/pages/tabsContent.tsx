@@ -25,14 +25,5 @@ const AllContent = () => {
     )
   }
   
-  const StatsContent = () => {
-    return (
-      <div className="p-4">
-        <h2 className="text-xl font-bold mb-4">Thống kê</h2>
-        <p className="mb-4">Số lượng video đã tạo: 10</p>
-      </div>
-    )
-  }
-  
-  export { AllContent, CreatedContent, ProcessingContent, StatsContent }
+  export { AllContent, CreatedContent, ProcessingContent }
   

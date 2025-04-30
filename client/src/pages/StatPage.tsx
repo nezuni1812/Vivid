@@ -1,7 +1,7 @@
 import type React from "react"
 
 import { useEffect, useState } from "react"
-import { useLocation } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 import {
 		BarChart,
 		Bar,
@@ -15,6 +15,7 @@ import {
 		Legend,
 } from "recharts"
 import { ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react"
+import { useAuth } from "../context/AuthContext"
 
 interface VideoItem {
 		id: string
@@ -55,7 +56,8 @@ type SortDirection = "asc" | "desc"
 
 const YoutubeStatPage = () => {
 		const location = useLocation()
-		const accessToken = localStorage.getItem("accessToken")
+    const navigate = useNavigate();
+    const { isSignedIn, accessToken, userId, signIn, isLoading } = useAuth(); // Replaced localStorage.getItem with useAuth
 		const [publishedVideo, setVideos] = useState<VideoItem[]>([])
 		const [loading, setLoading] = useState(true)
 		const [error, setError] = useState<string | null>(null)
@@ -113,11 +115,13 @@ const YoutubeStatPage = () => {
 		useEffect(() => {
 				const fetchVideos = async () => {
 						try {
-								if (!accessToken) {
-										setError("Vui lòng đăng nhập tài khoản Youtube để xem thống kê")
-										setLoading(false)
-										return
-								}
+              if (isLoading) return;
+              if (!isSignedIn || !accessToken || !userId) {
+                setError("Vui lòng đăng nhập tài khoản YouTube để xem thống kê");
+                navigate("/");
+                setLoading(false);
+                return;
+              }
 
 								// Lấy thông tin kênh của người dùng hiện tại
 								const channelRes = await fetch(
@@ -145,36 +149,34 @@ const YoutubeStatPage = () => {
 								})
 
 								// // Lấy playlistId của video uploads
-								// const uploadsListId = channelData.items[0].contentDetails.relatedPlaylists.uploads
+								const uploadsListId = channelData.items[0].contentDetails.relatedPlaylists.uploads
 
-								// // Lấy danh sách video trong uploads playlist
-								// const playlistRes = await fetch(
-								// 		`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${uploadsListId}`,
-								// 		{
-								// 				headers: {
-								// 						Authorization: `Bearer ${accessToken}`,
-								// 				},
-								// 		},
-								// )
-								// const playlistData = await playlistRes.json()
+								// Lấy danh sách video trong uploads playlist
+								const playlistRes = await fetch(
+										`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${uploadsListId}`,
+										{
+												headers: {
+														Authorization: `Bearer ${accessToken}`,
+												},
+										},
+								)
+								const playlistData = await playlistRes.json()
 
-								// const videoIds = playlistData.items.map((item: any) => item.snippet.resourceId.videoId)
+								const videoIds = playlistData.items.map((item: any) => item.snippet.resourceId.videoId)
                 
                 // Lấy các id video đã published của người dùng từ database
-                const currentUser = localStorage.getItem("currentUser")
-                const userId = currentUser ? JSON.parse(currentUser).user_id : null;
-                const response = await fetch(
-                  `http://localhost:5000/published-clips?user_id=${userId}&platform=Youtube`,
-                  {
-                    method: "GET",
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                  }
-                );
-                const videos = await response.json()
+                // const response = await fetch(
+                //   `http://localhost:5000/published-clips?user_id=${userId}&platform=Youtube`,
+                //   {
+                //     method: "GET",
+                //     headers: {
+                //       "Content-Type": "application/json",
+                //     },
+                //   }
+                // );
+                // const videos = await response.json()
 
-                const videoIds = videos.map((video: any) => video.external_id).join(",")
+                // const videoIds = videos.map((video: any) => video.external_id).join(",")
 								// Lấy thông tin chi tiết video
 								const videoStatsRes = await fetch(
 										`https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoIds}`,
@@ -184,8 +186,8 @@ const YoutubeStatPage = () => {
 												},
 										},
 								)
-								const statsData = await videoStatsRes.json()
-								const videoList: VideoItem[] = statsData.items.map((item: any) => ({
+								const videoStatsResJson = await videoStatsRes.json()
+								const videoList: VideoItem[] = videoStatsResJson.items.map((item: any) => ({
 										id: item.id,
 										title: item.snippet.title,
 										thumbnail: item.snippet.thumbnails.medium.url,
@@ -204,7 +206,7 @@ const YoutubeStatPage = () => {
 				}
 
 				fetchVideos()
-		}, [])
+		}, [accessToken])
 
 		useEffect(() => {
 				if (channelInfo) {

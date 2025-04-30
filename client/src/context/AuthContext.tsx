@@ -9,42 +9,74 @@ interface AuthContextType {
   photoURL: string | null;
   userEmail: string | null;
   accessToken: string | null;
+  userId: string | null; 
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+}
+
+function AuthProvider({ children }: { children: ReactNode }) {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const [photoURL, setPhotoURL] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Sync context with Firebase auth state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setIsLoading(true);
       if (user) {
-        const storedUser = localStorage.getItem("currentUser");
-        const storedToken = localStorage.getItem("googleAccessToken");
-        console.log("onAuthStateChanged storedUser:", storedUser); // Log storedUser
-        console.log("onAuthStateChanged user.photoURL:", user.photoURL); // Log Firebase photoURL
-        if (storedUser) {
-          const loginUser = JSON.parse(storedUser);
-          setIsSignedIn(true);
-          setUserName(loginUser.username);
-          setPhotoURL(user.photoURL || loginUser.photoURL || ""); // Prioritize Firebase user.photoURL
-          setUserEmail(loginUser.email);
-          setAccessToken(storedToken);
-        } else {
-          console.warn("No currentUser in localStorage");
-          // Fallback to Firebase user data if localStorage is empty
+        try {
+          // Retrieve backend data from localStorage
+          const currentUser = localStorage.getItem("currentUser");
+          const googleAccessToken = localStorage.getItem("googleAccessToken");
+
+          if (!currentUser || !googleAccessToken) {
+            console.warn("Missing user data or access token, re-authentication required.");
+            setIsSignedIn(false);
+            setUserName(null);
+            setPhotoURL(null);
+            setUserEmail(null);
+            setAccessToken(null);
+            setUserId(null);
+            localStorage.removeItem("currentUser");
+            localStorage.removeItem("googleAccessToken");
+            setIsLoading(false);
+            return;
+          }
+
+          const parsedUser = JSON.parse(currentUser);
+
+          // Use Firebase user object for client-side data
           setIsSignedIn(true);
           setUserName(user.displayName);
           setPhotoURL(user.photoURL || "");
           setUserEmail(user.email);
+          setAccessToken(googleAccessToken);
+          setUserId(parsedUser.user_id);
+        } catch (error) {
+          console.error("Error syncing user data:", error);
+          setIsSignedIn(false);
+          setUserName(null);
+          setPhotoURL(null);
+          setUserEmail(null);
           setAccessToken(null);
+          setUserId(null);
+          localStorage.removeItem("currentUser");
+          localStorage.removeItem("googleAccessToken");
         }
       } else {
         setIsSignedIn(false);
@@ -52,9 +84,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setPhotoURL(null);
         setUserEmail(null);
         setAccessToken(null);
+        setUserId(null);
         localStorage.removeItem("currentUser");
         localStorage.removeItem("googleAccessToken");
       }
+      setIsLoading(false);
     });
 
     return () => unsubscribe();
@@ -62,15 +96,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signIn = async () => {
     try {
-      const { accessToken: googleAccessToken, ...loginUser } = await signInWithGoogle();
-      const user = auth.currentUser;
-      console.log("AuthContext signIn loginUser:", loginUser); // Log loginUser
-      console.log("AuthContext signIn user.photoURL:", user?.photoURL); // Log Firebase photoURL
+      const loginUser = await signInWithGoogle();
       setIsSignedIn(true);
       setUserName(loginUser.username);
-      setPhotoURL(user?.photoURL || loginUser.photoURL || "");
+      setPhotoURL(loginUser.photoURL);
       setUserEmail(loginUser.email);
-      setAccessToken(googleAccessToken || null);
+      setAccessToken(loginUser.accessToken);
+      setUserId(loginUser.user_id);
     } catch (error) {
       console.error("Sign-in error:", error);
       throw error;
@@ -80,11 +112,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     try {
       await auth.signOut();
-      setIsSignedIn(true);
+      setIsSignedIn(false);
       setUserName(null);
       setPhotoURL(null);
       setUserEmail(null);
       setAccessToken(null);
+      setUserId(null);
       localStorage.removeItem("currentUser");
       localStorage.removeItem("googleAccessToken");
     } catch (error) {
@@ -95,17 +128,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ isSignedIn, userName, photoURL, userEmail, accessToken, signIn, signOut }}
+      value={{
+        isSignedIn,
+        userName,
+        photoURL,
+        userEmail,
+        accessToken,
+        userId,
+        signIn,
+        signOut,
+        isLoading,
+      }}
     >
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-};
+export { AuthProvider, useAuth };
