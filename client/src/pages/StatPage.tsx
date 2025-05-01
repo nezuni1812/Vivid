@@ -400,7 +400,7 @@ const YoutubeStatPage = () => {
 
   if (loading)
     return (
-      <div className="p-6 max-w-7xl mx-auto">
+      <div className="mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Thống kê Video YouTube</h1>
           <Skeleton className="h-10 w-32" />
@@ -450,7 +450,7 @@ const YoutubeStatPage = () => {
 
   if (error)
     return (
-      <div className="p-6 max-w-7xl mx-auto">
+      <div className="mx-auto">
         <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Lỗi</AlertTitle>
@@ -460,7 +460,7 @@ const YoutubeStatPage = () => {
     )
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h1 className="text-2xl font-bold">Thống kê Video YouTube</h1>
 

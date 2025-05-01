@@ -36,7 +36,7 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="container mx-auto py-6 px-4 md:px-6">
+    <div className="container mx-auto py-6 px-4 md:px-10">
       <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-100 mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -48,7 +48,7 @@ export default function AnalyticsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="mb-6">
+          <div className="mb-1">
             <label className="block text-sm font-medium mb-2">Chọn nền tảng</label>
             <Select value={selectedPlatform} onValueChange={handlePlatformChange}>
               <SelectTrigger className="w-full sm:w-[300px] border-blue-200 focus:ring-blue-100">

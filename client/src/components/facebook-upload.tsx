@@ -73,7 +73,6 @@ const FacebookUploader: React.FC = () => {
     document.body.appendChild(script)
   }, [])
 
-  const handleLogin = () => {
   useEffect(() => {
     if (!isSdkLoaded) return
 

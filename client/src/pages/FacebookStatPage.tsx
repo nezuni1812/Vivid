@@ -504,7 +504,7 @@ const FacebookStatsPage = () => {
 
   if (loading)
     return (
-      <div className="p-6 max-w-7xl mx-auto">
+      <div className="mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Thống kê Video Facebook</h1>
           <Skeleton className="h-10 w-32" />
@@ -553,12 +553,12 @@ const FacebookStatsPage = () => {
     )
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h1 className="text-2xl font-bold">Thống kê Video Facebook</h1>
 
         {authState.isLoggedIn && (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex font-semibold flex-wrap gap-2">
             <Select
               onValueChange={(value) => {
                 const page = pages.find((p) => p.id === value);
