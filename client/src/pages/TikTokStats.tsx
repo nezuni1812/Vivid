@@ -387,6 +387,46 @@ const TikTokStats = () => {
         </Alert>
       )}
 
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold">Khoảng thời gian</h2>
+          <div className="flex gap-2">
+            <Button
+              variant={timeRange === "7days" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setTimeRange("7days")}
+              className={timeRange === "7days" ? "bg-black hover:bg-gray-800" : ""}
+            >
+              7 ngày
+            </Button>
+            <Button
+              variant={timeRange === "30days" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setTimeRange("30days")}
+              className={timeRange === "30days" ? "bg-black hover:bg-gray-800" : ""}
+            >
+              30 ngày
+            </Button>
+            <Button
+              variant={timeRange === "90days" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setTimeRange("90days")}
+              className={timeRange === "90days" ? "bg-black hover:bg-gray-800" : ""}
+            >
+              90 ngày
+            </Button>
+            <Button
+              variant={timeRange === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setTimeRange("all")}
+              className={timeRange === "all" ? "bg-black hover:bg-gray-800" : ""}
+            >
+              Tất cả
+            </Button>
+          </div>
+        </div>
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         <Card className="bg-purple-50 border-purple-100">
@@ -444,46 +484,6 @@ const TikTokStats = () => {
             </div>
           </CardContent>
         </Card>
-      </div>
-
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">Khoảng thời gian</h2>
-          <div className="flex gap-2">
-            <Button
-              variant={timeRange === "7days" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setTimeRange("7days")}
-              className={timeRange === "7days" ? "bg-black hover:bg-gray-800" : ""}
-            >
-              7 ngày
-            </Button>
-            <Button
-              variant={timeRange === "30days" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setTimeRange("30days")}
-              className={timeRange === "30days" ? "bg-black hover:bg-gray-800" : ""}
-            >
-              30 ngày
-            </Button>
-            <Button
-              variant={timeRange === "90days" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setTimeRange("90days")}
-              className={timeRange === "90days" ? "bg-black hover:bg-gray-800" : ""}
-            >
-              90 ngày
-            </Button>
-            <Button
-              variant={timeRange === "all" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setTimeRange("all")}
-              className={timeRange === "all" ? "bg-black hover:bg-gray-800" : ""}
-            >
-              Tất cả
-            </Button>
-          </div>
-        </div>
       </div>
 
       {userInfo && topVideo && (

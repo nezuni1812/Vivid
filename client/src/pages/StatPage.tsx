@@ -472,6 +472,46 @@ const YoutubeStatPage = () => {
         </div>
       </div>
 
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold">Khoảng thời gian</h2>
+          <div className="flex gap-2">
+            <Button
+              variant={selectedPeriod === "7" ? "default" : "outline"}
+              size="sm"
+              onClick={handlePeriodChange("7")}
+              className={selectedPeriod === "7" ? "bg-red-500 hover:bg-red-600" : ""}
+            >
+              7 ngày
+            </Button>
+            <Button
+              variant={selectedPeriod === "30" ? "default" : "outline"}
+              size="sm"
+              onClick={handlePeriodChange("30")}
+              className={selectedPeriod === "30" ? "bg-red-500 hover:bg-red-600" : ""}
+            >
+              30 ngày
+            </Button>
+            <Button
+              variant={selectedPeriod === "90" ? "default" : "outline"}
+              size="sm"
+              onClick={handlePeriodChange("90")}
+              className={selectedPeriod === "90" ? "bg-red-500 hover:bg-red-600" : ""}
+            >
+              90 ngày
+            </Button>
+            <Button
+              variant={selectedPeriod === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={handlePeriodChange("all")}
+              className={selectedPeriod === "all" ? "bg-red-500 hover:bg-red-600" : ""}
+            >
+              Tất cả
+            </Button>
+          </div>
+        </div>
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         <Card className="bg-red-50 border-red-100">
@@ -529,46 +569,6 @@ const YoutubeStatPage = () => {
             </div>
           </CardContent>
         </Card>
-      </div>
-
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">Khoảng thời gian</h2>
-          <div className="flex gap-2">
-            <Button
-              variant={selectedPeriod === "7" ? "default" : "outline"}
-              size="sm"
-              onClick={handlePeriodChange("7")}
-              className={selectedPeriod === "7" ? "bg-red-500 hover:bg-red-600" : ""}
-            >
-              7 ngày
-            </Button>
-            <Button
-              variant={selectedPeriod === "30" ? "default" : "outline"}
-              size="sm"
-              onClick={handlePeriodChange("30")}
-              className={selectedPeriod === "30" ? "bg-red-500 hover:bg-red-600" : ""}
-            >
-              30 ngày
-            </Button>
-            <Button
-              variant={selectedPeriod === "90" ? "default" : "outline"}
-              size="sm"
-              onClick={handlePeriodChange("90")}
-              className={selectedPeriod === "90" ? "bg-red-500 hover:bg-red-600" : ""}
-            >
-              90 ngày
-            </Button>
-            <Button
-              variant={selectedPeriod === "all" ? "default" : "outline"}
-              size="sm"
-              onClick={handlePeriodChange("all")}
-              className={selectedPeriod === "all" ? "bg-red-500 hover:bg-red-600" : ""}
-            >
-              Tất cả
-            </Button>
-          </div>
-        </div>
       </div>
 
       <Tabs defaultValue="charts" className="mb-8">

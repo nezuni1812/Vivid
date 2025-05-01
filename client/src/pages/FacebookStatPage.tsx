@@ -559,6 +559,29 @@ const FacebookStatsPage = () => {
 
         {authState.isLoggedIn && (
           <div className="flex flex-wrap gap-2">
+            <Select
+              onValueChange={(value) => {
+                const page = pages.find((p) => p.id === value);
+                if (page) setSelectedPage(page);
+              }}
+              value={selectedPage?.id || ""}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Không có trang nào" />
+              </SelectTrigger>
+              <SelectContent>
+                {pages.length === 0 ? (
+                  <SelectItem value="" disabled>
+                    Không có trang nào
+                  </SelectItem>
+                ) : (
+                  pages.map((page) => (
+                    <SelectItem key={page.id} value={page.id}>
+                      {page.name}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
             <Button
               variant="outline"
               onClick={() => selectedPage && fetchVideoStats(selectedPage)}
@@ -609,33 +632,45 @@ const FacebookStatsPage = () => {
         </Card>
       ) : (
         <>
-          <div className="mb-6 flex flex-wrap gap-4 items-center justify-between">
-            <div className="flex flex-wrap gap-4 items-center">
-              <label className="mr-2 font-medium">Chọn Trang:</label>
-              <Select
-                onValueChange={(value) => {
-                  const page = pages.find((p) => p.id === value);
-                  if (page) setSelectedPage(page);
-                }}
-                value={selectedPage?.id || ""}
-              >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Không có trang nào" />
-                </SelectTrigger>
-                <SelectContent>
-                  {pages.length === 0 ? (
-                    <SelectItem value="" disabled>
-                      Không có trang nào
-                    </SelectItem>
-                  ) : (
-                    pages.map((page) => (
-                      <SelectItem key={page.id} value={page.id}>
-                        {page.name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+          
+
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Khoảng thời gian</h2>
+              <div className="flex gap-2">
+                <Button
+                  variant={timeRange.days === 7 ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTimeRange({ label: "Last 7 days", days: 7 })}
+                  className={timeRange.days === 7 ? "bg-blue-500 hover:bg-blue-600" : ""}
+                >
+                  7 ngày
+                </Button>
+                <Button
+                  variant={timeRange.days === 30 ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTimeRange({ label: "Last 30 days", days: 30 })}
+                  className={timeRange.days === 30 ? "bg-blue-500 hover:bg-blue-600" : ""}
+                >
+                  30 ngày
+                </Button>
+                <Button
+                  variant={timeRange.days === 90 ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTimeRange({ label: "Last 90 days", days: 90 })}
+                  className={timeRange.days === 90 ? "bg-blue-500 hover:bg-blue-600" : ""}
+                >
+                  90 ngày
+                </Button>
+                <Button
+                  variant={timeRange.days === 3650 ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTimeRange({ label: "All time", days: 3650 })}
+                  className={timeRange.days === 3650 ? "bg-blue-500 hover:bg-blue-600" : ""}
+                >
+                  Tất cả
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -696,46 +731,6 @@ const FacebookStatsPage = () => {
                 </div>
               </CardContent>
             </Card>
-          </div>
-
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Khoảng thời gian</h2>
-              <div className="flex gap-2">
-                <Button
-                  variant={timeRange.days === 7 ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setTimeRange({ label: "Last 7 days", days: 7 })}
-                  className={timeRange.days === 7 ? "bg-blue-500 hover:bg-blue-600" : ""}
-                >
-                  7 ngày
-                </Button>
-                <Button
-                  variant={timeRange.days === 30 ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setTimeRange({ label: "Last 30 days", days: 30 })}
-                  className={timeRange.days === 30 ? "bg-blue-500 hover:bg-blue-600" : ""}
-                >
-                  30 ngày
-                </Button>
-                <Button
-                  variant={timeRange.days === 90 ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setTimeRange({ label: "Last 90 days", days: 90 })}
-                  className={timeRange.days === 90 ? "bg-blue-500 hover:bg-blue-600" : ""}
-                >
-                  90 ngày
-                </Button>
-                <Button
-                  variant={timeRange.days === 3650 ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setTimeRange({ label: "All time", days: 3650 })}
-                  className={timeRange.days === 3650 ? "bg-blue-500 hover:bg-blue-600" : ""}
-                >
-                  Tất cả
-                </Button>
-              </div>
-            </div>
           </div>
 
           <Tabs defaultValue="charts" className="mb-8">
