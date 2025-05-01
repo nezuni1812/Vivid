@@ -2,8 +2,21 @@
 
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Calendar, ChevronDown, Filter, BarChart3, ThumbsUp, Eye, LogOut, RefreshCw } from "lucide-react"
+import { ChevronDown, Filter, ThumbsUp, Eye, LogOut, RefreshCw, AlertCircle, MessageCircle, Share2 } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
+import { Button } from "../components/ui/button"
+import { Badge } from "../components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
+import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert"
+import { Skeleton } from "../components/ui/skeleton"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 
 interface FacebookPage {
   id: string
@@ -62,7 +75,8 @@ const FacebookStatsPage = () => {
   const [totalShares, setTotalShares] = useState(0)
   const [chartData, setChartData] = useState<any[]>([])
   const [activeMetric, setActiveMetric] = useState<"views" | "likes" | "comments" | "shares">("views")
-  const [isSdkLoaded, setSdkLoaded] = useState(false);
+  const [isSdkLoaded, setSdkLoaded] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
 
   const timeRanges: TimeRange[] = [
@@ -75,19 +89,19 @@ const FacebookStatsPage = () => {
   // Load auth state from localStorage on initial render
   useEffect(() => {
     if (window.FB) {
-      setSdkLoaded(true);
-      return;
+      setSdkLoaded(true)
+      return
     }
 
-    window.fbAsyncInit = function () {
+    window.fbAsyncInit = () => {
       window.FB.init({
         appId: import.meta.env.VITE_FACEBOOK_APP_ID,
         cookie: true,
         xfbml: true,
         version: "v19.0",
-      });
-      setSdkLoaded(true);
-    };
+      })
+      setSdkLoaded(true)
+    }
 
     const script = document.createElement("script");
     script.src = "https://connect.facebook.net/en_US/sdk.js";
@@ -377,48 +391,50 @@ const FacebookStatsPage = () => {
     sort: "date" | "views" | "likes" | "comments" | "shares",
     order: "asc" | "desc",
   ) => {
-    // Filter by time range
-    const cutoffDate = new Date()
-    cutoffDate.setDate(cutoffDate.getDate() - range.days)
-
+    // Filter by time range for displayed videos (filteredVideos)
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - range.days);
+  
     const filtered =
-      range.days === 3650 ? [...videoList] : videoList.filter((video) => new Date(video.created_time) >= cutoffDate)
-
-    // Sort the videos
+      range.days === 3650
+        ? [...videoList]
+        : videoList.filter((video) => new Date(video.created_time) >= cutoffDate);
+  
+    // Sort the filtered videos
     filtered.sort((a, b) => {
-      let comparison = 0
-
+      let comparison = 0;
+  
       if (sort === "date") {
-        comparison = new Date(a.created_time).getTime() - new Date(b.created_time).getTime()
+        comparison = new Date(a.created_time).getTime() - new Date(b.created_time).getTime();
       } else if (sort === "views") {
-        comparison = a.views - b.views
+        comparison = a.views - b.views;
       } else if (sort === "likes") {
-        comparison = a.likes - b.likes
+        comparison = a.likes - b.likes;
       } else if (sort === "comments") {
-        comparison = a.comments - b.comments
+        comparison = a.comments - b.comments;
       } else if (sort === "shares") {
-        comparison = a.shares - b.shares
+        comparison = a.shares - b.shares;
       }
-
-      return order === "asc" ? comparison : -comparison
-    })
-
-    setFilteredVideos(filtered)
-
-    // Calculate statistics
-    const total_views = filtered.reduce((sum, video) => sum + video.views, 0)
-    const total_likes = filtered.reduce((sum, video) => sum + video.likes, 0)
-    const total_comments = filtered.reduce((sum, video) => sum + video.comments, 0)
-    const total_shares = filtered.reduce((sum, video) => sum + video.shares, 0)
-
-    setTotalViews(total_views)
-    setTotalLikes(total_likes)
-    setTotalComments(total_comments)
-    setTotalShares(total_shares)
-
-    // Prepare chart data
-    prepareChartData(filtered, range.days)
-  }
+  
+      return order === "asc" ? comparison : -comparison;
+    });
+  
+    setFilteredVideos(filtered);
+  
+    // Calculate total statistics from ALL videos (not filtered by time range)
+    const total_views = videoList.reduce((sum, video) => sum + video.views, 0);
+    const total_likes = videoList.reduce((sum, video) => sum + video.likes, 0);
+    const total_comments = videoList.reduce((sum, video) => sum + video.comments, 0);
+    const total_shares = videoList.reduce((sum, video) => sum + video.shares, 0);
+  
+    setTotalViews(total_views);
+    setTotalLikes(total_likes);
+    setTotalComments(total_comments);
+    setTotalShares(total_shares);
+  
+    // Prepare chart data based on filtered videos (still respects time range)
+    prepareChartData(filtered, range.days);
+  };
 
   const prepareChartData = (videos: VideoInsight[], days: number) => {
     // Create a date range for the chart
@@ -468,9 +484,9 @@ const FacebookStatsPage = () => {
 
   useEffect(() => {
     if (videos.length > 0) {
-      applyFiltersAndSort(videos, timeRange, sortBy, sortOrder)
+      applyFiltersAndSort(videos, timeRange, sortBy, sortOrder);
     }
-  }, [timeRange, sortBy, sortOrder])
+  }, [timeRange, sortBy, sortOrder]);
 
   const formatDuration = (seconds: number) => {
     if (!seconds) return "00:00"
@@ -488,388 +504,550 @@ const FacebookStatsPage = () => {
     })
   }
 
+  if (loading)
+    return (
+      <div className="mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Thống kê Video Facebook</h1>
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-4">
+                  <Skeleton className="h-4 w-1/3 mb-2" />
+                  <Skeleton className="h-8 w-1/2" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-1/4" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-[300px] w-full" />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-1/4" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex items-center space-x-4">
+                    <Skeleton className="h-12 w-12 rounded" />
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-2/3" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-blue-600 flex items-center">
-        <BarChart3 className="mr-2" /> Facebook Video Analytics
-      </h1>
+    <div className="mx-auto">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <h1 className="text-2xl font-bold">Thống kê Video Facebook</h1>
+
+        {authState.isLoggedIn && (
+          <div className="flex font-semibold flex-wrap gap-2">
+            <Select
+              onValueChange={(value) => {
+                const page = pages.find((p) => p.id === value);
+                if (page) setSelectedPage(page);
+              }}
+              value={selectedPage?.id || ""}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Không có trang nào" />
+              </SelectTrigger>
+              <SelectContent>
+                {pages.length === 0 ? (
+                  <SelectItem value="" disabled>
+                    Không có trang nào
+                  </SelectItem>
+                ) : (
+                  pages.map((page) => (
+                    <SelectItem key={page.id} value={page.id}>
+                      {page.name}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              onClick={() => selectedPage && fetchVideoStats(selectedPage)}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Làm mới
+            </Button>
+            <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
+              <LogOut className="h-4 w-4" />
+              Đăng xuất
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {error && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Lỗi</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       {!authState.isLoggedIn ? (
-        <div className="bg-white rounded-lg shadow-md p-8 text-center">
-          <h2 className="text-2xl font-semibold mb-6">Welcome to Facebook Video Analytics</h2>
-          <p className="mb-8 text-gray-600">
-            Connect your Facebook account to view detailed analytics for your Page videos.
-          </p>
-          <button
-            onClick={handleLogin}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md font-medium transition-colors flex items-center mx-auto"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="white"
-              className="mr-2"
-            >
-              <path d="M9.198 21.5h4v-8.01h3.604l.396-3.98h-4V7.5a1 1 0 0 1 1-1h3v-4h-3a5 5 0 0 0-5 5v2.01h-2l-.396 3.98h2.396v8.01Z" />
-            </svg>
-            Connect with Facebook
-          </button>
-        </div>
+        <Card className="p-8 text-center">
+          <CardHeader>
+            <CardTitle>Chào mừng đến với Thống kê Video Facebook</CardTitle>
+            <CardDescription>
+              Kết nối tài khoản Facebook của bạn để xem phân tích chi tiết cho video trên Trang của bạn.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={handleLogin} className="bg-blue-600 hover:bg-blue-700 flex items-center mx-auto">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="white"
+                className="mr-2"
+              >
+                <path d="M9.198 21.5h4v-8.01h3.604l.396-3.98h-4V7.5a1 1 0 0 1 1-1h3v-4h-3a5 5 0 0 0-5 5v2.01h-2l-.396 3.98h2.396v8.01Z" />
+              </svg>
+              Kết nối với Facebook
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
         <>
-          <div className="mb-6 flex flex-wrap gap-4 items-center justify-between">
-            <div className="flex flex-wrap gap-4 items-center">
-              <div>
-                <label className="mr-2 font-medium">Select Page:</label>
-                <select
-                  className="border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  onChange={(e) => {
-                    const page = pages.find((p) => p.id === e.target.value)
-                    if (page) setSelectedPage(page)
-                  }}
-                  value={selectedPage?.id || ""}
-                >
-                  {pages.length === 0 && <option value="">No pages available</option>}
-                  {pages.map((page) => (
-                    <option key={page.id} value={page.id}>
-                      {page.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+          {/* Summary Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+            <Card className="bg-blue-50 border-blue-100">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Tổng Lượt Xem</p>
+                    <p className="text-2xl font-bold">{totalViews.toLocaleString("vi-VN")}</p>
+                  </div>
+                  <div className="bg-blue-100 p-2 rounded-full">
+                    <Eye className="h-5 w-5 text-blue-500" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-              <div>
-                <label className="mr-2 font-medium flex items-center">
-                  <Calendar className="mr-1 h-4 w-4" /> Time Range:
-                </label>
-                <select
-                  className="border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={timeRange.days.toString()}
-                  onChange={(e) => {
-                    const range = timeRanges.find((r) => r.days.toString() === e.target.value)
-                    if (range) setTimeRange(range)
-                  }}
-                >
-                  {timeRanges.map((range) => (
-                    <option key={range.days} value={range.days.toString()}>
-                      {range.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+            <Card className="bg-pink-50 border-pink-100">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Tổng Lượt Thích</p>
+                    <p className="text-2xl font-bold">{totalLikes.toLocaleString("vi-VN")}</p>
+                  </div>
+                  <div className="bg-pink-100 p-2 rounded-full">
+                    <ThumbsUp className="h-5 w-5 text-pink-500" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-            <div className="flex gap-2">
-              <button
-                onClick={handleLogin}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center"
-                title="Change account"
-              >
-                <RefreshCw className="mr-1 h-4 w-4" />
-                Change Account
-              </button>
-              <button
-                onClick={handleLogout}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center"
-                title="Logout"
-              >
-                <LogOut className="mr-1 h-4 w-4" />
-                Logout
-              </button>
+            <Card className="bg-green-50 border-green-100">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Tổng Bình Luận</p>
+                    <p className="text-2xl font-bold">{totalComments.toLocaleString("vi-VN")}</p>
+                  </div>
+                  <div className="bg-green-100 p-2 rounded-full">
+                    <MessageCircle className="h-5 w-5 text-green-500" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-orange-50 border-orange-100">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Tổng Chia Sẻ</p>
+                    <p className="text-2xl font-bold">{totalShares.toLocaleString("vi-VN")}</p>
+                  </div>
+                  <div className="bg-orange-100 p-2 rounded-full">
+                    <Share2 className="h-5 w-5 text-orange-500" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Khoảng thời gian</h2>
+              <div className="flex gap-2">
+                <Button
+                  variant={timeRange.days === 7 ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTimeRange({ label: "Last 7 days", days: 7 })}
+                  className={timeRange.days === 7 ? "bg-blue-500 hover:bg-blue-600" : ""}
+                >
+                  7 ngày
+                </Button>
+                <Button
+                  variant={timeRange.days === 30 ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTimeRange({ label: "Last 30 days", days: 30 })}
+                  className={timeRange.days === 30 ? "bg-blue-500 hover:bg-blue-600" : ""}
+                >
+                  30 ngày
+                </Button>
+                <Button
+                  variant={timeRange.days === 90 ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTimeRange({ label: "Last 90 days", days: 90 })}
+                  className={timeRange.days === 90 ? "bg-blue-500 hover:bg-blue-600" : ""}
+                >
+                  90 ngày
+                </Button>
+                <Button
+                  variant={timeRange.days === 3650 ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTimeRange({ label: "All time", days: 3650 })}
+                  className={timeRange.days === 3650 ? "bg-blue-500 hover:bg-blue-600" : ""}
+                >
+                  Tất cả
+                </Button>
+              </div>
             </div>
           </div>
 
-          {loading ? (
-            <div className="flex justify-center items-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-            </div>
-          ) : (
-            <>
-              {/* Stats Overview */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-6 shadow-md">
-                  <h3 className="text-lg font-semibold text-blue-700 mb-2">Total Views</h3>
-                  <p className="text-3xl font-bold text-blue-800">{totalViews.toLocaleString()}</p>
-                  <p className="text-sm text-blue-600 mt-2">For {timeRange.label.toLowerCase()}</p>
-                </div>
+          <Tabs defaultValue="charts" className="mb-8">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="charts">Biểu đồ</TabsTrigger>
+              <TabsTrigger value="table">Bảng dữ liệu</TabsTrigger>
+              <TabsTrigger value="cards">Thẻ video</TabsTrigger>
+            </TabsList>
 
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-6 shadow-md">
-                  <h3 className="text-lg font-semibold text-purple-700 mb-2">Total Likes</h3>
-                  <p className="text-3xl font-bold text-purple-800">{totalLikes.toLocaleString()}</p>
-                  <p className="text-sm text-purple-600 mt-2">For {timeRange.label.toLowerCase()}</p>
-                </div>
-
-                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-6 shadow-md">
-                  <h3 className="text-lg font-semibold text-green-700 mb-2">Total Comments</h3>
-                  <p className="text-3xl font-bold text-green-800">{totalComments.toLocaleString()}</p>
-                  <p className="text-sm text-green-600 mt-2">For {timeRange.label.toLowerCase()}</p>
-                </div>
-
-                <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-6 shadow-md">
-                  <h3 className="text-lg font-semibold text-orange-700 mb-2">Total Shares</h3>
-                  <p className="text-3xl font-bold text-orange-800">{totalShares.toLocaleString()}</p>
-                  <p className="text-sm text-orange-600 mt-2">For {timeRange.label.toLowerCase()}</p>
-                </div>
-              </div>
-
+            <TabsContent value="charts" className="space-y-6">
               {/* Performance Chart */}
-              <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold text-gray-800">Performance Over Time</h2>
-                  <div className="flex gap-2">
-                    <button
-                      className={`px-3 py-1 rounded-md text-sm ${
-                        activeMetric === "views"
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                      }`}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Hiệu suất theo thời gian</CardTitle>
+                  <CardDescription>Xem xu hướng hiệu suất video của bạn</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-2 mb-4">
+                    <Button
+                      variant={activeMetric === "views" ? "default" : "outline"}
+                      size="sm"
                       onClick={() => setActiveMetric("views")}
+                      className={activeMetric === "views" ? "bg-blue-500 hover:bg-blue-600" : ""}
                     >
-                      Views
-                    </button>
-                    <button
-                      className={`px-3 py-1 rounded-md text-sm ${
-                        activeMetric === "likes"
-                          ? "bg-purple-600 text-white"
-                          : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                      }`}
+                      Lượt xem
+                    </Button>
+                    <Button
+                      variant={activeMetric === "likes" ? "default" : "outline"}
+                      size="sm"
                       onClick={() => setActiveMetric("likes")}
+                      className={activeMetric === "likes" ? "bg-pink-500 hover:bg-pink-600" : ""}
                     >
-                      Likes
-                    </button>
-                    <button
-                      className={`px-3 py-1 rounded-md text-sm ${
-                        activeMetric === "comments"
-                          ? "bg-green-600 text-white"
-                          : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                      }`}
+                      Lượt thích
+                    </Button>
+                    <Button
+                      variant={activeMetric === "comments" ? "default" : "outline"}
+                      size="sm"
                       onClick={() => setActiveMetric("comments")}
+                      className={activeMetric === "comments" ? "bg-green-500 hover:bg-green-600" : ""}
                     >
-                      Comments
-                    </button>
-                    <button
-                      className={`px-3 py-1 rounded-md text-sm ${
-                        activeMetric === "shares"
-                          ? "bg-orange-600 text-white"
-                          : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                      }`}
+                      Bình luận
+                    </Button>
+                    <Button
+                      variant={activeMetric === "shares" ? "default" : "outline"}
+                      size="sm"
                       onClick={() => setActiveMetric("shares")}
+                      className={activeMetric === "shares" ? "bg-orange-500 hover:bg-orange-600" : ""}
                     >
-                      Shares
-                    </button>
+                      Chia sẻ
+                    </Button>
                   </div>
-                </div>
 
-                <div className="h-80">
-                  {chartData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart
-                        data={chartData}
-                        margin={{
-                          top: 5,
-                          right: 30,
-                          left: 20,
-                          bottom: 5,
-                        }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis
-                          dataKey="date"
-                          tickFormatter={(date) => {
-                            const d = new Date(date)
-                            return `${d.getMonth() + 1}/${d.getDate()}`
+                  <div className="h-80">
+                    {chartData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={chartData}
+                          margin={{
+                            top: 5,
+                            right: 30,
+                            left: 20,
+                            bottom: 5,
                           }}
-                        />
-                        <YAxis />
-                        <Tooltip
-                          formatter={(value) => [
-                            Number(value).toLocaleString(),
-                            activeMetric.charAt(0).toUpperCase() + activeMetric.slice(1),
-                          ]}
-                          labelFormatter={(label) => formatDate(label)}
-                        />
-                        <Legend />
-                        {activeMetric === "views" && (
-                          <Line
-                            type="monotone"
-                            dataKey="views"
-                            stroke="#3b82f6"
-                            activeDot={{ r: 8 }}
-                            name="Views"
-                            strokeWidth={2}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis
+                            dataKey="date"
+                            tickFormatter={(date) => {
+                              const d = new Date(date)
+                              return `${d.getMonth() + 1}/${d.getDate()}`
+                            }}
                           />
-                        )}
-                        {activeMetric === "likes" && (
-                          <Line
-                            type="monotone"
-                            dataKey="likes"
-                            stroke="#8b5cf6"
-                            activeDot={{ r: 8 }}
-                            name="Likes"
-                            strokeWidth={2}
+                          <YAxis />
+                          <Tooltip
+                            formatter={(value) => [
+                              Number(value).toLocaleString(),
+                              activeMetric.charAt(0).toUpperCase() + activeMetric.slice(1),
+                            ]}
+                            labelFormatter={(label) => formatDate(label)}
                           />
-                        )}
-                        {activeMetric === "comments" && (
-                          <Line
-                            type="monotone"
-                            dataKey="comments"
-                            stroke="#22c55e"
-                            activeDot={{ r: 8 }}
-                            name="Comments"
-                            strokeWidth={2}
-                          />
-                        )}
-                        {activeMetric === "shares" && (
-                          <Line
-                            type="monotone"
-                            dataKey="shares"
-                            stroke="#f97316"
-                            activeDot={{ r: 8 }}
-                            name="Shares"
-                            strokeWidth={2}
-                          />
-                        )}
-                      </LineChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="h-full flex items-center justify-center">
-                      <p className="text-gray-500">No data available for the selected time period</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Video List */}
-              <div className="mb-6 flex flex-wrap gap-4 items-center">
-                <div>
-                  <label className="mr-2 font-medium flex items-center">
-                    <Filter className="mr-1 h-4 w-4" /> Sort By:
-                  </label>
-                  <select
-                    className="border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as any)}
-                  >
-                    <option value="date">Date</option>
-                    <option value="views">Views</option>
-                    <option value="likes">Likes</option>
-                    <option value="comments">Comments</option>
-                    <option value="shares">Shares</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mr-2 font-medium flex items-center">
-                    <ChevronDown className="mr-1 h-4 w-4" /> Order:
-                  </label>
-                  <select
-                    className="border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    value={sortOrder}
-                    onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
-                  >
-                    <option value="desc">Highest First</option>
-                    <option value="asc">Lowest First</option>
-                  </select>
-                </div>
-              </div>
-
-              {filteredVideos.length === 0 ? (
-                <div className="bg-gray-50 rounded-lg p-6 text-center">
-                  <p className="text-gray-600">No videos found for this page in the selected time range.</p>
-                </div>
-              ) : (
-                <>
-                  <h2 className="text-xl font-bold mb-4 text-gray-800">All Videos ({filteredVideos.length})</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredVideos.map((video) => (
-                      <div
-                        key={video.id}
-                        className="border rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow bg-white"
-                      >
-                        <div className="h-48 bg-gray-100 relative">
-                          {video.thumbnail_url ? (
-                            <img
-                              src={video.thumbnail_url || "/placeholder.svg"}
-                              alt={video.title}
-                              className="w-full h-full object-cover"
+                          <Legend />
+                          {activeMetric === "views" && (
+                            <Line
+                              type="monotone"
+                              dataKey="views"
+                              stroke="#3b82f6"
+                              activeDot={{ r: 8 }}
+                              name="Lượt xem"
+                              strokeWidth={2}
                             />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                              <span className="text-gray-400">No thumbnail</span>
-                            </div>
                           )}
-                          <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
+                          {activeMetric === "likes" && (
+                            <Line
+                              type="monotone"
+                              dataKey="likes"
+                              stroke="#ec4899"
+                              activeDot={{ r: 8 }}
+                              name="Lượt thích"
+                              strokeWidth={2}
+                            />
+                          )}
+                          {activeMetric === "comments" && (
+                            <Line
+                              type="monotone"
+                              dataKey="comments"
+                              stroke="#22c55e"
+                              activeDot={{ r: 8 }}
+                              name="Bình luận"
+                              strokeWidth={2}
+                            />
+                          )}
+                          {activeMetric === "shares" && (
+                            <Line
+                              type="monotone"
+                              dataKey="shares"
+                              stroke="#f97316"
+                              activeDot={{ r: 8 }}
+                              name="Chia sẻ"
+                              strokeWidth={2}
+                            />
+                          )}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-full flex items-center justify-center">
+                        <p className="text-muted-foreground">Không có dữ liệu cho khoảng thời gian đã chọn</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="table">
+              {/* Video List */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Chi tiết Video</CardTitle>
+                  <CardDescription>Nhấp vào tiêu đề cột để sắp xếp</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-6 flex flex-wrap gap-4 items-center">
+                    <div>
+                      <label className="mr-2 font-medium flex items-center">
+                        <Filter className="mr-1 h-4 w-4" /> Sắp xếp theo:
+                      </label>
+                      <select
+                        className="border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value as any)}
+                      >
+                        <option value="date">Ngày đăng</option>
+                        <option value="views">Lượt xem</option>
+                        <option value="likes">Lượt thích</option>
+                        <option value="comments">Bình luận</option>
+                        <option value="shares">Chia sẻ</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mr-2 font-medium flex items-center">
+                        <ChevronDown className="mr-1 h-4 w-4" /> Thứ tự:
+                      </label>
+                      <select
+                        className="border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        value={sortOrder}
+                        onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
+                      >
+                        <option value="desc">Cao nhất trước</option>
+                        <option value="asc">Thấp nhất trước</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-muted/50">
+                          <th className="p-3 text-left">Video</th>
+                          <th className="p-3 text-left">Ngày đăng</th>
+                          <th className="p-3 text-right">Lượt xem</th>
+                          <th className="p-3 text-right">Lượt thích</th>
+                          <th className="p-3 text-right">Bình luận</th>
+                          <th className="p-3 text-right">Chia sẻ</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredVideos.length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="p-4 text-center text-muted-foreground">
+                              Không có dữ liệu video nào trong khoảng thời gian đã chọn
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredVideos.map((video) => (
+                            <tr key={video.id} className="border-b hover:bg-muted/30">
+                              <td className="p-3">
+                                <div className="flex items-center space-x-3">
+                                  <div className="relative w-16 h-9 overflow-hidden rounded">
+                                    {video.thumbnail_url ? (
+                                      <img
+                                        src={video.thumbnail_url || "/placeholder.svg"}
+                                        alt={video.title}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                                        <span className="text-xs text-gray-500">No thumbnail</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <a
+                                    href={video.permalink_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-medium text-primary hover:underline line-clamp-2"
+                                  >
+                                    {video.title}
+                                  </a>
+                                </div>
+                              </td>
+                              <td className="p-3 text-sm">
+                                {new Date(video.created_time).toLocaleDateString("vi-VN", {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                })}
+                              </td>
+                              <td className="p-3 text-right">{video.views.toLocaleString("vi-VN")}</td>
+                              <td className="p-3 text-right">{video.likes.toLocaleString("vi-VN")}</td>
+                              <td className="p-3 text-right">{video.comments.toLocaleString("vi-VN")}</td>
+                              <td className="p-3 text-right">{video.shares.toLocaleString("vi-VN")}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="cards">
+              {/* Video Cards */}
+              <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+                {filteredVideos.length === 0 ? (
+                  <div className="col-span-full text-center p-8 text-muted-foreground">
+                    Không có video nào trong khoảng thời gian đã chọn
+                  </div>
+                ) : (
+                  filteredVideos.map((video) => (
+                    <Card key={video.id} className="overflow-hidden hover:shadow-md transition">
+                      <div className="h-48 bg-gray-100 relative">
+                        {video.thumbnail_url ? (
+                          <img
+                            src={video.thumbnail_url || "/placeholder.svg"}
+                            alt={video.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                            <span className="text-gray-400">No thumbnail</span>
+                          </div>
+                        )}
+                        <div className="absolute bottom-2 right-2">
+                          <Badge variant="secondary" className="bg-black/70 text-white">
                             {formatDuration(video.duration)}
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <h3 className="font-semibold text-lg mb-2 line-clamp-2">{video.title}</h3>
-                          <p className="text-gray-600 text-sm mb-3 line-clamp-2">{video.description}</p>
-
-                          <div className="grid grid-cols-2 gap-2 mb-3">
-                            <div className="flex items-center">
-                              <Eye className="h-4 w-4 text-blue-500 mr-1" />
-                              <span>{video.views.toLocaleString()}</span>
-                            </div>
-                            <div className="flex items-center">
-                              <ThumbsUp className="h-4 w-4 text-red-500 mr-1" />
-                              <span>{video.likes.toLocaleString()}</span>
-                            </div>
-                            <div className="flex items-center">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4 text-green-500 mr-1"
-                                viewBox="0 0 20 20"
-                                fill="currentColor"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                              <span>{video.comments.toLocaleString()}</span>
-                            </div>
-                            <div className="flex items-center">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4 text-blue-500 mr-1"
-                                viewBox="0 0 20 20"
-                                fill="currentColor"
-                              >
-                                <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
-                              </svg>
-                              <span>{video.shares.toLocaleString()}</span>
-                            </div>
-                          </div>
-
-                          <div className="flex justify-between items-center">
-                            <p className="text-xs text-gray-500">
-                              {new Date(video.created_time).toLocaleDateString(undefined, {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              })}
-                            </p>
-                            <a
-                              href={video.permalink_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-blue-600 hover:text-blue-800"
-                            >
-                              View on Facebook
-                            </a>
-                          </div>
+                          </Badge>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </>
-          )}
+                      <CardContent className="p-4">
+                        <h3 className="font-semibold text-lg mb-2 line-clamp-2">{video.title}</h3>
+                        <p className="text-muted-foreground text-sm mb-3 line-clamp-2">{video.description}</p>
+
+                        <div className="grid grid-cols-2 gap-2 mb-3">
+                          <div className="flex items-center">
+                            <Eye className="h-4 w-4 text-blue-500 mr-1" />
+                            <span>{video.views.toLocaleString()}</span>
+                          </div>
+                          <div className="flex items-center">
+                            <ThumbsUp className="h-4 w-4 text-pink-500 mr-1" />
+                            <span>{video.likes.toLocaleString()}</span>
+                          </div>
+                          <div className="flex items-center">
+                            <MessageCircle className="h-4 w-4 text-green-500 mr-1" />
+                            <span>{video.comments.toLocaleString()}</span>
+                          </div>
+                          <div className="flex items-center">
+                            <Share2 className="h-4 w-4 text-orange-500 mr-1" />
+                            <span>{video.shares.toLocaleString()}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-between items-center">
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(video.created_time).toLocaleDateString("vi-VN", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </p>
+                          <a
+                            href={video.permalink_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 hover:text-blue-800"
+                          >
+                            Xem trên Facebook
+                          </a>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
         </>
       )}
     </div>

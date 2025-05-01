@@ -357,12 +357,12 @@ const HomePage: React.FC = () => {
           )}
         </div>
         <FacebookUploader />
-        <button
+        {/* <button
           onClick={() => navigate("/facebook-stats")}
           className="bg-blue-500 text-white px-4 py-2 rounded"
         >
           Xem thống kê Facebook Page
-        </button>
+        </button> */}
       </div>
 
       {/* Workspace Section */}
