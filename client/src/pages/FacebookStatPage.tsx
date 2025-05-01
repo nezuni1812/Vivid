@@ -391,48 +391,50 @@ const FacebookStatsPage = () => {
     sort: "date" | "views" | "likes" | "comments" | "shares",
     order: "asc" | "desc",
   ) => {
-    // Filter by time range
-    const cutoffDate = new Date()
-    cutoffDate.setDate(cutoffDate.getDate() - range.days)
-
+    // Filter by time range for displayed videos (filteredVideos)
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - range.days);
+  
     const filtered =
-      range.days === 3650 ? [...videoList] : videoList.filter((video) => new Date(video.created_time) >= cutoffDate)
-
-    // Sort the videos
+      range.days === 3650
+        ? [...videoList]
+        : videoList.filter((video) => new Date(video.created_time) >= cutoffDate);
+  
+    // Sort the filtered videos
     filtered.sort((a, b) => {
-      let comparison = 0
-
+      let comparison = 0;
+  
       if (sort === "date") {
-        comparison = new Date(a.created_time).getTime() - new Date(b.created_time).getTime()
+        comparison = new Date(a.created_time).getTime() - new Date(b.created_time).getTime();
       } else if (sort === "views") {
-        comparison = a.views - b.views
+        comparison = a.views - b.views;
       } else if (sort === "likes") {
-        comparison = a.likes - b.likes
+        comparison = a.likes - b.likes;
       } else if (sort === "comments") {
-        comparison = a.comments - b.comments
+        comparison = a.comments - b.comments;
       } else if (sort === "shares") {
-        comparison = a.shares - b.shares
+        comparison = a.shares - b.shares;
       }
-
-      return order === "asc" ? comparison : -comparison
-    })
-
-    setFilteredVideos(filtered)
-
-    // Calculate statistics
-    const total_views = filtered.reduce((sum, video) => sum + video.views, 0)
-    const total_likes = filtered.reduce((sum, video) => sum + video.likes, 0)
-    const total_comments = filtered.reduce((sum, video) => sum + video.comments, 0)
-    const total_shares = filtered.reduce((sum, video) => sum + video.shares, 0)
-
-    setTotalViews(total_views)
-    setTotalLikes(total_likes)
-    setTotalComments(total_comments)
-    setTotalShares(total_shares)
-
-    // Prepare chart data
-    prepareChartData(filtered, range.days)
-  }
+  
+      return order === "asc" ? comparison : -comparison;
+    });
+  
+    setFilteredVideos(filtered);
+  
+    // Calculate total statistics from ALL videos (not filtered by time range)
+    const total_views = videoList.reduce((sum, video) => sum + video.views, 0);
+    const total_likes = videoList.reduce((sum, video) => sum + video.likes, 0);
+    const total_comments = videoList.reduce((sum, video) => sum + video.comments, 0);
+    const total_shares = videoList.reduce((sum, video) => sum + video.shares, 0);
+  
+    setTotalViews(total_views);
+    setTotalLikes(total_likes);
+    setTotalComments(total_comments);
+    setTotalShares(total_shares);
+  
+    // Prepare chart data based on filtered videos (still respects time range)
+    prepareChartData(filtered, range.days);
+  };
 
   const prepareChartData = (videos: VideoInsight[], days: number) => {
     // Create a date range for the chart
@@ -482,9 +484,9 @@ const FacebookStatsPage = () => {
 
   useEffect(() => {
     if (videos.length > 0) {
-      applyFiltersAndSort(videos, timeRange, sortBy, sortOrder)
+      applyFiltersAndSort(videos, timeRange, sortBy, sortOrder);
     }
-  }, [timeRange, sortBy, sortOrder])
+  }, [timeRange, sortBy, sortOrder]);
 
   const formatDuration = (seconds: number) => {
     if (!seconds) return "00:00"
@@ -632,48 +634,6 @@ const FacebookStatsPage = () => {
         </Card>
       ) : (
         <>
-          
-
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Khoảng thời gian</h2>
-              <div className="flex gap-2">
-                <Button
-                  variant={timeRange.days === 7 ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setTimeRange({ label: "Last 7 days", days: 7 })}
-                  className={timeRange.days === 7 ? "bg-blue-500 hover:bg-blue-600" : ""}
-                >
-                  7 ngày
-                </Button>
-                <Button
-                  variant={timeRange.days === 30 ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setTimeRange({ label: "Last 30 days", days: 30 })}
-                  className={timeRange.days === 30 ? "bg-blue-500 hover:bg-blue-600" : ""}
-                >
-                  30 ngày
-                </Button>
-                <Button
-                  variant={timeRange.days === 90 ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setTimeRange({ label: "Last 90 days", days: 90 })}
-                  className={timeRange.days === 90 ? "bg-blue-500 hover:bg-blue-600" : ""}
-                >
-                  90 ngày
-                </Button>
-                <Button
-                  variant={timeRange.days === 3650 ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setTimeRange({ label: "All time", days: 3650 })}
-                  className={timeRange.days === 3650 ? "bg-blue-500 hover:bg-blue-600" : ""}
-                >
-                  Tất cả
-                </Button>
-              </div>
-            </div>
-          </div>
-
           {/* Summary Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
             <Card className="bg-blue-50 border-blue-100">
@@ -731,6 +691,46 @@ const FacebookStatsPage = () => {
                 </div>
               </CardContent>
             </Card>
+          </div>
+
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Khoảng thời gian</h2>
+              <div className="flex gap-2">
+                <Button
+                  variant={timeRange.days === 7 ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTimeRange({ label: "Last 7 days", days: 7 })}
+                  className={timeRange.days === 7 ? "bg-blue-500 hover:bg-blue-600" : ""}
+                >
+                  7 ngày
+                </Button>
+                <Button
+                  variant={timeRange.days === 30 ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTimeRange({ label: "Last 30 days", days: 30 })}
+                  className={timeRange.days === 30 ? "bg-blue-500 hover:bg-blue-600" : ""}
+                >
+                  30 ngày
+                </Button>
+                <Button
+                  variant={timeRange.days === 90 ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTimeRange({ label: "Last 90 days", days: 90 })}
+                  className={timeRange.days === 90 ? "bg-blue-500 hover:bg-blue-600" : ""}
+                >
+                  90 ngày
+                </Button>
+                <Button
+                  variant={timeRange.days === 3650 ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTimeRange({ label: "All time", days: 3650 })}
+                  className={timeRange.days === 3650 ? "bg-blue-500 hover:bg-blue-600" : ""}
+                >
+                  Tất cả
+                </Button>
+              </div>
+            </div>
           </div>
 
           <Tabs defaultValue="charts" className="mb-8">
