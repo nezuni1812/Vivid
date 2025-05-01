@@ -366,7 +366,7 @@ const TikTokStats = () => {
 
         <div className="flex flex-wrap gap-2">
           <Link to="/tiktok-upload">
-            <Button className="flex items-center gap-2">
+            <Button className="flex items-center gap-2 bg-black hover:bg-gray-800">
               <Upload className="h-4 w-4" />
               Tải lên Video Mới
             </Button>
@@ -387,6 +387,65 @@ const TikTokStats = () => {
         </Alert>
       )}
 
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <Card className="bg-purple-50 border-purple-100">
+          <CardContent className="p-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm text-muted-foreground">Tổng Video</p>
+                <p className="text-2xl font-bold">{totalVideos}</p>
+              </div>
+              <div className="bg-purple-100 p-2 rounded-full">
+                <TrendingUp className="h-5 w-5 text-purple-500" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-blue-50 border-blue-100">
+          <CardContent className="p-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm text-muted-foreground">Tổng Lượt Xem</p>
+                <p className="text-2xl font-bold">{totalViews.toLocaleString("vi-VN")}</p>
+              </div>
+              <div className="bg-blue-100 p-2 rounded-full">
+                <Eye className="h-5 w-5 text-blue-500" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-pink-50 border-pink-100">
+          <CardContent className="p-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm text-muted-foreground">Tổng Lượt Thích</p>
+                <p className="text-2xl font-bold">{totalLikes.toLocaleString("vi-VN")}</p>
+              </div>
+              <div className="bg-pink-100 p-2 rounded-full">
+                <Heart className="h-5 w-5 text-pink-500" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-green-50 border-green-100">
+          <CardContent className="p-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm text-muted-foreground">Tỷ lệ Tương tác</p>
+                <p className="text-2xl font-bold">{avgEngagementRate}%</p>
+              </div>
+              <div className="bg-green-100 p-2 rounded-full">
+                <MessageCircle className="h-5 w-5 text-green-500" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="mb-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">Khoảng thời gian</h2>
@@ -395,6 +454,7 @@ const TikTokStats = () => {
               variant={timeRange === "7days" ? "default" : "outline"}
               size="sm"
               onClick={() => setTimeRange("7days")}
+              className={timeRange === "7days" ? "bg-black hover:bg-gray-800" : ""}
             >
               7 ngày
             </Button>
@@ -402,6 +462,7 @@ const TikTokStats = () => {
               variant={timeRange === "30days" ? "default" : "outline"}
               size="sm"
               onClick={() => setTimeRange("30days")}
+              className={timeRange === "30days" ? "bg-black hover:bg-gray-800" : ""}
             >
               30 ngày
             </Button>
@@ -409,73 +470,20 @@ const TikTokStats = () => {
               variant={timeRange === "90days" ? "default" : "outline"}
               size="sm"
               onClick={() => setTimeRange("90days")}
+              className={timeRange === "90days" ? "bg-black hover:bg-gray-800" : ""}
             >
               90 ngày
             </Button>
-            <Button variant={timeRange === "all" ? "default" : "outline"} size="sm" onClick={() => setTimeRange("all")}>
+            <Button
+              variant={timeRange === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setTimeRange("all")}
+              className={timeRange === "all" ? "bg-black hover:bg-gray-800" : ""}
+            >
               Tất cả
             </Button>
           </div>
         </div>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm text-muted-foreground">Tổng Video</p>
-                <p className="text-2xl font-bold">{totalVideos}</p>
-              </div>
-              <div className="bg-primary/10 p-2 rounded-full">
-                <TrendingUp className="h-5 w-5 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm text-muted-foreground">Tổng Lượt Xem</p>
-                <p className="text-2xl font-bold">{totalViews.toLocaleString("vi-VN")}</p>
-              </div>
-              <div className="bg-blue-100 p-2 rounded-full">
-                <Eye className="h-5 w-5 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm text-muted-foreground">Tổng Lượt Thích</p>
-                <p className="text-2xl font-bold">{totalLikes.toLocaleString("vi-VN")}</p>
-              </div>
-              <div className="bg-red-100 p-2 rounded-full">
-                <Heart className="h-5 w-5 text-red-500" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm text-muted-foreground">Tỷ lệ Tương tác</p>
-                <p className="text-2xl font-bold">{avgEngagementRate}%</p>
-              </div>
-              <div className="bg-green-100 p-2 rounded-full">
-                <MessageCircle className="h-5 w-5 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {userInfo && topVideo && (
@@ -544,7 +552,9 @@ const TikTokStats = () => {
                       rel="noopener noreferrer"
                       className="inline-block"
                     >
-                      <Button variant="outline">Xem trên TikTok</Button>
+                      <Button variant="outline" className="bg-black text-white hover:bg-gray-800 border-none">
+                        Xem trên TikTok
+                      </Button>
                     </a>
                   </div>
                 </div>
@@ -576,7 +586,7 @@ const TikTokStats = () => {
                     <XAxis dataKey="name" />
                     <YAxis />
                     <Tooltip />
-                    <Bar dataKey="views" fill="#4791FF" />
+                    <Bar dataKey="views" fill="#000000" />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -626,7 +636,7 @@ const TikTokStats = () => {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="views" stroke="#4791FF" activeDot={{ r: 8 }} />
+                  <Line type="monotone" dataKey="views" stroke="#000000" activeDot={{ r: 8 }} />
                   <Line type="monotone" dataKey="likes" stroke="#FF6B8A" />
                   <Line type="monotone" dataKey="comments" stroke="#41D87D" />
                 </LineChart>
@@ -745,7 +755,10 @@ const TikTokStats = () => {
                           <td className="p-3 text-right">{video.commentCount.toLocaleString("vi-VN")}</td>
                           <td className="p-3 text-right">{video.shareCount.toLocaleString("vi-VN")}</td>
                           <td className="p-3 text-right">
-                            <Badge variant={video.engagementRate > 5 ? "default" : "secondary"}>
+                            <Badge
+                              variant={video.engagementRate > 5 ? "default" : "secondary"}
+                              className={video.engagementRate > 5 ? "bg-black" : ""}
+                            >
                               {video.engagementRate?.toFixed(2)}%
                             </Badge>
                           </td>
@@ -861,7 +874,12 @@ const TikTokStats = () => {
 
                           <div className="pt-2">
                             <p className="text-sm text-muted-foreground">Tỷ lệ tương tác</p>
-                            <Progress value={Math.min(video.engagementRate || 0, 100)} className="h-2 mt-1" />
+                            <Progress value={Math.min(video.engagementRate || 0, 100)} className="h-2 mt-1 bg-gray-200">
+                              <div
+                                className="h-full bg-black"
+                                style={{ width: `${Math.min(video.engagementRate || 0, 100)}%` }}
+                              ></div>
+                            </Progress>
                             <p className="text-right text-sm font-medium mt-1">{video.engagementRate?.toFixed(2)}%</p>
                           </div>
                         </div>
