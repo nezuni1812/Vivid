@@ -33,7 +33,7 @@ export default function ScriptGenerator({workspace_id}:{workspace_id:string}) {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [language, setLanguage] = useState("vietnamese")
-  const [wordCount, setWordCount] = useState<number>(500)
+  const [wordCount, setWordCount] = useState<number>(100)
   const { workspaceId, scriptId, setScriptId } = useWorkspace();
 
 
@@ -254,7 +254,7 @@ export default function ScriptGenerator({workspace_id}:{workspace_id:string}) {
             type="number"
             min={100}
             value={wordCount}
-            onChange={(e) => setWordCount(Number.parseInt(e.target.value) || 500)}
+            onChange={(e) => setWordCount(Number.parseInt(e.target.value) || 100)}
             className="flex-1"
           />
           <span className="text-sm text-gray-500">từ</span>
