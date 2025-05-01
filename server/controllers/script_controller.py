@@ -105,3 +105,21 @@ class ScriptController:
             return {"script_id": str(script.id), "message": "Script created successfully"}, 201
         except Exception as e:
             return {"error": str(e)}, 500
+        
+    @staticmethod
+    def get_scripts_by_workspace(workspace_id):
+        workspace = Workspace.objects(id=workspace_id).first()
+        if not workspace:
+            raise Exception("Workspace not found")
+    
+        scripts = Script.objects(workspace_id=workspace).order_by('-created_at')
+
+        return [
+            {
+                "id": str(script.id),
+                "title": script.title,
+                "source_content": script.source_content,
+                "created_at": script.created_at.isoformat(),
+            }
+            for script in scripts
+        ]

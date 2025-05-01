@@ -172,3 +172,13 @@ def complete_script(script_id):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@script_bp.route("/scripts", methods=["GET"])
+def get_scripts_by_workspace():
+    workspace_id = request.args.get("workspace_id")
+
+    try:
+        scripts = ScriptController.get_scripts_by_workspace(workspace_id)
+        return jsonify(scripts), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400

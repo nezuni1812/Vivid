@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import {
@@ -35,7 +35,7 @@ const steps = [
 
 export default function CreateVideo() {
   const navigate = useNavigate();
-  const [activeStep, setActiveStep] = useState<string>("generate");
+  const [activeStep, setActiveStep] = useState<string>(""); // "content": create video, "generate": script + resource, "edit": editor
 
   const scriptRef = useRef<HTMLDivElement>(null);
   const voiceRef = useRef<HTMLDivElement>(null);
@@ -44,12 +44,48 @@ export default function CreateVideo() {
 
   const { scriptId, workspaceId } = useWorkspace(); // Get scriptId from context
   const { id: workspace_id } = useParams();
-
   const scrollToSection = (ref: React.RefObject<HTMLDivElement | null>) => {
     if (ref.current) {
       ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
+
+  useEffect(() => {
+    // Lấy danh sách các scripts thuộc về workspace_id
+    const fetchScripts = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:5000/scripts?workspace_id=${workspace_id}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch scripts");
+        }
+
+        const scripts = await response.json();
+        console.log("Fetched scripts:", scripts);
+
+        if (scripts.length > 0) {
+          setActiveStep("generate");
+        } else {
+          setActiveStep("content");
+        }
+      } catch (error) {
+        console.error("Error fetching scripts:", error);
+        setActiveStep("content"); // fallback, default to "content"
+      }
+    };
+
+    if (workspaceId) {
+      fetchScripts();
+    }
+  }, [workspaceId]);
 
   return (
     <>
