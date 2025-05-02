@@ -97,7 +97,7 @@ export default function CreateVideo() {
                 variant="outline"
                 size="icon"
                 className="mr-2"
-                onClick={() => navigate("/")}
+                onClick={() => navigate("/homepage")}
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -137,18 +137,6 @@ export default function CreateVideo() {
                     onClick={() => scrollToSection(voiceRef)}
                   >
                     Giọng nói
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => scrollToSection(imagesRef)}
-                  >
-                    Hình ảnh
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => scrollToSection(editorRef)}
-                  >
-                    Chỉnh sửa
                   </Button>
                 </div>
 
