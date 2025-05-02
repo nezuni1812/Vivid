@@ -14,6 +14,7 @@ import VideoEditor from "../components/video-editor"
 import PublishOptions from "../components/publish-options"
 import { useNavigate } from "react-router-dom"
 import { useWorkspace } from "../context/WorkspaceContext";
+import PublishOptionsDialog from "../components/publish-options-dialog"
 
 const steps = [
   { id: "content", label: "Nội dung" },
@@ -40,6 +41,7 @@ export default function CreateVideo() {
   return (
     <main className="max-w-[45rem] container mx-auto py-6 px-4 md:px-6">
       <div className="flex justify-between items-center mb-6">
+      <PublishOptionsDialog />
         <div className="flex items-center">
           <Button
             variant="outline"

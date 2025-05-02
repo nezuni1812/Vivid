@@ -12,9 +12,9 @@ const TikTokCallback: React.FC = () => {
     if (accessToken) {
       console.log('Access token received:', accessToken);
       localStorage.setItem('tiktok_access_token', accessToken);
-      window.location.href = '/tiktok-stats';
+      window.location.href = '/homepage';
     } else if (error) {
-      window.location.href = '/tiktok-login?error=' + encodeURIComponent(error);
+      window.location.href = '/homepage?error=' + encodeURIComponent(error);
     }
   }, [location]);
 

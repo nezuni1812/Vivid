@@ -133,7 +133,7 @@ export function LanguageSelect({ value, onChange }: LanguageSelectProps) {
                 <CommandEmpty>Không tìm thấy ngôn ngữ.</CommandEmpty>
                 <CommandGroup className="max-h-[300px] overflow-auto">
                   {languages.map((language) => (
-                    <CommandItem key={language.value} value={language.value} onSelect={handleSelect}>
+                    <CommandItem key={language.value} value={language.label} onSelect={handleSelect}>
                       <Check
                         className={cn(
                           "mr-2 h-4 w-4",

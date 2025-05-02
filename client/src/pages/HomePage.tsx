@@ -23,6 +23,8 @@ import { Textarea } from "../components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { useAuth } from "../context/AuthContext";
 import FacebookUploader from "../components/facebook-upload";
+import TikTokLogin from "../pages/TikTokLogin";
+
 import {
   AllContent,
   CreatedContent,
@@ -363,6 +365,7 @@ const HomePage: React.FC = () => {
         >
           Xem thống kê Facebook Page
         </button> */}
+        <TikTokLogin/>
       </div>
 
       {/* Workspace Section */}
