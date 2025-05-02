@@ -355,7 +355,7 @@ export default function PublishOptions({
       fetchTikTokUserInfo();
     }
     if (accessToken) {
-      console.log("Fetching YouTube user info with access token:", accessToken);
+      // console.log("Fetching YouTube user info with access token:", accessToken);
       fetchYouTubeUserInfo();
     }
   }, [tiktokAccessToken, accessToken]);
@@ -598,11 +598,56 @@ export default function PublishOptions({
     }
   };
 
-  // TikTok Upload Logic
+  // Thêm hàm fetchTikTokVideoList để truy vấn danh sách video
+  const fetchTikTokVideoList = async () => {
+    if (!tiktokAccessToken) {
+      setError("Không tìm thấy access token TikTok. Vui lòng đăng nhập.");
+      return null;
+    }
+
+    try {
+      const fields = ["id", "create_time", "title", "video_description", "share_url"].join(",");
+      const response = await fetch(
+        `https://open.tiktokapis.com/v2/video/list/?fields=${encodeURIComponent(fields)}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${tiktokAccessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            max_count: 1,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`API error: ${errorData.error?.message || response.statusText}`);
+      }
+
+      const data = await response.json();
+      if (data.data && data.data.videos) {
+        return data.data.videos[0];
+      } else {
+        setError("Không thể lấy danh sách video TikTok.");
+        return null;
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Lỗi khi lấy danh sách video TikTok."
+      );
+      return null;
+    }
+  };
+
   const uploadToTikTok = async () => {
     setIsTiktokLoading(true);
     if (!tiktokAccessToken) {
       alert("Please login to TikTok first.");
+      setIsTiktokLoading(false);
       return;
     }
 
@@ -619,7 +664,7 @@ export default function PublishOptions({
     formData.append("video_url", VideoLink);
 
     try {
-      const response = await fetch("http://localhost:5000/upload-video/", {
+      const response = await fetch("http://localhost:5000/upload-tiktok-video/", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${tiktokAccessToken}`,
@@ -629,13 +674,22 @@ export default function PublishOptions({
 
       const data = await response.json();
       if (data.success) {
-        alert("Tải lên TikTok thành công! " + data.message);
-        // console.log(data)
-        // savePublishedData("Tiktok", data.publish_id, data.url, tiktok.title, tiktok.description);
+        const latestVideo = await fetchTikTokVideoList();
+        if (latestVideo) {
+          // console.log("Video vừa đăng:", latestVideo);
+          const tiktokVideoUrl = `https://www.tiktok.com/@${tiktokUserInfo?.username}/video/${latestVideo.id}`;
+          await savePublishedData("Tiktok",
+            latestVideo.id,
+            tiktokVideoUrl,
+            tiktok.title,
+            tiktok.description
+          );
+          alert("Tải lên TikTok thành công! Link video: " + tiktokVideoUrl);
+        } else {
+          console.warn("Không thể lấy thông tin video vừa đăng.");
+        }
       } else {
-        alert(
-          "Tải lên TikTok thất bại: " + (data.error || "Lỗi không xác định")
-        );
+        alert("Tải lên TikTok thất bại: " + (data.error || "Lỗi không xác định"));
       }
     } catch (err) {
       alert("Lỗi khi tải lên TikTok: " + (err as Error).message);

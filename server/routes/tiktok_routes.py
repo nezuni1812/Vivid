@@ -29,9 +29,10 @@ CORS_ORIGIN = os.getenv("CORS_ORIGIN", "http://localhost:5173")
 UPLOAD_CONTENT_API_URL = "https://open.tiktokapis.com/v2/post/publish/inbox/video/init/"
 DIRECT_POST_API_URL = "https://open.tiktokapis.com/v2/post/publish/video/init/"
 STATUS_API_URL = "https://open.tiktokapis.com/v2/post/publish/status/fetch/"
+VIDEO_LIST_API_URL = "https://open.tiktokapis.com/v2/video/list/"
+USER_INFO_API_URL = "https://open.tiktokapis.com/v2/user/info/"
 
 def validate_redirect_uri(uri):
-    import re
     pattern = r'^(http|https)://(localhost|127\.0\.0\.1)(:\d+|\:\*)/[a-zA-Z0-9/]*$'
     if not re.match(pattern, uri):
         raise ValueError("Invalid redirect URI")
@@ -57,6 +58,66 @@ def count_utf16_runes(text):
     # Encode to UTF-16 and count code units (2 bytes per unit, including surrogates)
     encoded = text.encode('utf-16-le')
     return len(encoded) // 2
+
+# def get_newest_video_id(access_token):
+#     """Retrieve the ID and username for the most recently created video."""
+#     try:
+#         headers = {
+#             "Authorization": f"Bearer {access_token}",
+#             "Content-Type": "application/json"
+#         }
+
+#         # Get user info to retrieve username
+#         user_response = requests.get(
+#             USER_INFO_API_URL,
+#             headers=headers,
+#             params={"fields": "open_id,union_id,avatar_url,display_name,username"}
+#         )
+#         user_response.raise_for_status()
+#         user_data = user_response.json()
+#         if user_data.get("error", {}).get("code") != "ok":
+#             logger.error(f"Failed to fetch user info: {user_data.get('error')}")
+#             return None, None
+
+#         username = user_data.get("data", {}).get("user", {}).get("username")
+#         if not username:
+#             logger.error("No username found in user info response")
+#             return None, None
+
+#         # Get video list
+#         payload = {
+#             "filters": {
+#                 "video_ids": []
+#             },
+#             "fields": ["id", "create_time"],
+#             "cursor": 0,
+#             "max_count": 20
+#         }
+#         video_response = requests.post(VIDEO_LIST_API_URL, headers=headers, json=payload)
+#         video_response.raise_for_status()
+#         video_data = video_response.json()
+#         if video_data.get("error", {}).get("code") != "ok":
+#             logger.error(f"Failed to fetch video list: {video_data.get('error')}")
+#             return None, None
+
+#         videos = video_data.get("data", {}).get("videos", [])
+#         if not videos:
+#             logger.info("No videos found for the user")
+#             return None, username
+
+#         # Find video with the latest create_time
+#         newest_video = max(videos, key=lambda x: x.get("create_time", 0), default=None)
+#         video_id = newest_video.get("id") if newest_video else None
+
+#         logger.info(f"Newest video ID: {video_id}, Username: {username}")
+#         return video_id, username
+
+#     except requests.RequestException as e:
+#         logger.error(f"Error fetching newest video ID: {str(e)}")
+#         return None, None
+#     except Exception as e:
+#         logger.error(f"Unexpected error in get_newest_video_id: {str(e)}")
+#         return None, None
 
 @tiktok_bp.route("/auth/init/", methods=["GET", "OPTIONS"])
 @cross_origin(origins=["http://localhost:5173"], methods=["GET", "OPTIONS"], allow_headers=["Content-Type"], supports_credentials=True)
@@ -159,7 +220,7 @@ def callback():
         logger.error("Failed to get access token")
         return redirect(f"{CORS_ORIGIN}/tiktok-callback?error=failed_to_obtain_access_token")
 
-@tiktok_bp.route("/upload-video/", methods=["POST", "OPTIONS"])
+@tiktok_bp.route("/upload-tiktok-video/", methods=["POST", "OPTIONS"])
 @cross_origin(origins=["http://localhost:5173"], methods=["POST", "OPTIONS"], allow_headers=["Content-Type", "Authorization"], supports_credentials=True)
 def upload_video():
     if request.method == "OPTIONS":
@@ -348,12 +409,23 @@ def upload_video():
         )
         logger.info(notification_message)
 
-        return jsonify({
+        # Get newest video ID and username
+        # video_id, username = get_newest_video_id(access_token)
+        # video_link = None
+        # if video_id and username and status == "PUBLISH_COMPLETE":
+        #     video_link = f"https://www.tiktok.com/@{username}/video/{video_id}"
+        #     logger.info(f"Generated video link: {video_link}")
+
+        response_data = {
             "success": True,
             "publish_id": publish_id,
             "message": notification_message,
             "status": status
-        }), 200
+        }
+        # if video_link:
+        #     response_data["video_link"] = video_link
+
+        return jsonify(response_data), 200
 
     except requests.RequestException as e:
         logger.error(f"API error: {str(e)}, Response: {response.text if 'response' in locals() else 'No response'}")
