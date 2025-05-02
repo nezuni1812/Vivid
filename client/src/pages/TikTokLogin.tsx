@@ -16,8 +16,17 @@ export default function TikTokLogin() {
     const error = searchParams.get("error");
     const error_type = searchParams.get("error_type");
     const access_token = searchParams.get("access_token");
-
+  
     console.log("TikTokLogin params:", { error, error_type, access_token });
+  
+    if (window.opener) {
+      window.opener.postMessage(
+        { accessToken: access_token, error, error_type },
+        window.location.origin
+      );
+      window.close(); 
+      return;
+    }
 
     if (error) {
       console.error("TikTok OAuth error:", { error, error_type });
@@ -43,28 +52,28 @@ export default function TikTokLogin() {
       if (!auth_url) {
         throw new Error("Không nhận được auth URL");
       }
-      console.log("Redirecting to TikTok auth:", auth_url);
-      window.location.href = auth_url;
+  
+      console.log("Redirecting to TikTok auth in popup:", auth_url);
+      const popup = window.open(
+        auth_url,
+        'TikTokAuthPopup',
+        'width=600,height=600,scrollbars=no'
+      );
+  
+      if (!popup) {
+        alert("Trình duyệt đã chặn cửa sổ popup. Vui lòng cho phép để tiếp tục.");
+      }
     } catch (error) {
-
+      console.error("Login error:", error);
     } finally {
       setIsLoading(false);
     }
   };
-
+  
   return (
-    <div className="max-w-[45rem] mx-auto p-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Đăng nhập với TikTok</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Button onClick={handleLogin} disabled={isLoading} className="bg-blue-600 hover:bg-blue-700">
-            {isLoading ? "Đang xử lý..." : "Đăng nhập TikTok"}
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
+    <Button onClick={handleLogin} disabled={isLoading} className="w-full bg-black hover:bg-slate-700">
+      {isLoading ? "Đang xử lý..." : "Đăng nhập TikTok"}
+    </Button>
   );
 }
 // </DOCUMENT>

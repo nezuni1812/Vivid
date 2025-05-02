@@ -365,13 +365,6 @@ const TikTokStats = () => {
         <h1 className="text-2xl font-bold">Thống kê Video TikTok</h1>
 
         <div className="flex flex-wrap gap-2">
-          <Link to="/tiktok-upload">
-            <Button className="flex items-center gap-2 bg-black hover:bg-gray-800">
-              <Upload className="h-4 w-4" />
-              Tải lên Video Mới
-            </Button>
-          </Link>
-
           <Button variant="outline" onClick={handleRefresh} disabled={refreshing} className="flex items-center gap-2">
             <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
             {refreshing ? "Đang tải..." : "Làm mới"}

@@ -39,6 +39,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import TikTokLogin from "../pages/TikTokLogin";
 
 interface FacebookPage {
   id: string;
@@ -142,6 +143,24 @@ export default function PublishOptions({
     script.src = "https://connect.facebook.net/en_US/sdk.js";
     script.async = true;
     document.body.appendChild(script);
+  }, []);
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      const { accessToken, error, error_type } = event.data;
+      if (error) {
+        setError(`Đăng nhập TikTok thất bại: ${error} (${error_type || "Unknown error type"})`);
+        return;
+      }
+      if (accessToken) {
+        localStorage.setItem("tiktok_access_token", accessToken);
+        setTiktokAccessToken(accessToken);
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
   }, []);
 
   useEffect(() => {
@@ -404,7 +423,7 @@ export default function PublishOptions({
     if (tiktokAccessToken) {
       promises.push(uploadToTikTok());
     }
-    if (isSignedIn && accessToken) {
+    if (isSignedIn && accessToken && youtubeUserInfo) {
       promises.push(uploadToYouTube());
     }
 
@@ -422,9 +441,11 @@ export default function PublishOptions({
     setTimeout(() => {
       alert("Video đã được xuất thành công!");
       setIsExporting(false);
-      setVideoLink("https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/clips/What_%20Short%20video%20clip%20designed%20with%20Canva.mp4"); // Thay bằng link thực tế sau  
+      setVideoLink(
+        "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/clips/What_%20Short%20video%20clip%20designed%20with%20Canva.mp4"
+      ); // Thay bằng link thực tế sau
       setActiveTab("publish");
-    }, 1000); 
+    }, 1000);
   };
 
   const handleYouTubeSignIn = async () => {
@@ -489,8 +510,14 @@ export default function PublishOptions({
       return false;
     }
   };
-   // lưu dữ liệu lên MongoDB
-  const savePublishedData: any = async (i_platform: string, i_external_id: string, i_url: string,  i_title: string, i_desc: string) => {
+  // lưu dữ liệu lên MongoDB
+  const savePublishedData: any = async (
+    i_platform: string,
+    i_external_id: string,
+    i_url: string,
+    i_title: string,
+    i_desc: string
+  ) => {
     const publishedData = {
       clip_id: "123456789012345678901234", // Thay bằng id clip thật sự sau
       platform: i_platform,
@@ -501,16 +528,19 @@ export default function PublishOptions({
         description: i_desc,
       }),
     };
-    
+
     try {
-      const saveResponse = await fetch("http://localhost:5000/published-clips", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(publishedData),
-      });
-  
+      const saveResponse = await fetch(
+        "http://localhost:5000/published-clips",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(publishedData),
+        }
+      );
+
       if (!saveResponse.ok) {
         throw new Error("Không thể lưu bài đăng vào cơ sở dữ liệu.");
       }
@@ -519,7 +549,7 @@ export default function PublishOptions({
     } catch (saveError) {
       console.error("Lỗi khi lưu thông tin bài đăng:", saveError);
     }
-  }
+  };
 
   // YouTube Upload Logic
   const uploadToYouTube = async () => {
@@ -581,7 +611,13 @@ export default function PublishOptions({
           "Tải lên YouTube thành công! Link video: " +
             `https://www.youtube.com/watch?v=${data.id}`
         );
-        savePublishedData("Youtube", data.id, `https://www.youtube.com/watch?v=${data.id}`, youtube.title, youtube.description);
+        savePublishedData(
+          "Youtube",
+          data.id,
+          `https://www.youtube.com/watch?v=${data.id}`,
+          youtube.title,
+          youtube.description
+        );
       } else {
         console.error("Upload failed:", data);
         throw new Error(data.error?.message || "Tải lên YouTube thất bại.");
@@ -606,9 +642,17 @@ export default function PublishOptions({
     }
 
     try {
-      const fields = ["id", "create_time", "title", "video_description", "share_url"].join(",");
+      const fields = [
+        "id",
+        "create_time",
+        "title",
+        "video_description",
+        "share_url",
+      ].join(",");
       const response = await fetch(
-        `https://open.tiktokapis.com/v2/video/list/?fields=${encodeURIComponent(fields)}`,
+        `https://open.tiktokapis.com/v2/video/list/?fields=${encodeURIComponent(
+          fields
+        )}`,
         {
           method: "POST",
           headers: {
@@ -623,7 +667,9 @@ export default function PublishOptions({
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(`API error: ${errorData.error?.message || response.statusText}`);
+        throw new Error(
+          `API error: ${errorData.error?.message || response.statusText}`
+        );
       }
 
       const data = await response.json();
@@ -664,13 +710,16 @@ export default function PublishOptions({
     formData.append("video_url", VideoLink);
 
     try {
-      const response = await fetch("http://localhost:5000/upload-tiktok-video/", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${tiktokAccessToken}`,
-        },
-        body: formData,
-      });
+      const response = await fetch(
+        "http://localhost:5000/upload-tiktok-video/",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${tiktokAccessToken}`,
+          },
+          body: formData,
+        }
+      );
 
       const data = await response.json();
       if (data.success) {
@@ -678,7 +727,8 @@ export default function PublishOptions({
         if (latestVideo) {
           // console.log("Video vừa đăng:", latestVideo);
           const tiktokVideoUrl = `https://www.tiktok.com/@${tiktokUserInfo?.username}/video/${latestVideo.id}`;
-          await savePublishedData("Tiktok",
+          await savePublishedData(
+            "Tiktok",
             latestVideo.id,
             tiktokVideoUrl,
             tiktok.title,
@@ -689,7 +739,9 @@ export default function PublishOptions({
           console.warn("Không thể lấy thông tin video vừa đăng.");
         }
       } else {
-        alert("Tải lên TikTok thất bại: " + (data.error || "Lỗi không xác định"));
+        alert(
+          "Tải lên TikTok thất bại: " + (data.error || "Lỗi không xác định")
+        );
       }
     } catch (err) {
       alert("Lỗi khi tải lên TikTok: " + (err as Error).message);
@@ -735,7 +787,13 @@ export default function PublishOptions({
         alert(
           `Đăng video lên Facebook thành công! ID: https://www.facebook.com/${selectedPage.id}/posts/${data.id}`
         );
-        savePublishedData("Facebook", data.id, `https://www.facebook.com/${selectedPage.id}/posts/${data.id}`, facebook.title, facebook.description);
+        savePublishedData(
+          "Facebook",
+          data.id,
+          `https://www.facebook.com/${selectedPage.id}/posts/${data.id}`,
+          facebook.title,
+          facebook.description
+        );
       } else {
         if (data.error?.code === 190 && data.error?.error_subcode === 463) {
           setError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
@@ -833,14 +891,17 @@ export default function PublishOptions({
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Định dạng</label>
-              <Select value={format} onValueChange={(value) => setFormat(value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn định dạng" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="MP4">MP4</SelectItem>
-                <SelectItem value="MOV">MOV</SelectItem>
-              </SelectContent>
+              <Select
+                value={format}
+                onValueChange={(value) => setFormat(value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn định dạng" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="MP4">MP4</SelectItem>
+                  <SelectItem value="MOV">MOV</SelectItem>
+                </SelectContent>
               </Select>
             </div>
 
@@ -866,36 +927,36 @@ export default function PublishOptions({
             <Button
               className="w-full bg-blue-600 hover:bg-blue-700"
               onClick={() => {
-handleExport();
+                handleExport();
               }}
               disabled={isExporting}
             >
               {isExporting ? (
-              <>
-                <svg
-                className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-                </svg>
-                Đang xử lý...
-              </>
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Đang xử lý...
+                </>
               ) : (
-              "Xuất video"
+                "Xuất video"
               )}
             </Button>
           </CardFooter>
@@ -988,184 +1049,234 @@ handleExport();
 
                   {activePlatform === "youtube" && (
                     <div className="space-y-3">
-                      <div className="space-y-2 mb-4">
-                        <label className="text-sm font-medium">Kênh</label>
-                        <div className="flex items-center p-2 bg-gray-100 rounded-md">
-                          {youtubeUserInfo ? (
-                            <>
-                              <img
-                                src={youtubeUserInfo.avatar_url}
-                                alt="Avatar"
-                                className="w-10 h-10 rounded-full mr-3"
-                              />
-                              <span className="text-sm font-medium">
-                                {youtubeUserInfo.username}
-                              </span>
-                            </>
-                          ) : (
-                            <span className="text-sm text-gray-500">
-                              Đăng nhập để xem thông tin kênh
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                          Tiêu đề video
-                        </label>
-                        <Input
-                          placeholder="Nhập tiêu đề video..."
-                          value={youtube.title}
-                          onChange={(e) =>
-                            setYoutube({ ...youtube, title: e.target.value })
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Mô tả</label>
-                        <Textarea
-                          placeholder="Nhập mô tả video..."
-                          value={youtube.description}
-                          onChange={(e) =>
-                            setYoutube({
-                              ...youtube,
-                              description: e.target.value,
-                            })
-                          }
-                          className="min-h-[100px]"
-                        />
-                      </div>
-                      <Button
-                        className="w-full bg-red-600 hover:bg-red-700 mt-4"
-                        onClick={uploadToYouTube}
-                        disabled={isYoutubeLoading}
-                      >
-                        {isYoutubeLoading ? (
-                          <>
-                            <svg
-                              className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
+                      {!youtubeUserInfo ? (
+                        <Card className="p-8 text-center py-20">
+                          <CardHeader>
+                            <CardTitle>Chia sẻ Video lên YouTube</CardTitle>
+                            <CardDescription>
+                              Kết nối tài khoản YouTube để chia sẻ video
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <Button
+                              onClick={handleYouTubeSignIn}
+                              className="w-full bg-red-600 hover:bg-red-700"
                             >
-                              <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                              ></circle>
-                              <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                              ></path>
-                            </svg>
-                            Đang xử lý...
-                          </>
-                        ) : (
-                          "Chia sẻ lên YouTube"
-                        )}
-                      </Button>
+                              Đăng nhập YouTube
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        <>
+                          <div className="space-y-2 mb-4">
+                            <label className="text-sm font-medium">Kênh</label>
+                            <div className="flex items-center p-2 bg-gray-100 rounded-md">
+                              {youtubeUserInfo ? (
+                                <>
+                                  <img
+                                    src={youtubeUserInfo.avatar_url}
+                                    alt="Avatar"
+                                    className="w-10 h-10 rounded-full mr-3"
+                                  />
+                                  <span className="text-sm font-medium">
+                                    {youtubeUserInfo.username}
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="text-sm text-gray-500">
+                                  Đăng nhập để xem thông tin kênh
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">
+                              Tiêu đề video
+                            </label>
+                            <Input
+                              placeholder="Nhập tiêu đề video..."
+                              value={youtube.title}
+                              onChange={(e) =>
+                                setYoutube({
+                                  ...youtube,
+                                  title: e.target.value,
+                                })
+                              }
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Mô tả</label>
+                            <Textarea
+                              placeholder="Nhập mô tả video..."
+                              value={youtube.description}
+                              onChange={(e) =>
+                                setYoutube({
+                                  ...youtube,
+                                  description: e.target.value,
+                                })
+                              }
+                              className="min-h-[100px]"
+                            />
+                          </div>
+                          <Button
+                            className="w-full bg-red-600 hover:bg-red-700 mt-4"
+                            onClick={uploadToYouTube}
+                            disabled={isYoutubeLoading}
+                          >
+                            {isYoutubeLoading ? (
+                              <>
+                                <svg
+                                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  ></circle>
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                  ></path>
+                                </svg>
+                                Đang xử lý...
+                              </>
+                            ) : (
+                              "Chia sẻ lên YouTube"
+                            )}
+                          </Button>
+                        </>
+                      )}
                     </div>
                   )}
 
                   {activePlatform === "tiktok" && (
                     <div className="space-y-3">
-                      <div className="space-y-2 mb-4">
-                        <label className="text-sm font-medium">Kênh</label>
-                        <div className="flex items-center p-2 bg-gray-100 rounded-md">
-                          {tiktokUserInfo ? (
-                            <>
-                              <img
-                                src={tiktokUserInfo.avatar_url}
-                                alt="Avatar"
-                                className="w-10 h-10 rounded-full mr-3"
-                              />
-                              <span className="text-sm font-medium">
-                                {tiktokUserInfo.display_name} (
-                                {tiktokUserInfo.username})
-                              </span>
-                            </>
-                          ) : (
-                            <span className="text-sm text-gray-500">
-                              Đăng nhập để xem thông tin kênh
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                          Tiêu đề video
-                        </label>
-                        <Input
-                          placeholder="Nhập tiêu đề cho video TikTok..."
-                          value={tiktok.title}
-                          onChange={(e) =>
-                            setTiktok({ ...tiktok, title: e.target.value })
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Mô tả</label>
-                        <Textarea
-                          placeholder="Nhập mô tả cho video TikTok..."
-                          value={tiktok.description}
-                          onChange={(e) =>
-                            setTiktok({
-                              ...tiktok,
-                              description: e.target.value,
-                            })
-                          }
-                          className="min-h-[100px]"
-                        />
-                      </div>
-                      <Button
-                        className="w-full bg-black hover:bg-gray-800 mt-4"
-                        onClick={uploadToTikTok}
-                        disabled={isTiktokLoading}
-                      >
-                        {isTiktokLoading ? (
-                          <>
-                            <svg
-                              className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                            >
-                              <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                              ></circle>
-                              <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                              ></path>
-                            </svg>
-                            Đang xử lý...
-                          </>
-                        ) : (
-                          "Chia sẻ lên TikTok"
-                        )}
-                      </Button>
+                      {!tiktokAccessToken ? (
+                        <Card className="p-8 text-center py-20">
+                          <CardHeader>
+                            <CardTitle>Chia sẻ Video lên TikTok</CardTitle>
+                            <CardDescription>
+                              Kết nối tài khoản TikTok để chia sẻ video
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <TikTokLogin />
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        <>
+                          <div className="space-y-2 mb-4">
+                            <label className="text-sm font-medium">Kênh</label>
+                            <div className="flex items-center p-2 bg-gray-100 rounded-md">
+                              {tiktokUserInfo ? (
+                                <>
+                                  <img
+                                    src={tiktokUserInfo.avatar_url}
+                                    alt="Avatar"
+                                    className="w-10 h-10 rounded-full mr-3"
+                                  />
+                                  <span className="text-sm font-medium">
+                                    {tiktokUserInfo.display_name} (
+                                    {tiktokUserInfo.username})
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="text-sm text-gray-500">
+                                  Đăng nhập để xem thông tin kênh
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">
+                              Tiêu đề video
+                            </label>
+                            <Input
+                              placeholder="Nhập tiêu đề cho video TikTok..."
+                              value={tiktok.title}
+                              onChange={(e) =>
+                                setTiktok({ ...tiktok, title: e.target.value })
+                              }
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Mô tả</label>
+                            <Textarea
+                              placeholder="Nhập mô tả cho video TikTok..."
+                              value={tiktok.description}
+                              onChange={(e) =>
+                                setTiktok({
+                                  ...tiktok,
+                                  description: e.target.value,
+                                })
+                              }
+                              className="min-h-[100px]"
+                            />
+                          </div>
+                          <Button
+                            className="w-full bg-black hover:bg-gray-800 mt-4"
+                            onClick={uploadToTikTok}
+                            disabled={isTiktokLoading}
+                          >
+                            {isTiktokLoading ? (
+                              <>
+                                <svg
+                                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  ></circle>
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                  ></path>
+                                </svg>
+                                Đang xử lý...
+                              </>
+                            ) : (
+                              "Chia sẻ lên TikTok"
+                            )}
+                          </Button>
+                        </>
+                      )}
                     </div>
                   )}
 
                   {activePlatform === "facebook" && (
                     <div className="space-y-3">
                       {!authState.isLoggedIn ? (
-                        <Button
-                          onClick={handleFacebookLogin}
-                          className="w-full bg-blue-600 hover:bg-blue-700"
-                        >
-                          Đăng nhập Facebook
-                        </Button>
+                        <Card className="p-8 text-center py-20">
+                          <CardHeader>
+                            <CardTitle>Chia sẻ Video lên Facebook</CardTitle>
+                            <CardDescription>
+                              Kết nối tài khoản Facebook để chia sẻ video
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <Button
+                              onClick={handleFacebookLogin}
+                              className="w-full bg-blue-600 hover:bg-blue-700"
+                            >
+                              Đăng nhập Facebook
+                            </Button>
+                          </CardContent>
+                        </Card>
                       ) : (
                         <>
                           <div className="space-y-2">
@@ -1298,7 +1409,8 @@ handleExport();
                           <DialogHeader>
                             <DialogTitle>Caption được tạo</DialogTitle>
                             <DialogDescription>
-                              Nhấn "Xác nhận" để áp dụng caption cho tất cả nền tảng.
+                              Nhấn "Xác nhận" để áp dụng caption cho tất cả nền
+                              tảng.
                             </DialogDescription>
                           </DialogHeader>
                           <div className="space-y-3">

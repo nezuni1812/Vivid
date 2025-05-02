@@ -59,7 +59,7 @@ const TikTokUpload: React.FC = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/upload-video/', {
+      const response = await fetch('http://localhost:5000/upload-tiktok-video/', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,
