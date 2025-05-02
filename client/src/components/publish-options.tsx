@@ -489,6 +489,37 @@ export default function PublishOptions({
       return false;
     }
   };
+   // lưu dữ liệu lên MongoDB
+  const savePublishedData: any = async (i_platform: string, i_external_id: string, i_url: string,  i_title: string, i_desc: string) => {
+    const publishedData = {
+      clip_id: "123456789012345678901234", // Thay bằng id clip thật sự sau
+      platform: i_platform,
+      external_id: i_external_id,
+      url: i_url,
+      metadata: JSON.stringify({
+        title: i_title,
+        description: i_desc,
+      }),
+    };
+    
+    try {
+      const saveResponse = await fetch("http://localhost:5000/published-clips", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(publishedData),
+      });
+  
+      if (!saveResponse.ok) {
+        throw new Error("Không thể lưu bài đăng vào cơ sở dữ liệu.");
+      }
+      const result = await saveResponse.json();
+      console.log("Đã lưu bài đăng:", result);
+    } catch (saveError) {
+      console.error("Lỗi khi lưu thông tin bài đăng:", saveError);
+    }
+  }
 
   // YouTube Upload Logic
   const uploadToYouTube = async () => {
@@ -509,10 +540,10 @@ export default function PublishOptions({
       snippet: {
         title: youtube.title || "Video không có tiêu đề",
         description: youtube.description || "Không có mô tả",
-        tags: ["API", "Video Generation", "test", "AI"],
+        // tags: ["API", "Video Generation", "test", "AI"],
       },
       status: {
-        privacyStatus: "private",
+        privacyStatus: "private", // "public", "private", or "unlisted"
       },
     };
 
@@ -550,6 +581,7 @@ export default function PublishOptions({
           "Tải lên YouTube thành công! Link video: " +
             `https://www.youtube.com/watch?v=${data.id}`
         );
+        savePublishedData("Youtube", data.id, `https://www.youtube.com/watch?v=${data.id}`, youtube.title, youtube.description);
       } else {
         console.error("Upload failed:", data);
         throw new Error(data.error?.message || "Tải lên YouTube thất bại.");
@@ -598,6 +630,8 @@ export default function PublishOptions({
       const data = await response.json();
       if (data.success) {
         alert("Tải lên TikTok thành công! " + data.message);
+        // console.log(data)
+        // savePublishedData("Tiktok", data.publish_id, data.url, tiktok.title, tiktok.description);
       } else {
         alert(
           "Tải lên TikTok thất bại: " + (data.error || "Lỗi không xác định")
@@ -647,6 +681,7 @@ export default function PublishOptions({
         alert(
           `Đăng video lên Facebook thành công! ID: https://www.facebook.com/${selectedPage.id}/posts/${data.id}`
         );
+        savePublishedData("Facebook", data.id, `https://www.facebook.com/${selectedPage.id}/posts/${data.id}`, facebook.title, facebook.description);
       } else {
         if (data.error?.code === 190 && data.error?.error_subcode === 463) {
           setError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
