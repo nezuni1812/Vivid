@@ -592,10 +592,10 @@ const FacebookStatsPage = () => {
               <RefreshCw className="h-4 w-4" />
               Làm mới
             </Button>
-            <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
+            {/* <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
               <LogOut className="h-4 w-4" />
               Đăng xuất
-            </Button>
+            </Button> */}
           </div>
         )}
       </div>

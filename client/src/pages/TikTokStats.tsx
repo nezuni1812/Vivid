@@ -8,9 +8,6 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
   LineChart,
   Line,
   CartesianGrid,
@@ -25,7 +22,6 @@ import {
   MessageCircle,
   Share2,
   TrendingUp,
-  Upload,
   RefreshCw,
   AlertCircle,
 } from "lucide-react"
@@ -37,6 +33,7 @@ import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert"
 import { Skeleton } from "../components/ui/skeleton"
 import { Badge } from "../components/ui/badge"
 import { Progress } from "../components/ui/progress"
+import TikTokLogin from "./TikTokLogin"
 
 interface TikTokVideo {
   id: string
@@ -73,7 +70,10 @@ const COLORS = ["#FF6B8A", "#4791FF", "#FFB572", "#41D87D", "#B18CFF"]
 
 const TikTokStats = () => {
   const [videos, setVideos] = useState<TikTokVideo[]>([])
+  const [filteredVideos, setFilteredVideos] = useState<TikTokVideo[]>([])
   const [loading, setLoading] = useState(true)
+  const [chartLoading, setChartLoading] = useState(false)
+  const [tableLoading, setTableLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [sortField, setSortField] = useState<SortField>("publishedAt")
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc")
@@ -85,8 +85,30 @@ const TikTokStats = () => {
 
   const accessToken = localStorage.getItem("tiktok_access_token")
 
-  // Calculate engagement rate for each video
-  const processedVideos = videos.map((video) => ({
+  // Hàm lọc video theo thời gian
+  const filterVideosByTimeRange = (videos: TikTokVideo[], range: TimeRange) => {
+    const now = new Date()
+    let startDate = new Date()
+
+    switch (range) {
+      case "7days":
+        startDate.setDate(now.getDate() - 7)
+        break
+      case "30days":
+        startDate.setDate(now.getDate() - 30)
+        break
+      case "90days":
+        startDate.setDate(now.getDate() - 90)
+        break
+      case "all":
+        return videos
+    }
+
+    return videos.filter((video) => new Date(video.publishedAt) >= startDate)
+  }
+
+  // Xử lý dữ liệu video
+  const processedVideos = filteredVideos.map((video) => ({
     ...video,
     engagementRate: ((video.likeCount + video.commentCount + video.shareCount) / video.viewCount) * 100 || 0,
   }))
@@ -100,8 +122,8 @@ const TikTokStats = () => {
   const avgEngagementRate =
     totalViews > 0 ? (((totalLikes + totalComments + totalShares) / totalViews) * 100).toFixed(2) : "0"
 
-  // Data for charts
-  const viewsChartData = processedVideos
+  // Dữ liệu cho biểu đồ cột
+  const chartData = processedVideos
     .sort((a, b) => b.viewCount - a.viewCount)
     .slice(0, 10)
     .map((video) => ({
@@ -109,24 +131,18 @@ const TikTokStats = () => {
       views: video.viewCount,
     }))
 
-  const engagementChartData = [
-    { name: "Likes", value: totalLikes },
-    { name: "Comments", value: totalComments },
-    { name: "Shares", value: totalShares },
-  ]
-
-  // Performance trend data (simulated for now)
-  const trendData = [
-    { date: "T2", views: 2400, likes: 1200, comments: 480 },
-    { date: "T3", views: 1398, likes: 800, comments: 320 },
-    { date: "T4", views: 9800, likes: 3908, comments: 1200 },
-    { date: "T5", views: 3908, likes: 2000, comments: 800 },
-    { date: "T6", views: 4800, likes: 2400, comments: 980 },
-    { date: "T7", views: 3800, likes: 2300, comments: 800 },
-    { date: "CN", views: 4300, likes: 2100, comments: 700 },
-  ]
-
   // Pagination calculation
+  const performanceData = processedVideos
+    .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+    .slice(0, 10)
+    .map((video) => ({
+      name: video.title.length > 20 ? video.title.substring(0, 20) + "..." : video.title,
+      views: video.viewCount,
+      likes: video.likeCount,
+      comments: video.commentCount,
+    }))
+
+  // Phân trang
   const totalPages = Math.ceil(processedVideos.length / videosPerPage)
   const currentVideos = processedVideos
     .sort((a, b) => {
@@ -151,7 +167,12 @@ const TikTokStats = () => {
   useEffect(() => {
     fetchTikTokVideos()
     fetchUserInfo()
-  }, [timeRange])
+  }, [])
+
+  useEffect(() => {
+    setFilteredVideos(filterVideosByTimeRange(videos, timeRange))
+    setCurrentPage(1)
+  }, [timeRange, videos])
 
   const fetchTikTokVideos = async () => {
     if (!accessToken) {
@@ -161,6 +182,8 @@ const TikTokStats = () => {
     }
 
     setRefreshing(true)
+    setChartLoading(true)
+    setTableLoading(true)
 
     try {
       const fields = [
@@ -174,24 +197,6 @@ const TikTokStats = () => {
         "cover_image_url",
       ].join(",")
 
-      const now = new Date()
-      let startDate = new Date()
-
-      switch (timeRange) {
-        case "7days":
-          startDate.setDate(now.getDate() - 7)
-          break
-        case "30days":
-          startDate.setDate(now.getDate() - 30)
-          break
-        case "90days":
-          startDate.setDate(now.getDate() - 90)
-          break
-        case "all":
-          startDate = new Date(0) // Beginning of time
-          break
-      }
-
       const response = await fetch(`https://open.tiktokapis.com/v2/video/list/?fields=${encodeURIComponent(fields)}`, {
         method: "POST",
         headers: {
@@ -199,14 +204,7 @@ const TikTokStats = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          max_count: 20, // Adjust as needed (max 20)
-          // Filter by date if not "all"
-          ...(timeRange !== "all" && {
-            create_time_range: {
-              start_time: Math.floor(startDate.getTime() / 1000),
-              end_time: Math.floor(now.getTime() / 1000),
-            },
-          }),
+          max_count: 20,
         }),
       })
 
@@ -217,18 +215,18 @@ const TikTokStats = () => {
 
       const data = await response.json()
       if (data.data && data.data.videos) {
-        setVideos(
-          data.data.videos.map((video: any) => ({
-            id: video.id,
-            title: video.title || "Không có tiêu đề",
-            thumbnail: video.cover_image_url || "/placeholder.svg?height=200&width=350",
-            viewCount: video.view_count || 0,
-            likeCount: video.like_count || 0,
-            commentCount: video.comment_count || 0,
-            shareCount: video.share_count || 0,
-            publishedAt: new Date(video.create_time * 1000).toISOString(),
-          })),
-        )
+        const fetchedVideos = data.data.videos.map((video: any) => ({
+          id: video.id,
+          title: video.title || "Không có tiêu đề",
+          thumbnail: video.cover_image_url || "/placeholder.svg?height=200&width=350",
+          viewCount: video.view_count || 0,
+          likeCount: video.like_count || 0,
+          commentCount: video.comment_count || 0,
+          shareCount: video.share_count || 0,
+          publishedAt: new Date(video.create_time * 1000).toISOString(),
+        }))
+        setVideos(fetchedVideos)
+        setFilteredVideos(filterVideosByTimeRange(fetchedVideos, timeRange))
       } else {
         setError("Không tìm thấy video nào")
       }
@@ -238,6 +236,8 @@ const TikTokStats = () => {
     } finally {
       setLoading(false)
       setRefreshing(false)
+      setChartLoading(false)
+      setTableLoading(false)
     }
   }
 
@@ -303,6 +303,10 @@ const TikTokStats = () => {
 
   const handleRefresh = () => {
     fetchTikTokVideos()
+  }
+
+  const handlePeriodChange = (range: TimeRange) => () => {
+    setTimeRange(range)
   }
 
   const renderSkeleton = () => (
@@ -380,6 +384,20 @@ const TikTokStats = () => {
         </Alert>
       )}
 
+      {!loading && !userInfo ? (
+        <Card className="p-8 text-center">
+          <CardHeader>
+            <CardTitle>Chào mừng đến với Thống kê Video TikTok</CardTitle>
+            <CardDescription>
+              Kết nối tài khoản TikTok của bạn để xem phân tích chi tiết cho video trên Kênh của bạn.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex items-center mx-auto w-60">
+            <TikTokLogin/>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         <Card className="bg-purple-50 border-purple-100">
@@ -446,7 +464,7 @@ const TikTokStats = () => {
             <Button
               variant={timeRange === "7days" ? "default" : "outline"}
               size="sm"
-              onClick={() => setTimeRange("7days")}
+              onClick={handlePeriodChange("7days")}
               className={timeRange === "7days" ? "bg-black hover:bg-gray-800" : ""}
             >
               7 ngày
@@ -454,7 +472,7 @@ const TikTokStats = () => {
             <Button
               variant={timeRange === "30days" ? "default" : "outline"}
               size="sm"
-              onClick={() => setTimeRange("30days")}
+              onClick={handlePeriodChange("30days")}
               className={timeRange === "30days" ? "bg-black hover:bg-gray-800" : ""}
             >
               30 ngày
@@ -462,7 +480,7 @@ const TikTokStats = () => {
             <Button
               variant={timeRange === "90days" ? "default" : "outline"}
               size="sm"
-              onClick={() => setTimeRange("90days")}
+              onClick={handlePeriodChange("90days")}
               className={timeRange === "90days" ? "bg-black hover:bg-gray-800" : ""}
             >
               90 ngày
@@ -470,7 +488,7 @@ const TikTokStats = () => {
             <Button
               variant={timeRange === "all" ? "default" : "outline"}
               size="sm"
-              onClick={() => setTimeRange("all")}
+              onClick={handlePeriodChange("all")}
               className={timeRange === "all" ? "bg-black hover:bg-gray-800" : ""}
             >
               Tất cả
@@ -573,318 +591,321 @@ const TikTokStats = () => {
                 <CardDescription>10 video có lượt xem cao nhất</CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={viewsChartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="views" fill="#000000" />
-                  </BarChart>
-                </ResponsiveContainer>
+                {chartLoading ? (
+                  <div className="h-[300px] flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-500"></div>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" angle={0} textAnchor="end" height={70} />
+                      <YAxis />
+                      <Tooltip formatter={(value: number) => value.toLocaleString("vi-VN")} />
+                      <Bar dataKey="views" fill="#000000" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
 
-            {/* Engagement Pie Chart */}
+            {/* Performance Trend */}
             <Card>
               <CardHeader>
-                <CardTitle>Phân bố tương tác</CardTitle>
-                <CardDescription>Tỷ lệ các loại tương tác</CardDescription>
+                <CardTitle>Hiệu suất Video</CardTitle>
+                <CardDescription>Hiệu suất của 10 video mới nhất trong khoảng thời gian đã chọn</CardDescription>
               </CardHeader>
-              <CardContent className="flex justify-center">
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={engagementChartData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {engagementChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+              <CardContent>
+                {chartLoading ? (
+                  <div className="h-[300px] flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
+                  </div>
+                ) : performanceData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={performanceData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" angle={0} textAnchor="end" height={70} />
+                      <YAxis />
+                      <Tooltip formatter={(value: number) => value.toLocaleString("vi-VN")} />
+                      <Legend />
+                      <Line type="monotone" dataKey="views" stroke="#ef4444" activeDot={{ r: 8 }} name="Lượt xem" />
+                      <Line type="monotone" dataKey="likes" stroke="#3b82f6" name="Lượt thích" />
+                      <Line type="monotone" dataKey="comments" stroke="#10b981" name="Bình luận" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-[300px] flex items-center justify-center">
+                    <p className="text-muted-foreground">Không có dữ liệu cho khoảng thời gian đã chọn</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
-
-          {/* Weekly Performance Trend */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Xu hướng hiệu suất</CardTitle>
-              <CardDescription>Hiệu suất trong 7 ngày qua</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={trendData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="views" stroke="#000000" activeDot={{ r: 8 }} />
-                  <Line type="monotone" dataKey="likes" stroke="#FF6B8A" />
-                  <Line type="monotone" dataKey="comments" stroke="#41D87D" />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         <TabsContent value="table">
-          {/* Video Analytics Table */}
           <Card>
             <CardHeader>
               <CardTitle>Chi tiết Video</CardTitle>
               <CardDescription>Nhấp vào tiêu đề cột để sắp xếp</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-muted/50">
-                      <th className="p-3 text-left">Video</th>
-                      <th className="p-3 text-left cursor-pointer" onClick={() => handleSort("publishedAt")}>
-                        <div className="flex items-center">
-                          Ngày đăng
-                          <ArrowUpDown className="ml-1 h-4 w-4" />
-                          {sortField === "publishedAt" && (
-                            <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
-                          )}
-                        </div>
-                      </th>
-                      <th className="p-3 text-right cursor-pointer" onClick={() => handleSort("viewCount")}>
-                        <div className="flex items-center justify-end">
-                          Lượt xem
-                          <ArrowUpDown className="ml-1 h-4 w-4" />
-                          {sortField === "viewCount" && (
-                            <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
-                          )}
-                        </div>
-                      </th>
-                      <th className="p-3 text-right cursor-pointer" onClick={() => handleSort("likeCount")}>
-                        <div className="flex items-center justify-end">
-                          Lượt thích
-                          <ArrowUpDown className="ml-1 h-4 w-4" />
-                          {sortField === "likeCount" && (
-                            <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
-                          )}
-                        </div>
-                      </th>
-                      <th className="p-3 text-right cursor-pointer" onClick={() => handleSort("commentCount")}>
-                        <div className="flex items-center justify-end">
-                          Bình luận
-                          <ArrowUpDown className="ml-1 h-4 w-4" />
-                          {sortField === "commentCount" && (
-                            <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
-                          )}
-                        </div>
-                      </th>
-                      <th className="p-3 text-right cursor-pointer" onClick={() => handleSort("shareCount")}>
-                        <div className="flex items-center justify-end">
-                          Chia sẻ
-                          <ArrowUpDown className="ml-1 h-4 w-4" />
-                          {sortField === "shareCount" && (
-                            <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
-                          )}
-                        </div>
-                      </th>
-                      <th className="p-3 text-right cursor-pointer" onClick={() => handleSort("engagementRate")}>
-                        <div className="flex items-center justify-end">
-                          Tỷ lệ tương tác
-                          <ArrowUpDown className="ml-1 h-4 w-4" />
-                          {sortField === "engagementRate" && (
-                            <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
-                          )}
-                        </div>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentVideos.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="p-4 text-center text-muted-foreground">
-                          Không có dữ liệu video nào trong khoảng thời gian đã chọn
-                        </td>
-                      </tr>
-                    ) : (
-                      currentVideos.map((video) => (
-                        <tr key={video.id} className="border-b hover:bg-muted/30">
-                          <td className="p-3">
-                            <div className="flex items-center space-x-3">
-                              <div className="relative w-16 h-9 overflow-hidden rounded flex-shrink-0">
-                                <img
-                                  src={video.thumbnail || "/placeholder.svg?height=200&width=350"}
-                                  alt={video.title}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                              <a
-                                href={userInfo ? `https://www.tiktok.com/@${userInfo.username}/video/${video.id}` : "#"}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex-1 font-medium text-primary hover:underline line-clamp-2"
-                              >
-                                {video.title}
-                              </a>
-                            </div>
-                          </td>
-                          <td className="p-3 text-sm">
-                            {new Date(video.publishedAt).toLocaleDateString("vi-VN", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </td>
-                          <td className="p-3 text-right">{video.viewCount.toLocaleString("vi-VN")}</td>
-                          <td className="p-3 text-right">{video.likeCount.toLocaleString("vi-VN")}</td>
-                          <td className="p-3 text-right">{video.commentCount.toLocaleString("vi-VN")}</td>
-                          <td className="p-3 text-right">{video.shareCount.toLocaleString("vi-VN")}</td>
-                          <td className="p-3 text-right">
-                            <Badge
-                              variant={video.engagementRate > 5 ? "default" : "secondary"}
-                              className={video.engagementRate > 5 ? "bg-black" : ""}
-                            >
-                              {video.engagementRate?.toFixed(2)}%
-                            </Badge>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex flex-col sm:flex-row justify-between items-center mt-4 gap-4">
-                  <div className="text-sm text-muted-foreground">
-                    Hiển thị {(currentPage - 1) * videosPerPage + 1} đến{" "}
-                    {Math.min(currentPage * videosPerPage, videos.length)} trong {videos.length} video
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronLeft className="h-4 w-4 mr-1" /> Trước
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                      disabled={currentPage === totalPages}
-                    >
-                      Tiếp <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
-                  </div>
+              {tableLoading ? (
+                <div className="space-y-4">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="flex items-center space-x-4">
+                      <Skeleton className="h-12 w-12 rounded" />
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-2/3" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
+              ) : (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-muted/50">
+                          <th className="p-3 text-left">Video</th>
+                          <th className="p-3 text-left cursor-pointer" onClick={() => handleSort("publishedAt")}>
+                            <div className="flex items-center">
+                              Ngày đăng
+                              <ArrowUpDown className="ml-1 h-4 w-4" />
+                              {sortField === "publishedAt" && (
+                                <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                              )}
+                            </div>
+                          </th>
+                          <th className="p-3 text-right cursor-pointer" onClick={() => handleSort("viewCount")}>
+                            <div className="flex items-center justify-end">
+                              Lượt xem
+                              <ArrowUpDown className="ml-1 h-4 w-4" />
+                              {sortField === "viewCount" && (
+                                <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                              )}
+                            </div>
+                          </th>
+                          <th className="p-3 text-right cursor-pointer" onClick={() => handleSort("likeCount")}>
+                            <div className="flex items-center justify-end">
+                              Lượt thích
+                              <ArrowUpDown className="ml-1 h-4 w-4" />
+                              {sortField === "likeCount" && (
+                                <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                              )}
+                            </div>
+                          </th>
+                          <th className="p-3 text-right cursor-pointer" onClick={() => handleSort("commentCount")}>
+                            <div className="flex items-center justify-end">
+                              Bình luận
+                              <ArrowUpDown className="ml-1 h-4 w-4" />
+                              {sortField === "commentCount" && (
+                                <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                              )}
+                            </div>
+                          </th>
+                          <th className="p-3 text-right cursor-pointer" onClick={() => handleSort("shareCount")}>
+                            <div className="flex items-center justify-end">
+                              Chia sẻ
+                              <ArrowUpDown className="ml-1 h-4 w-4" />
+                              {sortField === "shareCount" && (
+                                <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                              )}
+                            </div>
+                          </th>
+                          <th className="p-3 text-right cursor-pointer" onClick={() => handleSort("engagementRate")}>
+                            <div className="flex items-center justify-end">
+                              Tỷ lệ tương tác
+                              <ArrowUpDown className="ml-1 h-4 w-4" />
+                              {sortField === "engagementRate" && (
+                                <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                              )}
+                            </div>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {currentVideos.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="p-4 text-center text-muted-foreground">
+                              Không có dữ liệu video nào trong khoảng thời gian đã chọn
+                            </td>
+                          </tr>
+                        ) : (
+                          currentVideos.map((video) => (
+                            <tr key={video.id} className="border-b hover:bg-muted/30">
+                              <td className="p-3">
+                                <div className="flex items-center space-x-3">
+                                  <div className="relative w-16 h-9 overflow-hidden rounded flex-shrink-0">
+                                    <img
+                                      src={video.thumbnail || "/placeholder.svg?height=200&width=350"}
+                                      alt={video.title}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                  <a
+                                    href={
+                                      userInfo
+                                        ? `https://www.tiktok.com/@${userInfo.username}/video/${video.id}`
+                                        : "#"
+                                    }
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-medium text-primary hover:underline line-clamp-2"
+                                  >
+                                    {video.title}
+                                  </a>
+                                </div>
+                              </td>
+                              <td className="p-3 text-sm">
+                                {new Date(video.publishedAt).toLocaleDateString("vi-VN", {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                })}
+                              </td>
+                              <td className="p-3 text-right">{video.viewCount.toLocaleString("vi-VN")}</td>
+                              <td className="p-3 text-right">{video.likeCount.toLocaleString("vi-VN")}</td>
+                              <td className="p-3 text-right">{video.commentCount.toLocaleString("vi-VN")}</td>
+                              <td className="p-3 text-right">{video.shareCount.toLocaleString("vi-VN")}</td>
+                              <td className="p-3 text-right">
+                                <Badge
+                                  variant={video.engagementRate > 5 ? "default" : "secondary"}
+                                  className={video.engagementRate > 5 ? "bg-black" : ""}
+                                >
+                                  {video.engagementRate?.toFixed(2)}%
+                                </Badge>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                      <div className="flex flex-col sm:flex-row justify-between items-center mt-4 gap-4">
+                        <div className="text-sm text-muted-foreground">
+                          Hiển thị {(currentPage - 1) * videosPerPage + 1} đến{" "}
+                          {Math.min(currentPage * videosPerPage, filteredVideos.length)} trong{" "}
+                          {filteredVideos.length} video
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                            disabled={currentPage === 1}
+                          >
+                            <ChevronLeft className="h-4 w-4 mr-1" /> Trước
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                            disabled={currentPage === totalPages}
+                          >
+                            Tiếp <ChevronRight className="h-4 w-4 ml-1" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="cards">
-          {/* Video Cards */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Thư viện Video</CardTitle>
-              <CardDescription>Tất cả video trong khoảng thời gian đã chọn</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {videos.length === 0 ? (
-                <div className="text-center p-8 text-muted-foreground">
-                  Không có video nào trong khoảng thời gian đã chọn
-                </div>
-              ) : (
-                <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                  {videos.map((video) => (
-                    <div
-                      key={video.id}
-                      className="rounded-lg shadow-sm overflow-hidden border bg-card hover:shadow-md transition"
-                    >
-                      <div className="relative aspect-video">
-                        <img
-                          src={video.thumbnail || "/placeholder.svg?height=200&width=350"}
-                          alt={video.title}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute bottom-2 right-2">
-                          <Badge variant="secondary" className="bg-black/70 text-white">
-                            {new Date(video.publishedAt).toLocaleDateString("vi-VN")}
-                          </Badge>
-                        </div>
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+            {filteredVideos.length === 0 ? (
+              <div className="col-span-full text-center p-8 text-muted-foreground">
+                Không có video nào trong khoảng thời gian đã chọn
+              </div>
+            ) : (
+              filteredVideos.map((video) => (
+                <Card key={video.id} className="overflow-hidden hover:shadow-md transition">
+                  <div className="relative aspect-video">
+                    <img
+                      src={video.thumbnail || "/placeholder.svg?height=200&width=350"}
+                      alt={video.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute bottom-2 right-2">
+                      <Badge variant="secondary" className="bg-black/70 text-white">
+                        {new Date(video.publishedAt).toLocaleDateString("vi-VN")}
+                      </Badge>
+                    </div>
+                  </div>
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold text-lg mb-2 line-clamp-2">
+                      <a
+                        href={
+                          userInfo ? `https://www.tiktok.com/@${userInfo.username}/video/${video.id}` : "#"
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        {video.title}
+                      </a>
+                    </h3>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground flex items-center">
+                          <Eye className="h-4 w-4 mr-1" /> Lượt xem
+                        </span>
+                        <span className="font-medium">{video.viewCount.toLocaleString("vi-VN")}</span>
                       </div>
-                      <div className="p-4">
-                        <h3 className="font-semibold text-lg mb-2 line-clamp-2">
-                          <a
-                            href={userInfo ? `https://www.tiktok.com/@${userInfo.username}/video/${video.id}` : "#"}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline"
-                          >
-                            {video.title}
-                          </a>
-                        </h3>
 
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground flex items-center">
-                              <Eye className="h-4 w-4 mr-1" /> Lượt xem
-                            </span>
-                            <span className="font-medium">{video.viewCount.toLocaleString("vi-VN")}</span>
-                          </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground flex items-center">
+                          <Heart className="h-4 w-4 mr-1" /> Lượt thích
+                        </span>
+                        <span className="font-medium">{video.likeCount.toLocaleString("vi-VN")}</span>
+                      </div>
 
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground flex items-center">
-                              <Heart className="h-4 w-4 mr-1" /> Lượt thích
-                            </span>
-                            <span className="font-medium">{video.likeCount.toLocaleString("vi-VN")}</span>
-                          </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground flex items-center">
+                          <MessageCircle className="h-4 w-4 mr-1" /> Bình luận
+                        </span>
+                        <span className="font-medium">{video.commentCount.toLocaleString("vi-VN")}</span>
+                      </div>
 
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground flex items-center">
-                              <MessageCircle className="h-4 w-4 mr-1" /> Bình luận
-                            </span>
-                            <span className="font-medium">{video.commentCount.toLocaleString("vi-VN")}</span>
-                          </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground flex items-center">
+                          <Share2 className="h-4 w-4 mr-1" /> Chia sẻ
+                        </span>
+                        <span className="font-medium">{video.shareCount.toLocaleString("vi-VN")}</span>
+                      </div>
 
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground flex items-center">
-                              <Share2 className="h-4 w-4 mr-1" /> Chia sẻ
-                            </span>
-                            <span className="font-medium">{video.shareCount.toLocaleString("vi-VN")}</span>
-                          </div>
-
-                          <div className="pt-2">
-                            <p className="text-sm text-muted-foreground">Tỷ lệ tương tác</p>
-                            <Progress value={Math.min(video.engagementRate || 0, 100)} className="h-2 mt-1 bg-gray-200">
-                              <div
-                                className="h-full bg-black"
-                                style={{ width: `${Math.min(video.engagementRate || 0, 100)}%` }}
-                              ></div>
-                            </Progress>
-                            <p className="text-right text-sm font-medium mt-1">{video.engagementRate?.toFixed(2)}%</p>
-                          </div>
-                        </div>
+                      <div className="pt-2">
+                        <p className="text-sm text-muted-foreground">Tỷ lệ tương tác</p>
+                        <Progress
+                          value={Math.min(video.engagementRate || 0, 100)}
+                          className="h-2 mt-1 bg-gray-200"
+                        >
+                          <div
+                            className="h-full bg-gray-500"
+                            style={{ width: `${Math.min(video.engagementRate || 0, 100)}%` }}
+                          ></div>
+                        </Progress>
+                        <p className="text-right text-sm font-medium mt-1">
+                          {video.engagementRate?.toFixed(2)}%
+                        </p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
         </TabsContent>
       </Tabs>
+        </>
+      )}
     </div>
   )
 }
