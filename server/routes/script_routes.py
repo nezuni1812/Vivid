@@ -182,3 +182,30 @@ def get_scripts_by_workspace():
         return jsonify(scripts), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 400
+    
+@script_bp.route("/caption/<script_id>", methods=["GET", "OPTIONS"])
+@cross_origin(origins=["http://localhost:5173"], methods=["GET", "OPTIONS"], allow_headers=["Content-Type"])
+def create_caption_from_script(script_id):
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
+
+    try:
+        # Lấy title và description
+        title_result, title_status = ScriptController.create_title_from_script(script_id)
+        description_result, desc_status = ScriptController.create_description_from_script(script_id)
+        
+        # Kiểm tra kết quả trả về
+        if title_status != 200:
+            return jsonify({"error": "Lỗi khi tạo tiêu đề", "details": title_result}), title_status
+            
+        if desc_status != 200:
+            return jsonify({"error": "Lỗi khi tạo mô tả", "details": description_result}), desc_status
+        
+        # Nếu thành công, trả về cả title và description trong một JSON response
+        return jsonify({
+            "title": title_result.get("title"),
+            "description": description_result.get("description")
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"error": f"Lỗi khi tạo caption: {str(e)}"}), 500

@@ -1,7 +1,7 @@
 from services.language.input_handler_service import detect_language_and_input
 from services.language.translator_service import translate_to_english
 from services.content.wiki_service import get_wikipedia_summary
-from services.content.script_service import create_script_with_gemini
+from services.content.script_service import create_script_with_gemini, create_title_with_gemini, create_description_with_gemini
 from models.models import Script, Workspace
 
 class ScriptController:
@@ -123,3 +123,39 @@ class ScriptController:
             }
             for script in scripts
         ]
+
+    @staticmethod
+    def create_title_from_script(script_id):
+        try:
+            # Find the script by ID
+            script = Script.objects(id=script_id).first()
+            if not script:
+                raise Exception("Script not found")
+
+            # Create a title from the script content
+            title = create_title_with_gemini(
+                script.title, 
+                script.style, 
+                script.language
+            )
+            return {"title": title}, 200
+        except Exception as e:
+            return {"error": str(e)}, 500
+        
+    @staticmethod
+    def create_description_from_script(script_id):
+        try:
+            # Find the script by ID
+            script = Script.objects(id=script_id).first()
+            if not script:
+                raise Exception("Script not found")
+
+            # Create a title from the script content
+            description = create_description_with_gemini(
+                script.title, 
+                script.style, 
+                script.language
+            )
+            return {"description": description}, 200
+        except Exception as e:
+            return {"error": str(e)}, 500

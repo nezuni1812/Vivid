@@ -41,3 +41,47 @@ def create_script_with_gemini(topic, style, length,  lang):
     except Exception as e:
         print(f"Lỗi khi tạo kịch bản với Gemini: {e}")
         return f"This is a script about {topic} (generated without Gemini due to an error)."
+    
+def create_title_with_gemini(topic, style, lang):
+    """Tạo tiêu đề với Gemini dựa trên dữ liệu Wiki hoặc khái niệm gốc"""
+    client = genai.Client()
+    if style == 1:
+        style =  "fun voice for kids"
+    elif style == 2:
+        style = "serious voice for educational content"
+    elif style == 3:
+        style = "serious voice for scientific documents"
+
+    prompt = f"Tạo duy nhất 1 tiêu đề video (không thêm gì khác) trong ngôn ngữ {lang} về {topic}. Tiêu đề có phong cách dành cho {style}."
+
+    try:    
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=[prompt]
+        )
+        return sanitize_text(response.text)
+    except Exception as e:
+        print(f"Lỗi khi tạo kịch bản với Gemini: {e}")
+        return f"This is a script about {topic} (generated without Gemini due to an error)."
+    
+def create_description_with_gemini(topic, style, lang):
+    client = genai.Client()
+    if style == 1:
+        style =  "fun voice for kids"
+    elif style == 2:
+        style = "serious voice for educational content"
+    elif style == 3:
+        style = "serious voice for scientific documents"
+
+    prompt = f"Tạo duy nhất 1 mô tả video ngắn cỡ 30 chữ (không thêm gì khác) trong ngôn ngữ {lang} về {topic}. Mô tả có phong cách dành cho {style} có kèm theo cái hashtag có dấu # để đăng mạng xã hội."
+
+    try:    
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=[prompt]
+        )
+        return sanitize_text(response.text)
+    except Exception as e:
+        print(f"Lỗi khi tạo kịch bản với Gemini: {e}")
+        return f"This is a script about {topic} (generated without Gemini due to an error)."
+    
