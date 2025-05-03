@@ -39,7 +39,7 @@ export default function CesdkEditor() {
         },
         callbacks: {
           onUpload: "local",
-          onSave: (scene) => {
+          onSave: (scene: any) => {
             const element = document.createElement("a");
             const base64Data = btoa(unescape(encodeURIComponent(scene)));
             element.setAttribute(
@@ -243,12 +243,48 @@ export default function CesdkEditor() {
   // choose the default tab to be opened
   const [activeTab, setActiveTab] = useState("tab1");
 
+  const [prompt, setPrompt] = useState("");
+
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  const [newImage, setNewImage] = useState("https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/e1587b7049c14ef7a878f5c2301ac3e1.png");
+
+  const doSomething = async (prompt: string) => {
+    console.log("Prompt:", prompt);
+    const response = await fetch(
+      `${new URL("creations/create-image", import.meta.env.VITE_BACKEND_URL)}`
+    );
+
+    if (!response.ok) {
+      console.error("Error creating image:", response.statusText);
+      return;
+    }
+
+    const data = await response.json();
+    console.log("Image created:", data);
+    setNewImage(data.content);
+  };
+  
+  const handleDragStart = async (e: React.DragEvent<HTMLImageElement>) => {
+    const img = imgRef.current;
+    console.log("img", img);
+
+    if (!img) return;
+
+    const response = await fetch(img.src);
+    const blob = await response.blob();
+
+    const file = new File([blob], 'image.png', { type: blob.type });
+
+    const dataTransfer = e.dataTransfer;
+    dataTransfer.items.clear();
+    dataTransfer.items.add(file);
+  };
+
+
   return (
     <div className="flex gap-2 w-full">
-      <div
-        ref={containerRef}
-        className="h-full flex-7"
-      />
+      <div ref={containerRef} className="h-full flex-7" />
 
       <div className="new-resource flex-3 pr-2">
         {/* <button onClick={AddVideo}>Add videos</button> */}
@@ -294,15 +330,28 @@ export default function CesdkEditor() {
             <textarea
               name="promp"
               id=""
+              value={prompt}
+              onChange={(e) => {
+                setPrompt(e.target.value);
+              }}
               placeholder="Mô tả hình ảnh tại đây"
               className="resize-none border rounded-sm p-1"
               rows={4}
             ></textarea>
 
-            <Button>Tạo hình ảnh</Button>
+            <Button onClick={() => doSomething(prompt)}>Tạo hình ảnh</Button>
 
             <h2 className="font-medium text-lg">Kết quả</h2>
             <p>Kéo vào timeline để sử dụng</p>
+            {newImage ? (
+              <div className="image-container">
+                <div className="img-wrapper">
+                  <img src={newImage} alt="New generated image" draggable onDragStart={handleDragStart} ref={imgRef}/>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm font-medium">Chưa có hình ảnh nào được tạo</p>
+            )}
           </Tabs.Content>
 
           <Tabs.Content
@@ -310,12 +359,16 @@ export default function CesdkEditor() {
             value="tab2"
           >
             <h2 className="font-medium">Tìm kiếm video</h2>
-            <input type="text" name="search" placeholder="Dùng từ khóa để kiếm hình ảnh" className="border rounded-sm p-1"/>
+            <input
+              type="text"
+              name="search"
+              placeholder="Dùng từ khóa để kiếm hình ảnh"
+              className="border rounded-sm p-1"
+            />
             <Button>Tìm kiếm</Button>
-            
+
             <h2 className="font-medium text-lg">Kết quả</h2>
             <p>Kéo vào timeline để sử dụng</p>
-            
           </Tabs.Content>
         </Tabs.Root>
       </div>

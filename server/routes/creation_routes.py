@@ -50,6 +50,18 @@ def get_creations():
     
     return jsonify(materials), 200
 
+@creation_bp.route("/creations/create-image", methods=["POST"])
+def create_image():
+    print("Creating image on user prompt")
+    data = request.get_json()
+    if not data or "prompt" not in data:
+        return jsonify({"error": "No data provided"}), 400
+    
+    filename = asyncio.run(get_image(data["prompt"]))
+    print("Generating image with description:", data["prompt"], " with filename:", filename)
+    return jsonify({"content": filename}), 200
+    
+
 @creation_bp.route("/creations/edit", methods=["POST"])
 def gen_on_prompt():
     print("Generating on prompt")
