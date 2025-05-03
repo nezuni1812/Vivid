@@ -1,5 +1,6 @@
 // CesdkEditor.jsx
 import { useEffect, useRef } from "react";
+import * as Tabs from "@radix-ui/react-tabs";
 import { Button } from "../components/ui/button";
 
 export default function CesdkEditor() {
@@ -87,7 +88,7 @@ export default function CesdkEditor() {
         "https://videos.pexels.com/video-files/7647252/7647252-uhd_2560_1440_24fps.mp4",
         "https://videos.pexels.com/video-files/7955159/7955159-hd_2048_1080_25fps.mp4",
         "https://videos.pexels.com/video-files/25935014/11922020_720_1280_15fps.mp4",
-        
+
         // "https://videos.pexels.com/video-files/5125962/5125962-uhd_2732_1440_30fps.mp4",
         // "https://videos.pexels.com/video-files/6976105/6976105-hd_960_720_25fps.mp4",
         // "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/temp_images/c5c18475a432489ba61dc6d8c0f0a037.png",
@@ -187,10 +188,10 @@ export default function CesdkEditor() {
 
     console.log("Video Blob:", videoBlob);
     // Create a link element
-    const link = document.createElement('a');
+    const link = document.createElement("a");
 
     // Set the download attribute with the file name
-    link.download = 'test.mp4';
+    link.download = "test.mp4";
 
     // Create a URL for the Blob and set it as the href
     link.href = URL.createObjectURL(videoBlob);
@@ -240,21 +241,41 @@ export default function CesdkEditor() {
   };
 
   return (
-    <>
+    <div className="flex gap-2">
       <div
         ref={containerRef}
-        style={{ width: "100%", height: "100%" }}
+        style={{ width: "60%", height: "100%" }}
         className=""
       />
-      {/* <button onClick={AddVideo}>Add videos</button> */}
-      <Button
-        variant="outline"
-        size="icon"
-        className="mr-2"
-        onClick={ExportVid}
-      >
-        <p>Export video</p>
-      </Button>
-    </>
+
+      <div className="new-resource">
+        {/* <button onClick={AddVideo}>Add videos</button> */}
+        <Button
+          variant="outline"
+          size="icon"
+          className="w-full px-2"
+          onClick={ExportVid}
+        >
+          Export video
+        </Button>
+
+        <Tabs.Root className="w-full" defaultValue="tab1">
+          <Tabs.List className="rounded-lg bg-[#f4f4f5] p-1 flex gap-1">
+            <Tabs.Trigger className="TabsTrigger rounded-sm shadow-sm p-1 bg-white" value="tab1">
+              Generate image
+            </Tabs.Trigger>
+            <Tabs.Trigger className="TabsTrigger rounded-sm shadow-sm p-1 bg-white" value="tab2">
+              Find video
+            </Tabs.Trigger>
+          </Tabs.List>
+          <Tabs.Content className="TabsContent" value="tab1">
+            Image generating
+          </Tabs.Content>
+          <Tabs.Content className="TabsContent" value="tab2">
+            Video finding
+          </Tabs.Content>
+        </Tabs.Root>
+      </div>
+    </div>
   );
 }
