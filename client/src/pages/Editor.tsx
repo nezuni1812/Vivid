@@ -1,5 +1,5 @@
 // CesdkEditor.jsx
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as Tabs from "@radix-ui/react-tabs";
 import { Button } from "../components/ui/button";
 
@@ -240,39 +240,82 @@ export default function CesdkEditor() {
     console.log("Added all videos");
   };
 
+  // choose the default tab to be opened
+  const [activeTab, setActiveTab] = useState("tab1");
+
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 w-full">
       <div
         ref={containerRef}
-        style={{ width: "60%", height: "100%" }}
-        className=""
+        className="h-full flex-7"
       />
 
-      <div className="new-resource">
+      <div className="new-resource flex-3 pr-2">
         {/* <button onClick={AddVideo}>Add videos</button> */}
         <Button
           variant="outline"
           size="icon"
-          className="w-full px-2"
+          className="w-full p-2 my-2"
           onClick={ExportVid}
         >
           Export video
         </Button>
 
-        <Tabs.Root className="w-full" defaultValue="tab1">
-          <Tabs.List className="rounded-lg bg-[#f4f4f5] p-1 flex gap-1">
-            <Tabs.Trigger className="TabsTrigger rounded-sm shadow-sm p-1 bg-white" value="tab1">
+        <Tabs.Root
+          className="w-full"
+          defaultValue="tab1"
+          value={activeTab}
+          onValueChange={setActiveTab}
+        >
+          <Tabs.List className="rounded-lg bg-[#f4f4f5] p-1 flex gap-1 w-max">
+            <Tabs.Trigger
+              className={`TabsTrigger rounded-sm p-1 ${
+                activeTab === "tab1" ? "bg-white shadow-sm" : "bg-[#f4f4f5]"
+              }`}
+              value="tab1"
+            >
               Generate image
             </Tabs.Trigger>
-            <Tabs.Trigger className="TabsTrigger rounded-sm shadow-sm p-1 bg-white" value="tab2">
+
+            <Tabs.Trigger
+              className={`TabsTrigger rounded-sm p-1 ${
+                activeTab === "tab2" ? "bg-white shadow-sm" : "bg-[#f4f4f5]"
+              }`}
+              value="tab2"
+            >
               Find video
             </Tabs.Trigger>
           </Tabs.List>
-          <Tabs.Content className="TabsContent" value="tab1">
-            Image generating
+          <Tabs.Content
+            className="TabsContent flex flex-col gap-2"
+            value="tab1"
+          >
+            <h2 className="font-medium">Prompt</h2>
+            <textarea
+              name="promp"
+              id=""
+              placeholder="Mô tả hình ảnh tại đây"
+              className="resize-none border rounded-sm p-1"
+              rows={4}
+            ></textarea>
+
+            <Button>Tạo hình ảnh</Button>
+
+            <h2 className="font-medium text-lg">Kết quả</h2>
+            <p>Kéo vào timeline để sử dụng</p>
           </Tabs.Content>
-          <Tabs.Content className="TabsContent" value="tab2">
-            Video finding
+
+          <Tabs.Content
+            className="TabsContent flex flex-col gap-2"
+            value="tab2"
+          >
+            <h2 className="font-medium">Tìm kiếm video</h2>
+            <input type="text" name="search" placeholder="Dùng từ khóa để kiếm hình ảnh" className="border rounded-sm p-1"/>
+            <Button>Tìm kiếm</Button>
+            
+            <h2 className="font-medium text-lg">Kết quả</h2>
+            <p>Kéo vào timeline để sử dụng</p>
+            
           </Tabs.Content>
         </Tabs.Root>
       </div>
