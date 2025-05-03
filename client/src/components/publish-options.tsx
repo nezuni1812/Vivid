@@ -523,10 +523,10 @@ export default function PublishOptions({
       platform: i_platform,
       external_id: i_external_id,
       url: i_url,
-      metadata: JSON.stringify({
+      metadata: {
         title: i_title,
         description: i_desc,
-      }),
+      },
     };
 
     try {
@@ -540,7 +540,6 @@ export default function PublishOptions({
           body: JSON.stringify(publishedData),
         }
       );
-
       if (!saveResponse.ok) {
         throw new Error("Không thể lưu bài đăng vào cơ sở dữ liệu.");
       }
@@ -612,7 +611,7 @@ export default function PublishOptions({
             `https://www.youtube.com/watch?v=${data.id}`
         );
         savePublishedData(
-          "Youtube",
+          "YouTube",
           data.id,
           `https://www.youtube.com/watch?v=${data.id}`,
           youtube.title,
