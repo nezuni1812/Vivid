@@ -727,7 +727,7 @@ export default function PublishOptions({
           // console.log("Video vừa đăng:", latestVideo);
           const tiktokVideoUrl = `https://www.tiktok.com/@${tiktokUserInfo?.username}/video/${latestVideo.id}`;
           await savePublishedData(
-            "Tiktok",
+            "TikTok",
             latestVideo.id,
             tiktokVideoUrl,
             tiktok.title,

@@ -76,10 +76,17 @@ def get_clip(clip_id):
         "created_at": clip.created_at.isoformat(),
         "updated_at": clip.updated_at.isoformat()
     }), 200
-
+    
 @clip_bp.route("/clips", methods=["GET"])
 def list_clips():
-    clips = Clip.objects()
+    user_id = request.args.get("user_id")
+    query = {}
+    if user_id:
+        workspaces = Workspace.objects(user_id=user_id)
+        workspace_ids = [str(workspace.id) for workspace in workspaces]
+        query["workspace_id__in"] = workspace_ids
+
+    clips = Clip.objects(**query)
     return jsonify([{
         "clip_id": str(clip.id),
         "workspace_id": str(clip.workspace_id.id),
@@ -87,5 +94,19 @@ def list_clips():
         "clip_url": clip.clip_url,
         "status": clip.status,
         "created_at": clip.created_at.isoformat(),
-        "updated_at": clip.updated_at.isoformat()
+        "updated_at": clip.updated_at.isoformat(),
+        "thumbnail": clip.thumbnail if hasattr(clip, "thumbnail") else None
     } for clip in clips]), 200
+
+# @clip_bp.route("/clips", methods=["GET"])
+# def list_clips():
+#     clips = Clip.objects()
+#     return jsonify([{
+#         "clip_id": str(clip.id),
+#         "workspace_id": str(clip.workspace_id.id),
+#         "prompt": clip.prompt,
+#         "clip_url": clip.clip_url,
+#         "status": clip.status,
+#         "created_at": clip.created_at.isoformat(),
+#         "updated_at": clip.updated_at.isoformat()
+#     } for clip in clips]), 200
