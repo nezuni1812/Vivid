@@ -719,7 +719,7 @@ const TikTokStats = () => {
                         <tr key={video.id} className="border-b hover:bg-muted/30">
                           <td className="p-3">
                             <div className="flex items-center space-x-3">
-                              <div className="relative w-16 h-9 overflow-hidden rounded">
+                              <div className="relative w-16 h-9 overflow-hidden rounded flex-shrink-0">
                                 <img
                                   src={video.thumbnail || "/placeholder.svg?height=200&width=350"}
                                   alt={video.title}
@@ -727,10 +727,10 @@ const TikTokStats = () => {
                                 />
                               </div>
                               <a
-                                href={`https://www.tiktok.com/video/${video.id}`}
+                                href={userInfo ? `https://www.tiktok.com/@${userInfo.username}/video/${video.id}` : "#"}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="font-medium text-primary hover:underline line-clamp-2"
+                                className="flex-1 font-medium text-primary hover:underline line-clamp-2"
                               >
                                 {video.title}
                               </a>
@@ -827,7 +827,7 @@ const TikTokStats = () => {
                       <div className="p-4">
                         <h3 className="font-semibold text-lg mb-2 line-clamp-2">
                           <a
-                            href={`https://www.tiktok.com/video/${video.id}`}
+                            href={userInfo ? `https://www.tiktok.com/@${userInfo.username}/video/${video.id}` : "#"}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-primary hover:underline"
