@@ -187,11 +187,11 @@ export default function CesdkEditor() {
     );
 
     console.log("Video Blob:", videoBlob);
-    
+
     const multipartForm = new FormData();
-    multipartForm.append("file", videoBlob, "video.mp4"); 
+    multipartForm.append("file", videoBlob, "video.mp4");
     multipartForm.append("filename", "generated_video.mp4"); // Add a name for the file
-    
+
     const response = await fetch(
       `${import.meta.env.VITE_BACKEND_URL}/creations/save`,
       {
@@ -199,17 +199,17 @@ export default function CesdkEditor() {
         body: multipartForm,
       }
     );
-    
+
     if (!response.ok) {
       console.error("Error uploading video:", response);
       return;
     }
-    
+
     const data = await response.json();
     console.log("Video uploaded successfully:", data);
-    
+
     return;
-    
+
     // Create a link element
     const link = document.createElement("a");
 
@@ -263,7 +263,6 @@ export default function CesdkEditor() {
     console.log("Added all videos");
   };
 
-
   return (
     <div className="flex gap-2 w-full">
       <div ref={containerRef} className="h-full flex-7" />
@@ -290,10 +289,10 @@ const CreateTab = () => {
   const [activeTab, setActiveTab] = useState("tab1");
   const [prompt, setPrompt] = useState("");
   const [newImage, setNewImage] = useState(
-    "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/e1587b7049c14ef7a878f5c2301ac3e1.png"
+    ""
   );
   const imgRef = useRef<HTMLImageElement>(null);
-  const doSomething = async (prompt: string) => {
+  const generateImageOnUserPrompt = async (prompt: string) => {
     console.log("Prompt:", prompt);
     const response = await fetch(
       `${new URL("creations/create-image", import.meta.env.VITE_BACKEND_URL)}`,
@@ -321,7 +320,7 @@ const CreateTab = () => {
 
     const data = await response.json();
     console.log("Image created:", data);
-    // setNewImage(data.content);
+    setNewImage("https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/e1587b7049c14ef7a878f5c2301ac3e1.png");
   };
   const handleDragStart = async (e: React.DragEvent<HTMLImageElement>) => {
     const img = imgRef.current;
@@ -338,7 +337,7 @@ const CreateTab = () => {
     dataTransfer.items.clear();
     dataTransfer.items.add(file);
   };
-  
+
   return (
     <Tabs.Root
       className="w-full"
@@ -366,54 +365,16 @@ const CreateTab = () => {
         </Tabs.Trigger>
       </Tabs.List>
       <Tabs.Content className="TabsContent flex flex-col gap-2" value="tab1">
-        <h2 className="font-medium">Prompt</h2>
-        <textarea
-          name="promp"
-          id=""
-          value={prompt}
-          onChange={(e) => {
-            setPrompt(e.target.value);
-          }}
-          placeholder="Mô tả hình ảnh tại đây"
-          className="resize-none border rounded-sm p-1"
-          rows={4}
-        ></textarea>
-
-        <Button onClick={() => doSomething(prompt)}>Tạo hình ảnh</Button>
-
-        <h2 className="font-medium text-lg">Kết quả</h2>
-        <p>Kéo vào timeline để sử dụng</p>
-        {newImage ? (
-          <div className="image-container">
-            <div className="img-wrapper">
-              <img
-                src={newImage}
-                alt="New generated image"
-                draggable
-                onDragStart={handleDragStart}
-                ref={imgRef}
-              />
-            </div>
-          </div>
-        ) : (
-          <p className="text-sm font-medium">Chưa có hình ảnh nào được tạo</p>
-        )}
-
-        <DropZone />
+        <ImageGenTab
+          prompt={prompt}
+          setPrompt={setPrompt}
+          generateImageOnUserPrompt={generateImageOnUserPrompt}
+          newImage={newImage}
+        />
       </Tabs.Content>
 
       <Tabs.Content className="TabsContent flex flex-col gap-2" value="tab2">
-        <h2 className="font-medium">Tìm kiếm video</h2>
-        <input
-          type="text"
-          name="search"
-          placeholder="Dùng từ khóa để kiếm hình ảnh"
-          className="border rounded-sm p-1"
-        />
-        <Button>Tìm kiếm</Button>
-
-        <h2 className="font-medium text-lg">Kết quả</h2>
-        <p>Kéo vào timeline để sử dụng</p>
+        <VideoGetTab />
       </Tabs.Content>
     </Tabs.Root>
   );
@@ -433,7 +394,7 @@ const OpenImagePopup = () => {
       const script = popup.document.createElement("script");
       script.src = "https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"; // or your preferred version
       popup.document.head.appendChild(script);
-      
+
       const rootDiv = popup.document.createElement("div");
       rootDiv.id = "react-popup-root";
       popup.document.body.appendChild(rootDiv);
@@ -503,3 +464,66 @@ function DropZone() {
     </div>
   );
 }
+
+const ImageGenTab = ({
+  prompt,
+  setPrompt,
+  generateImageOnUserPrompt,
+  newImage,
+}: {
+  prompt: string;
+  setPrompt: React.Dispatch<React.SetStateAction<string>>;
+  generateImageOnUserPrompt: (e: any) => {};
+  newImage: string;
+}) => {
+  return (
+    <>
+      <h2 className="font-medium">Prompt</h2>
+      <textarea
+        name="promp"
+        id=""
+        value={prompt}
+        onChange={(e) => {
+          setPrompt(e.target.value);
+        }}
+        placeholder="Mô tả hình ảnh tại đây"
+        className="resize-none border rounded-sm p-1"
+        rows={4}
+      ></textarea>
+
+      <Button onClick={() => generateImageOnUserPrompt(prompt)}>
+        Tạo hình ảnh
+      </Button>
+
+      <h2 className="font-medium text-lg">Kết quả</h2>
+      <p>Kéo vào timeline để sử dụng</p>
+      {newImage ? (
+        <div className="image-container">
+          <div className="img-wrapper">
+            <img src={newImage} alt="New generated image" draggable />
+          </div>
+        </div>
+      ) : (
+        <p className="text-sm font-medium">Chưa có hình ảnh nào được tạo</p>
+      )}
+    </>
+  );
+};
+
+const VideoGetTab = () => {
+  return (
+    <>
+      <h2 className="font-medium">Tìm kiếm video</h2>
+      <input
+        type="text"
+        name="search"
+        placeholder="Dùng từ khóa để kiếm hình ảnh"
+        className="border rounded-sm p-1"
+      />
+      <Button>Tìm kiếm</Button>
+
+      <h2 className="font-medium text-lg">Kết quả</h2>
+      <p>Kéo vào timeline để sử dụng</p>
+    </>
+  );
+};
