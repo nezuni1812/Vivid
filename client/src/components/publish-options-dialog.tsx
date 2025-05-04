@@ -10,9 +10,10 @@ import PublishOptions from "./publish-options"
 
 interface PublishOptionsDialogProps {
   trigger?: React.ReactNode
+  exportVid?: () => Promise<any>;
 }
 
-export default function PublishOptionsDialog({ trigger }: PublishOptionsDialogProps) {
+export default function PublishOptionsDialog({ trigger, exportVid }: PublishOptionsDialogProps) {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
@@ -24,7 +25,7 @@ export default function PublishOptionsDialog({ trigger }: PublishOptionsDialogPr
         </Button>
       )}
       <DialogContent className="max-w-5xl w-[90vw] [&>button]:hidden">
-        <PublishOptions isOpen={isOpen} onClose={() => setIsOpen(false)} />
+        <PublishOptions isOpen={isOpen} onClose={() => setIsOpen(false)} exportVid={exportVid} />
       </DialogContent>
     </Dialog>
   )

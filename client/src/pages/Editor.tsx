@@ -5,7 +5,68 @@ import { Button } from "../components/ui/button";
 import ReactDOM from "react-dom/client";
 import PublishOptionsDialog from "../components/publish-options-dialog";
 
-export default function CesdkEditor({resourceList = null}:{resourceList?: string[] | null}) {
+export const ExportVid = async (engine: any) => {
+  const scene = engine.scene.get();
+  const page = engine.scene.getCurrentPage();
+
+  // Video Export
+  const progressCallback = (
+    renderedFrames: any,
+    encodedFrames: any,
+    totalFrames: any
+  ) => {
+    console.log(
+      "Rendered",
+      renderedFrames,
+      "frames and encoded",
+      encodedFrames,
+      "frames out of",
+      totalFrames
+    );
+  };
+  const videoOptions = {
+    h264Profile: 77,
+    h264Level: 52,
+    videoBitrate: 0,
+    audioBitrate: 0,
+    timeOffset: 0,
+    duration: 10,
+    framerate: 30,
+    targetWidth: 1920,
+    targetHeight: 1080,
+  };
+  const videoBlob = await engine.block.exportVideo(
+    page,
+    "video/mp4",
+    progressCallback,
+    videoOptions
+  );
+
+  console.log("Video Blob:", videoBlob);
+
+  const multipartForm = new FormData();
+  multipartForm.append("file", videoBlob, "video.mp4");
+  multipartForm.append("filename", "generated_video.mp4");
+
+  const response = await fetch(
+    `${import.meta.env.VITE_BACKEND_URL}/creations/save`,
+    {
+      method: "POST",
+      body: multipartForm,
+    }
+  );
+
+  if (!response.ok) {
+    console.error("Error uploading video:", response);
+    return null;
+  }
+
+  const data = await response.json();
+  console.log("Video uploaded successfully:", data);
+  return data;
+};
+
+export default function CesdkEditor({ resourceList = null }: { resourceList?: string[] | null }) {
   const location = useLocation();
   
   const containerRef = useRef(null);
@@ -148,7 +209,7 @@ export default function CesdkEditor({resourceList = null}:{resourceList?: string
     };
   }, []);
 
-  const ExportVid = async () => {
+  /*const ExportVid = async () => {
     const scene = mainEngine.scene.get();
     const page = mainEngine.scene.getCurrentPage();
 
@@ -222,23 +283,22 @@ export default function CesdkEditor({resourceList = null}:{resourceList?: string
     // Programmatically trigger the download
     link.click();
     console.log("Video exported successfully!");
-  };
+  };*/
 
   return (
     <div className="flex gap-2 w-full">
       <div ref={containerRef} className="h-full flex-7" />
 
       <div className="new-resource flex-3 pr-2">
-        {/* <button onClick={AddVideo}>Add videos</button> */}
-        <Button
+        {/* <Button
           variant="outline"
           size="icon"
           className="w-full p-2 my-2"
-          onClick={ExportVid}
+          onClick={() => ExportVid(mainEngine)}
         >
           Export video
-        </Button>
-        <PublishOptionsDialog />
+        </Button> */}
+        <PublishOptionsDialog exportVid={() => ExportVid(mainEngine)} />
         <OpenImagePopup />
         <CreateTab />
       </div>

@@ -58,6 +58,7 @@ const LOCAL_STORAGE_KEY = "facebook_stats_auth";
 interface PublishOptionsProps {
   isOpen?: boolean;
   onClose?: () => void;
+  exportVid?: () => Promise<any>;
 }
 
 interface YouTubeUserInfo {
@@ -76,6 +77,7 @@ interface TikTokUserInfo {
 export default function PublishOptions({
   isOpen = true,
   onClose,
+  exportVid,
 }: PublishOptionsProps) {
   const { isSignedIn, accessToken, signIn } = useAuth();
   const [quality, setQuality] = useState("1080p");
@@ -436,16 +438,29 @@ export default function PublishOptions({
       });
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
+    if (!exportVid) {
+      setError("Export function not available.");
+      return;
+    }
+
     setIsExporting(true);
-    setTimeout(() => {
-      alert("Video đã được xuất thành công!");
+    try {
+      const data = await exportVid();
+      if (data && data.url) {
+        alert("Video đã được xuất thành công!");
+        setVideoLink(data.url);
+        setActiveTab("publish");
+      } else {
+        setError("Failed to export video.");
+      }
+    } catch (error) {
+      console.error("Export error:", error);
+      setError("Error exporting video: " + (error instanceof Error ? error.message : "Unknown error"));
+    } finally {
       setIsExporting(false);
-      setVideoLink(
-        "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/clips/What_%20Short%20video%20clip%20designed%20with%20Canva.mp4"
-      ); // Thay bằng link thực tế sau
       setActiveTab("publish");
-    }, 1000);
+    }
   };
 
   const handleYouTubeSignIn = async () => {
@@ -925,9 +940,7 @@ export default function PublishOptions({
           <CardFooter>
             <Button
               className="w-full bg-blue-600 hover:bg-blue-700"
-              onClick={() => {
-                handleExport();
-              }}
+              onClick={handleExport}
               disabled={isExporting}
             >
               {isExporting ? (
