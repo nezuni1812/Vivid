@@ -9,6 +9,30 @@ s3_client = init_storage_client()
 R2_BUCKET = os.getenv("R2_BUCKET")
 R2_PUBLIC_URL = os.getenv("R2_PUBLIC_URL")  # Thêm biến môi trường mới
 
+async def upload_blob_to_r2(blob, file_name):
+    """Upload blob to R2 storage and return public URL"""
+    loop = asyncio.get_event_loop()
+    try:
+        # Save blob to a temporary file
+        temp_file_path = os.path.join("temp_images", file_name)
+        os.makedirs(os.path.dirname(temp_file_path) or ".", exist_ok=True)
+        with open(temp_file_path, "wb") as f:
+            f.write(blob.read())
+
+        # Upload file to R2
+        await loop.run_in_executor(None, lambda: s3_client.upload_file(
+            temp_file_path, R2_BUCKET, file_name
+        ))
+        
+        # Remove the temporary file
+        # os.remove(temp_file_path)
+        
+        # Return public URL format
+        return f"{R2_PUBLIC_URL}/{file_name}"
+        
+    except Exception as e:
+        raise Exception(f"Upload failed: {str(e)}")
+
 async def upload_to_r2(file_path, file_name):
     """Upload file to R2 storage and return public URL"""
     loop = asyncio.get_event_loop()

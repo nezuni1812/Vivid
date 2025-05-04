@@ -1,7 +1,7 @@
-// CesdkEditor.jsx
 import { useEffect, useRef, useState } from "react";
 import * as Tabs from "@radix-ui/react-tabs";
 import { Button } from "../components/ui/button";
+import ReactDOM from "react-dom/client";
 
 export default function CesdkEditor() {
   const containerRef = useRef(null);
@@ -174,7 +174,7 @@ export default function CesdkEditor() {
       videoBitrate: 0,
       audioBitrate: 0,
       timeOffset: 0,
-      // duration: 10,
+      duration: 10,
       framerate: 30,
       targetWidth: 1920,
       targetHeight: 1080,
@@ -187,6 +187,29 @@ export default function CesdkEditor() {
     );
 
     console.log("Video Blob:", videoBlob);
+    
+    const multipartForm = new FormData();
+    multipartForm.append("file", videoBlob, "video.mp4"); 
+    multipartForm.append("filename", "generated_video.mp4"); // Add a name for the file
+    
+    const response = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/creations/save`,
+      {
+        method: "POST",
+        body: multipartForm,
+      }
+    );
+    
+    if (!response.ok) {
+      console.error("Error uploading video:", response);
+      return;
+    }
+    
+    const data = await response.json();
+    console.log("Video uploaded successfully:", data);
+    
+    return;
+    
     // Create a link element
     const link = document.createElement("a");
 
@@ -240,47 +263,6 @@ export default function CesdkEditor() {
     console.log("Added all videos");
   };
 
-  // choose the default tab to be opened
-  const [activeTab, setActiveTab] = useState("tab1");
-
-  const [prompt, setPrompt] = useState("");
-
-  const imgRef = useRef<HTMLImageElement>(null);
-
-  const [newImage, setNewImage] = useState("https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/e1587b7049c14ef7a878f5c2301ac3e1.png");
-
-  const doSomething = async (prompt: string) => {
-    console.log("Prompt:", prompt);
-    const response = await fetch(
-      `${new URL("creations/create-image", import.meta.env.VITE_BACKEND_URL)}`
-    );
-
-    if (!response.ok) {
-      console.error("Error creating image:", response.statusText);
-      return;
-    }
-
-    const data = await response.json();
-    console.log("Image created:", data);
-    setNewImage(data.content);
-  };
-  
-  const handleDragStart = async (e: React.DragEvent<HTMLImageElement>) => {
-    const img = imgRef.current;
-    console.log("img", img);
-
-    if (!img) return;
-
-    const response = await fetch(img.src);
-    const blob = await response.blob();
-
-    const file = new File([blob], 'image.png', { type: blob.type });
-
-    const dataTransfer = e.dataTransfer;
-    dataTransfer.items.clear();
-    dataTransfer.items.add(file);
-  };
-
 
   return (
     <div className="flex gap-2 w-full">
@@ -296,82 +278,228 @@ export default function CesdkEditor() {
         >
           Export video
         </Button>
-
-        <Tabs.Root
-          className="w-full"
-          defaultValue="tab1"
-          value={activeTab}
-          onValueChange={setActiveTab}
-        >
-          <Tabs.List className="rounded-lg bg-[#f4f4f5] p-1 flex gap-1 w-max">
-            <Tabs.Trigger
-              className={`TabsTrigger rounded-sm p-1 ${
-                activeTab === "tab1" ? "bg-white shadow-sm" : "bg-[#f4f4f5]"
-              }`}
-              value="tab1"
-            >
-              Generate image
-            </Tabs.Trigger>
-
-            <Tabs.Trigger
-              className={`TabsTrigger rounded-sm p-1 ${
-                activeTab === "tab2" ? "bg-white shadow-sm" : "bg-[#f4f4f5]"
-              }`}
-              value="tab2"
-            >
-              Find video
-            </Tabs.Trigger>
-          </Tabs.List>
-          <Tabs.Content
-            className="TabsContent flex flex-col gap-2"
-            value="tab1"
-          >
-            <h2 className="font-medium">Prompt</h2>
-            <textarea
-              name="promp"
-              id=""
-              value={prompt}
-              onChange={(e) => {
-                setPrompt(e.target.value);
-              }}
-              placeholder="Mô tả hình ảnh tại đây"
-              className="resize-none border rounded-sm p-1"
-              rows={4}
-            ></textarea>
-
-            <Button onClick={() => doSomething(prompt)}>Tạo hình ảnh</Button>
-
-            <h2 className="font-medium text-lg">Kết quả</h2>
-            <p>Kéo vào timeline để sử dụng</p>
-            {newImage ? (
-              <div className="image-container">
-                <div className="img-wrapper">
-                  <img src={newImage} alt="New generated image" draggable onDragStart={handleDragStart} ref={imgRef}/>
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm font-medium">Chưa có hình ảnh nào được tạo</p>
-            )}
-          </Tabs.Content>
-
-          <Tabs.Content
-            className="TabsContent flex flex-col gap-2"
-            value="tab2"
-          >
-            <h2 className="font-medium">Tìm kiếm video</h2>
-            <input
-              type="text"
-              name="search"
-              placeholder="Dùng từ khóa để kiếm hình ảnh"
-              className="border rounded-sm p-1"
-            />
-            <Button>Tìm kiếm</Button>
-
-            <h2 className="font-medium text-lg">Kết quả</h2>
-            <p>Kéo vào timeline để sử dụng</p>
-          </Tabs.Content>
-        </Tabs.Root>
+        <OpenImagePopup />
+        <CreateTab />
       </div>
+    </div>
+  );
+}
+
+const CreateTab = () => {
+  // choose the default tab to be opened
+  const [activeTab, setActiveTab] = useState("tab1");
+  const [prompt, setPrompt] = useState("");
+  const [newImage, setNewImage] = useState(
+    "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/e1587b7049c14ef7a878f5c2301ac3e1.png"
+  );
+  const imgRef = useRef<HTMLImageElement>(null);
+  const doSomething = async (prompt: string) => {
+    console.log("Prompt:", prompt);
+    const response = await fetch(
+      `${new URL("creations/create-image", import.meta.env.VITE_BACKEND_URL)}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt,
+          negative_prompt: "bad, ugly, deformed, blurry",
+          width: 512,
+          height: 512,
+          samples: 1,
+          steps: 20,
+          seed: null,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      console.error("Error creating image:", response.statusText);
+      return;
+    }
+
+    const data = await response.json();
+    console.log("Image created:", data);
+    // setNewImage(data.content);
+  };
+  const handleDragStart = async (e: React.DragEvent<HTMLImageElement>) => {
+    const img = imgRef.current;
+    console.log("img", img);
+
+    if (!img) return;
+
+    const response = await fetch(img.src);
+    const blob = await response.blob();
+
+    const file = new File([blob], "image.png");
+
+    const dataTransfer = e.dataTransfer;
+    dataTransfer.items.clear();
+    dataTransfer.items.add(file);
+  };
+  
+  return (
+    <Tabs.Root
+      className="w-full"
+      defaultValue="tab1"
+      value={activeTab}
+      onValueChange={setActiveTab}
+    >
+      <Tabs.List className="rounded-lg bg-[#f4f4f5] p-1 flex gap-1 w-max">
+        <Tabs.Trigger
+          className={`TabsTrigger rounded-sm p-1 ${
+            activeTab === "tab1" ? "bg-white shadow-sm" : "bg-[#f4f4f5]"
+          }`}
+          value="tab1"
+        >
+          Generate image
+        </Tabs.Trigger>
+
+        <Tabs.Trigger
+          className={`TabsTrigger rounded-sm p-1 ${
+            activeTab === "tab2" ? "bg-white shadow-sm" : "bg-[#f4f4f5]"
+          }`}
+          value="tab2"
+        >
+          Find video
+        </Tabs.Trigger>
+      </Tabs.List>
+      <Tabs.Content className="TabsContent flex flex-col gap-2" value="tab1">
+        <h2 className="font-medium">Prompt</h2>
+        <textarea
+          name="promp"
+          id=""
+          value={prompt}
+          onChange={(e) => {
+            setPrompt(e.target.value);
+          }}
+          placeholder="Mô tả hình ảnh tại đây"
+          className="resize-none border rounded-sm p-1"
+          rows={4}
+        ></textarea>
+
+        <Button onClick={() => doSomething(prompt)}>Tạo hình ảnh</Button>
+
+        <h2 className="font-medium text-lg">Kết quả</h2>
+        <p>Kéo vào timeline để sử dụng</p>
+        {newImage ? (
+          <div className="image-container">
+            <div className="img-wrapper">
+              <img
+                src={newImage}
+                alt="New generated image"
+                draggable
+                onDragStart={handleDragStart}
+                ref={imgRef}
+              />
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm font-medium">Chưa có hình ảnh nào được tạo</p>
+        )}
+
+        <DropZone />
+      </Tabs.Content>
+
+      <Tabs.Content className="TabsContent flex flex-col gap-2" value="tab2">
+        <h2 className="font-medium">Tìm kiếm video</h2>
+        <input
+          type="text"
+          name="search"
+          placeholder="Dùng từ khóa để kiếm hình ảnh"
+          className="border rounded-sm p-1"
+        />
+        <Button>Tìm kiếm</Button>
+
+        <h2 className="font-medium text-lg">Kết quả</h2>
+        <p>Kéo vào timeline để sử dụng</p>
+      </Tabs.Content>
+    </Tabs.Root>
+  );
+};
+
+const OpenImagePopup = () => {
+  const handleClick = () => {
+    const popup = window.open(
+      "",
+      "CreateTabPopup",
+      "width=800,height=600,resizable=yes,scrollbars=no,status=no"
+    );
+
+    if (popup) {
+      popup.document.title = "Image Popup";
+
+      const script = popup.document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"; // or your preferred version
+      popup.document.head.appendChild(script);
+      
+      const rootDiv = popup.document.createElement("div");
+      rootDiv.id = "react-popup-root";
+      popup.document.body.appendChild(rootDiv);
+
+      // Add some basic styling
+      const style = popup.document.createElement("style");
+      style.textContent = `
+        body { margin: 0; font-family: sans-serif; padding: 1rem; }
+      `;
+      popup.document.head.appendChild(style);
+
+      // Mount React component into popup
+      const root = ReactDOM.createRoot(rootDiv);
+      root.render(<CreateTab />);
+    }
+  };
+
+  return <button onClick={handleClick}>Open CreateTab in Popup</button>;
+};
+
+function DropZone() {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+
+    const dt = e.dataTransfer;
+
+    console.log("Types:", dt.types);
+
+    if (dt.files && dt.files.length > 0) {
+      console.log("Dropped files:", dt.files);
+    }
+
+    if (dt.types.includes("text/plain")) {
+      const text = dt.getData("text/plain");
+      console.log("Dropped text:", text);
+    }
+
+    if (dt.types.includes("text/html")) {
+      const html = dt.getData("text/html");
+      console.log("Dropped HTML:", html);
+    }
+
+    if (dt.types.includes("application/json")) {
+      const json = dt.getData("application/json");
+      console.log("Dropped JSON:", json);
+    }
+
+    // Other possible types: "Files", "text/uri-list", custom MIME types, etc.
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault(); // Allow dropping
+  };
+
+  return (
+    <div
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      style={{
+        border: "2px dashed #888",
+        padding: "50px",
+        textAlign: "center",
+        marginTop: "40px",
+      }}
+    >
+      Drop something here (file, text, image, etc.)
     </div>
   );
 }

@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 import uuid
 from urllib.parse import urljoin
 
-from services.storage.storage_service import upload_to_r2
+from services.storage.storage_service import upload_to_r2, upload_blob_to_r2
 
 load_dotenv()
 
@@ -57,11 +57,35 @@ def create_image():
     if not data or "prompt" not in data:
         return jsonify({"error": "No data provided"}), 400
     
+    print("Data:", data)
+    return jsonify({"content": "good request"}), 200
+
     filename = asyncio.run(get_image(data["prompt"]))
     print("Generating image with description:", data["prompt"], " with filename:", filename)
     return jsonify({"content": filename}), 200
-    
 
+@creation_bp.route("/creations/save", methods=["POST"])
+def save_video():
+    print("Saving video")
+    # data = request.files
+    # if not data:
+    #     return jsonify({"error": "No data provided"}), 400
+    
+    # take video blob from key file from multipart/form-data
+    blob = request.files['file']
+    if 'file' not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+    
+    # take filename from form data
+    filename = request.form.get('filename')
+    if not request.form.get('filename'):
+        return jsonify({"error": "No filename provided"}), 400
+    
+    video_url = asyncio.run(upload_blob_to_r2(blob, filename))
+    print("Video URL:", video_url)
+    return jsonify({"content": video_url}), 200
+    
+    
 @creation_bp.route("/creations/edit", methods=["POST"])
 def gen_on_prompt():
     print("Generating on prompt")
