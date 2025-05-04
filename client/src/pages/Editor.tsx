@@ -1,7 +1,8 @@
-// CesdkEditor.jsx
 import { useEffect, useRef, useState } from "react";
 import * as Tabs from "@radix-ui/react-tabs";
 import { Button } from "../components/ui/button";
+import ReactDOM from "react-dom/client";
+import PublishOptionsDialog from "../components/publish-options-dialog";
 
 export default function CesdkEditor() {
   const containerRef = useRef(null);
@@ -79,7 +80,7 @@ export default function CesdkEditor() {
         "https://videos.pexels.com/video-files/3139886/3139886-hd_720_1280_30fps.mp4",
         "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/4326b0f984a544dfaec15b8fe5193365.png",
         "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/7ab96f7e287843e2b2dcd015cf785139.png",
-        "https://videos.pexels.com/video-files/31801617/13549114_1920_1080_25fps.mp4",
+        // "https://videos.pexels.com/video-files/31801617/13549114_1920_1080_25fps.mp4",
         "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/5a0379e1332d48f49fb0fe8016262a81.png",
         "https://videos.pexels.com/video-files/5465034/5465034-uhd_2160_3840_25fps.mp4",
         "https://videos.pexels.com/video-files/4990320/4990320-hd_1920_1080_30fps.mp4",
@@ -87,17 +88,7 @@ export default function CesdkEditor() {
         "https://videos.pexels.com/video-files/5847513/5847513-hd_1080_1920_24fps.mp4",
         "https://videos.pexels.com/video-files/7647252/7647252-uhd_2560_1440_24fps.mp4",
         "https://videos.pexels.com/video-files/7955159/7955159-hd_2048_1080_25fps.mp4",
-        "https://videos.pexels.com/video-files/25935014/11922020_720_1280_15fps.mp4",
-
-        // "https://videos.pexels.com/video-files/5125962/5125962-uhd_2732_1440_30fps.mp4",
-        // "https://videos.pexels.com/video-files/6976105/6976105-hd_960_720_25fps.mp4",
-        // "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/temp_images/c5c18475a432489ba61dc6d8c0f0a037.png",
-        // "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/temp_images/b388e30ea40445edadece16e0ef846a7.png",
-        // "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/temp_images/07d3290668134cc2a21d55dbaa9f76b7.png",
-        // "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/temp_images/d5d87d9faf2a421f918cabc1840f23bc.png",
-        // "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/temp_images/7e21dd47f3b848e49e050d5fb46ce76c.png",
-        // "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/temp_images/ceb5f4361e8b4e73afb9c212ed9c5641.png",
-        // "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/temp_images/aaad8326507d48d38a6ff8c6e4a91f5a.png",
+        // "https://videos.pexels.com/video-files/25935014/11922020_720_1280_15fps.mp4",
       ];
 
       let engine = cesdkInstance.engine;
@@ -174,7 +165,7 @@ export default function CesdkEditor() {
       videoBitrate: 0,
       audioBitrate: 0,
       timeOffset: 0,
-      // duration: 10,
+      duration: 10,
       framerate: 30,
       targetWidth: 1920,
       targetHeight: 1080,
@@ -187,6 +178,29 @@ export default function CesdkEditor() {
     );
 
     console.log("Video Blob:", videoBlob);
+
+    const multipartForm = new FormData();
+    multipartForm.append("file", videoBlob, "video.mp4");
+    multipartForm.append("filename", "generated_video.mp4"); // Add a name for the file
+
+    const response = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/creations/save`,
+      {
+        method: "POST",
+        body: multipartForm,
+      }
+    );
+
+    if (!response.ok) {
+      console.error("Error uploading video:", response);
+      return;
+    }
+
+    const data = await response.json();
+    console.log("Video uploaded successfully:", data);
+
+    return;
+
     // Create a link element
     const link = document.createElement("a");
 
@@ -200,87 +214,6 @@ export default function CesdkEditor() {
     link.click();
     console.log("Video exported successfully!");
   };
-
-  const AddVideo = () => {
-    console.log("AddVideo called");
-    if (!cesdkInstance) {
-      console.error("CESDK instance is not initialized yet.");
-      return;
-    }
-    const videoUrls = [
-      // "https://videos.pexels.com/video-files/5125962/5125962-uhd_2732_1440_30fps.mp4",
-      "https://videos.pexels.com/video-files/5125962/5125962-hd_2048_1080_30fps.mp4",
-      // "https://videos.pexels.com/video-files/5125962/5125962-hd_1366_720_60fps.mp4",
-      // "https://cdn.img.ly/assets/demo/v2.mp4",
-    ];
-
-    if (!mainEngine) {
-      console.error("Engine is not initialized yet.");
-      return;
-    }
-
-    const page = mainEngine.scene.getCurrentPage();
-    if (!page) {
-      console.error("Current page is not available.");
-      return;
-    }
-    // console.log("Track created:", track);
-    mainEngine.block.appendChild(page, mainTrack);
-    console.log("Before adding video:");
-    for (const url of videoUrls) {
-      const video2 = mainEngine.block.create("graphic");
-      mainEngine.block.setShape(video2, mainEngine.block.createShape("rect"));
-      const videoFill2 = mainEngine.block.createFill("video");
-      mainEngine.block.setString(videoFill2, "fill/video/fileURI", url);
-      mainEngine.block.setFill(video2, videoFill2);
-      mainEngine.block.appendChild(mainTrack, video2);
-      console.log("Video added:", video2);
-    }
-    mainEngine.block.fillParent(mainTrack);
-    console.log("Added all videos");
-  };
-
-  // choose the default tab to be opened
-  const [activeTab, setActiveTab] = useState("tab1");
-
-  const [prompt, setPrompt] = useState("");
-
-  const imgRef = useRef<HTMLImageElement>(null);
-
-  const [newImage, setNewImage] = useState("https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/e1587b7049c14ef7a878f5c2301ac3e1.png");
-
-  const doSomething = async (prompt: string) => {
-    console.log("Prompt:", prompt);
-    const response = await fetch(
-      `${new URL("creations/create-image", import.meta.env.VITE_BACKEND_URL)}`
-    );
-
-    if (!response.ok) {
-      console.error("Error creating image:", response.statusText);
-      return;
-    }
-
-    const data = await response.json();
-    console.log("Image created:", data);
-    setNewImage(data.content);
-  };
-  
-  const handleDragStart = async (e: React.DragEvent<HTMLImageElement>) => {
-    const img = imgRef.current;
-    console.log("img", img);
-
-    if (!img) return;
-
-    const response = await fetch(img.src);
-    const blob = await response.blob();
-
-    const file = new File([blob], 'image.png', { type: blob.type });
-
-    const dataTransfer = e.dataTransfer;
-    dataTransfer.items.clear();
-    dataTransfer.items.add(file);
-  };
-
 
   return (
     <div className="flex gap-2 w-full">
@@ -296,82 +229,188 @@ export default function CesdkEditor() {
         >
           Export video
         </Button>
-
-        <Tabs.Root
-          className="w-full"
-          defaultValue="tab1"
-          value={activeTab}
-          onValueChange={setActiveTab}
-        >
-          <Tabs.List className="rounded-lg bg-[#f4f4f5] p-1 flex gap-1 w-max">
-            <Tabs.Trigger
-              className={`TabsTrigger rounded-sm p-1 ${
-                activeTab === "tab1" ? "bg-white shadow-sm" : "bg-[#f4f4f5]"
-              }`}
-              value="tab1"
-            >
-              Generate image
-            </Tabs.Trigger>
-
-            <Tabs.Trigger
-              className={`TabsTrigger rounded-sm p-1 ${
-                activeTab === "tab2" ? "bg-white shadow-sm" : "bg-[#f4f4f5]"
-              }`}
-              value="tab2"
-            >
-              Find video
-            </Tabs.Trigger>
-          </Tabs.List>
-          <Tabs.Content
-            className="TabsContent flex flex-col gap-2"
-            value="tab1"
-          >
-            <h2 className="font-medium">Prompt</h2>
-            <textarea
-              name="promp"
-              id=""
-              value={prompt}
-              onChange={(e) => {
-                setPrompt(e.target.value);
-              }}
-              placeholder="Mô tả hình ảnh tại đây"
-              className="resize-none border rounded-sm p-1"
-              rows={4}
-            ></textarea>
-
-            <Button onClick={() => doSomething(prompt)}>Tạo hình ảnh</Button>
-
-            <h2 className="font-medium text-lg">Kết quả</h2>
-            <p>Kéo vào timeline để sử dụng</p>
-            {newImage ? (
-              <div className="image-container">
-                <div className="img-wrapper">
-                  <img src={newImage} alt="New generated image" draggable onDragStart={handleDragStart} ref={imgRef}/>
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm font-medium">Chưa có hình ảnh nào được tạo</p>
-            )}
-          </Tabs.Content>
-
-          <Tabs.Content
-            className="TabsContent flex flex-col gap-2"
-            value="tab2"
-          >
-            <h2 className="font-medium">Tìm kiếm video</h2>
-            <input
-              type="text"
-              name="search"
-              placeholder="Dùng từ khóa để kiếm hình ảnh"
-              className="border rounded-sm p-1"
-            />
-            <Button>Tìm kiếm</Button>
-
-            <h2 className="font-medium text-lg">Kết quả</h2>
-            <p>Kéo vào timeline để sử dụng</p>
-          </Tabs.Content>
-        </Tabs.Root>
+        <PublishOptionsDialog />
+        <OpenImagePopup />
+        <CreateTab />
       </div>
     </div>
   );
 }
+
+const CreateTab = () => {
+  // choose the default tab to be opened
+  const [activeTab, setActiveTab] = useState("tab1");
+  const [prompt, setPrompt] = useState("");
+  const [newImage, setNewImage] = useState(
+    ""
+  );
+  const generateImageOnUserPrompt = async (prompt: string) => {
+    console.log("Prompt:", prompt);
+    const response = await fetch(
+      `${new URL("creations/create-image", import.meta.env.VITE_BACKEND_URL)}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt,
+          negative_prompt: "bad, ugly, deformed, blurry",
+          width: 512,
+          height: 512,
+          samples: 1,
+          steps: 20,
+          seed: null,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      console.error("Error creating image:", response.statusText);
+      return;
+    }
+
+    const data = await response.json();
+    console.log("Image created:", data);
+    setNewImage("https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/e1587b7049c14ef7a878f5c2301ac3e1.png");
+  };
+
+  return (
+    <Tabs.Root
+      className="w-full"
+      defaultValue="tab1"
+      value={activeTab}
+      onValueChange={setActiveTab}
+    >
+      <Tabs.List className="rounded-lg bg-[#f4f4f5] p-1 flex gap-1 w-max">
+        <Tabs.Trigger
+          className={`TabsTrigger rounded-sm p-1 ${
+            activeTab === "tab1" ? "bg-white shadow-sm" : "bg-[#f4f4f5]"
+          }`}
+          value="tab1"
+        >
+          Generate image
+        </Tabs.Trigger>
+
+        <Tabs.Trigger
+          className={`TabsTrigger rounded-sm p-1 ${
+            activeTab === "tab2" ? "bg-white shadow-sm" : "bg-[#f4f4f5]"
+          }`}
+          value="tab2"
+        >
+          Find video
+        </Tabs.Trigger>
+      </Tabs.List>
+      <Tabs.Content className="TabsContent flex flex-col gap-2" value="tab1">
+        <ImageGenTab
+          prompt={prompt}
+          setPrompt={setPrompt}
+          generateImageOnUserPrompt={generateImageOnUserPrompt}
+          newImage={newImage}
+        />
+      </Tabs.Content>
+
+      <Tabs.Content className="TabsContent flex flex-col gap-2" value="tab2">
+        <VideoGetTab />
+      </Tabs.Content>
+    </Tabs.Root>
+  );
+};
+
+const OpenImagePopup = () => {
+  const handleClick = () => {
+    const popup = window.open(
+      "",
+      "CreateTabPopup",
+      "width=800,height=600,resizable=yes,scrollbars=no,status=no"
+    );
+
+    if (popup) {
+      popup.document.title = "Image Popup";
+
+      const script = popup.document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"; // or your preferred version
+      popup.document.head.appendChild(script);
+
+      const rootDiv = popup.document.createElement("div");
+      rootDiv.id = "react-popup-root";
+      popup.document.body.appendChild(rootDiv);
+
+      // Add some basic styling
+      const style = popup.document.createElement("style");
+      style.textContent = `
+        body { margin: 0; font-family: sans-serif; padding: 1rem; }
+      `;
+      popup.document.head.appendChild(style);
+
+      // Mount React component into popup
+      const root = ReactDOM.createRoot(rootDiv);
+      root.render(<CreateTab />);
+    }
+  };
+
+  return <button onClick={handleClick}>Open Image window in Popup</button>;
+};
+
+const ImageGenTab = ({
+  prompt,
+  setPrompt,
+  generateImageOnUserPrompt,
+  newImage,
+}: {
+  prompt: string;
+  setPrompt: React.Dispatch<React.SetStateAction<string>>;
+  generateImageOnUserPrompt: (e: any) => {};
+  newImage: string;
+}) => {
+  return (
+    <>
+      <h2 className="font-medium">Prompt</h2>
+      <textarea
+        name="promp"
+        id=""
+        value={prompt}
+        onChange={(e) => {
+          setPrompt(e.target.value);
+        }}
+        placeholder="Mô tả hình ảnh tại đây"
+        className="resize-none border rounded-sm p-1"
+        rows={4}
+      ></textarea>
+
+      <Button onClick={() => generateImageOnUserPrompt(prompt)}>
+        Tạo hình ảnh
+      </Button>
+
+      <h2 className="font-medium text-lg">Kết quả</h2>
+      <p>Kéo vào timeline để sử dụng</p>
+      {newImage ? (
+        <div className="image-container">
+          <div className="img-wrapper">
+            <img src={newImage} alt="New generated image" draggable />
+          </div>
+        </div>
+      ) : (
+        <p className="text-sm font-medium">Chưa có hình ảnh nào được tạo</p>
+      )}
+    </>
+  );
+};
+
+const VideoGetTab = () => {
+  return (
+    <>
+      <h2 className="font-medium">Tìm kiếm video</h2>
+      <input
+        type="text"
+        name="search"
+        placeholder="Dùng từ khóa để kiếm hình ảnh"
+        className="border rounded-sm p-1"
+      />
+      <Button>Tìm kiếm</Button>
+
+      <h2 className="font-medium text-lg">Kết quả</h2>
+      <p>Kéo vào timeline để sử dụng</p>
+    </>
+  );
+};
