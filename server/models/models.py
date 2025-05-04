@@ -71,8 +71,7 @@ class Audio(Document):
     script_id = ReferenceField(Script, required=True)
     audio_url = StringField(required=True)
     timings = StringField(required=True)  # JSON string of timing data
-    voice_style = IntField(default=1)
     status = StringField(default="processing", choices=["processing", "completed", "error"])
     created_at = DateTimeField(default=datetime.utcnow)
-    
+    voice_style = IntField(default=1)  # 1: serious, 2: fun
     meta = {"collection": "audios"}

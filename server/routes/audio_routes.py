@@ -151,4 +151,13 @@ def generate_audio_from_file():
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
+@audio_bp.route("/get-audio/<workspace_id>", methods=["GET"])
+def get_audio_by_workspace(workspace_id):
+    """Get all audio files for a specific workspace"""
+    try:
+        result, status = AudioController.get_audio_by_workspace_id(workspace_id)
+        return jsonify(result), status
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

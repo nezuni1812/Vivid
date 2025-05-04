@@ -2,6 +2,7 @@ from services.audio.audio_service import process_script_to_audio_and_timings
 from services.audio.speech_to_text_service import analyze_audio
 from services.storage.storage_service import upload_to_r2, delete_from_r2
 from controllers.script_controller import ScriptController
+from models.models import Audio, Script, Workspace
 import os
 import json  # Thêm dòng này vào đầu file
 
@@ -190,4 +191,45 @@ class AudioController:
             }, 200
             
         except Exception as e:
+            return {"error": str(e)}, 500
+        
+    @staticmethod
+    def get_audio_by_workspace_id(workspace_id_string):
+        """Get audio dựa vào string ID của workspace"""
+        try:
+            from bson.objectid import ObjectId
+            import json
+            from models.models import Workspace, Audio
+            
+            # Bước 1: Tìm workspace bằng string ID
+            workspace = Workspace.objects(id=workspace_id_string).first()
+            if not workspace:
+                return {"error": f"Không tìm thấy workspace với ID {workspace_id_string}"}, 404
+            
+            # Bước 2: Tìm audio bằng object workspace (quan trọng!)
+            audio = Audio.objects(workspace_id=workspace).first()
+            if not audio:
+                return {"message": "Không có audio nào cho workspace này"}, 200
+            
+            # Bước 3: Xử lý dữ liệu audio
+            try:
+                timings = json.loads(audio.timings) if isinstance(audio.timings, str) else audio.timings
+            except:
+                timings = audio.timings
+                
+            # Trả về dữ liệu audio
+            result = {
+                "audio_id": str(audio.id),
+                "workspace_id": str(audio.workspace_id.id),
+                "script_id": str(audio.script_id.id),
+                "audio_url": audio.audio_url,
+                "timings": timings,
+                "status": audio.status,
+                "voice_style": audio.voice_style
+            }
+            
+            return result, 200
+            
+        except Exception as e:
+            print(f"Lỗi trong get_audio_by_workspace_id: {str(e)}")
             return {"error": str(e)}, 500
