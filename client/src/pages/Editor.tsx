@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import * as Tabs from "@radix-ui/react-tabs";
 import { Button } from "../components/ui/button";
 import ReactDOM from "react-dom/client";
 import PublishOptionsDialog from "../components/publish-options-dialog";
 
-export default function CesdkEditor() {
+export default function CesdkEditor({resourceList = null}:{resourceList?: string[] | null}) {
+  const location = useLocation();
+  
   const containerRef = useRef(null);
   let cesdkInstance: any;
   let mainTrack: any;
@@ -75,7 +78,11 @@ export default function CesdkEditor() {
       await cesdkInstance.createVideoScene();
 
       // Set default video timeline
-      const videoUrls = [
+      if (!resourceList){
+        console.log("No resource list provided, using default video URLs.");
+      }
+      
+      var videoUrls = resourceList ?? [
         "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/836cb7493a764771821f719fd936d3bf.png",
         "https://videos.pexels.com/video-files/3139886/3139886-hd_720_1280_30fps.mp4",
         "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/4326b0f984a544dfaec15b8fe5193365.png",
@@ -90,6 +97,8 @@ export default function CesdkEditor() {
         "https://videos.pexels.com/video-files/7955159/7955159-hd_2048_1080_25fps.mp4",
         // "https://videos.pexels.com/video-files/25935014/11922020_720_1280_15fps.mp4",
       ];
+      
+      videoUrls = location.state?.resourceList ?? videoUrls;
 
       let engine = cesdkInstance.engine;
 

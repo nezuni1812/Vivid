@@ -89,7 +89,7 @@ export default function CreateVideo() {
 
   return (
     <>
-      {(activeStep === "content" || true) && (
+      {activeStep === "content" && (
         <main className="max-w-[45rem] container mx-auto py-6 px-4 md:px-6">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center">
@@ -215,7 +215,7 @@ export default function CreateVideo() {
         </main>
       )}
       
-      {(activeStep === "generate" && false)&& (
+      {activeStep === "generate"&& (
         <Resource workspace_id={workspace_id}></Resource>
       )}
     </>
