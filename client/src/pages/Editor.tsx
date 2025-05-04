@@ -68,7 +68,7 @@ export const ExportVid = async (engine: any) => {
 
 export default function CesdkEditor({ resourceList = null }: { resourceList?: string[] | null }) {
   const location = useLocation();
-  
+
   const containerRef = useRef(null);
   let cesdkInstance: any;
   let mainTrack: any;
@@ -139,10 +139,10 @@ export default function CesdkEditor({ resourceList = null }: { resourceList?: st
       await cesdkInstance.createVideoScene();
 
       // Set default video timeline
-      if (!resourceList){
+      if (!resourceList) {
         console.log("No resource list provided, using default video URLs.");
       }
-      
+
       var videoUrls = resourceList ?? [
         "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/836cb7493a764771821f719fd936d3bf.png",
         "https://videos.pexels.com/video-files/3139886/3139886-hd_720_1280_30fps.mp4",
@@ -158,7 +158,7 @@ export default function CesdkEditor({ resourceList = null }: { resourceList?: st
         "https://videos.pexels.com/video-files/7955159/7955159-hd_2048_1080_25fps.mp4",
         // "https://videos.pexels.com/video-files/25935014/11922020_720_1280_15fps.mp4",
       ];
-      
+
       videoUrls = location.state?.resourceList ?? videoUrls;
 
       let engine = cesdkInstance.engine;
@@ -195,6 +195,32 @@ export default function CesdkEditor({ resourceList = null }: { resourceList?: st
 
         engine.block.appendChild(track, video2);
       }
+      const audio = engine.block.create("audio");
+      engine.block.appendChild(page, audio);
+      engine.block.setString(
+        audio,
+        "audio/fileURI",
+        "https://cdn.img.ly/assets/demo/v1/ly.img.audio/audios/far_from_home.m4a"
+      );
+
+      const track1 = engine.block.create("track");
+      
+      const text = engine.block.create("text");
+      engine.block.appendChild(track1, text);
+      engine.block.replaceText(text, "Hello World");
+      engine.block.setWidth(text, 900);
+      engine.block.setHeight(text, 100);
+      engine.block.setPositionY(text, 600);
+      // engine.block.alignHorizontally([text], "Right");
+      
+      engine.block.setTextFontSize(text, 12);
+      engine.block.setTextColor(text, { r: 255, g: 255, b: 255, a: 1.0 });
+      
+      const text1 = engine.block.create("text");
+      engine.block.appendChild(track1, text1);
+      engine.block.replaceText(text1, "Hi");
+
+      engine.block.appendChild(page, track1);
       engine.block.fillParent(track);
     };
 
@@ -310,9 +336,7 @@ const CreateTab = () => {
   // choose the default tab to be opened
   const [activeTab, setActiveTab] = useState("tab1");
   const [prompt, setPrompt] = useState("");
-  const [newImage, setNewImage] = useState(
-    ""
-  );
+  const [newImage, setNewImage] = useState("");
   const generateImageOnUserPrompt = async (prompt: string) => {
     console.log("Prompt:", prompt);
     const response = await fetch(
@@ -341,7 +365,9 @@ const CreateTab = () => {
 
     const data = await response.json();
     console.log("Image created:", data);
-    setNewImage("https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/e1587b7049c14ef7a878f5c2301ac3e1.png");
+    setNewImage(
+      "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/e1587b7049c14ef7a878f5c2301ac3e1.png"
+    );
   };
 
   return (
