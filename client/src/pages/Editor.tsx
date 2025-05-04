@@ -291,7 +291,6 @@ const CreateTab = () => {
   const [newImage, setNewImage] = useState(
     ""
   );
-  const imgRef = useRef<HTMLImageElement>(null);
   const generateImageOnUserPrompt = async (prompt: string) => {
     console.log("Prompt:", prompt);
     const response = await fetch(
@@ -321,21 +320,6 @@ const CreateTab = () => {
     const data = await response.json();
     console.log("Image created:", data);
     setNewImage("https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/e1587b7049c14ef7a878f5c2301ac3e1.png");
-  };
-  const handleDragStart = async (e: React.DragEvent<HTMLImageElement>) => {
-    const img = imgRef.current;
-    console.log("img", img);
-
-    if (!img) return;
-
-    const response = await fetch(img.src);
-    const blob = await response.blob();
-
-    const file = new File([blob], "image.png");
-
-    const dataTransfer = e.dataTransfer;
-    dataTransfer.items.clear();
-    dataTransfer.items.add(file);
   };
 
   return (
@@ -412,58 +396,8 @@ const OpenImagePopup = () => {
     }
   };
 
-  return <button onClick={handleClick}>Open CreateTab in Popup</button>;
+  return <button onClick={handleClick}>Open Image window in Popup</button>;
 };
-
-function DropZone() {
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-
-    const dt = e.dataTransfer;
-
-    console.log("Types:", dt.types);
-
-    if (dt.files && dt.files.length > 0) {
-      console.log("Dropped files:", dt.files);
-    }
-
-    if (dt.types.includes("text/plain")) {
-      const text = dt.getData("text/plain");
-      console.log("Dropped text:", text);
-    }
-
-    if (dt.types.includes("text/html")) {
-      const html = dt.getData("text/html");
-      console.log("Dropped HTML:", html);
-    }
-
-    if (dt.types.includes("application/json")) {
-      const json = dt.getData("application/json");
-      console.log("Dropped JSON:", json);
-    }
-
-    // Other possible types: "Files", "text/uri-list", custom MIME types, etc.
-  };
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault(); // Allow dropping
-  };
-
-  return (
-    <div
-      onDrop={handleDrop}
-      onDragOver={handleDragOver}
-      style={{
-        border: "2px dashed #888",
-        padding: "50px",
-        textAlign: "center",
-        marginTop: "40px",
-      }}
-    >
-      Drop something here (file, text, image, etc.)
-    </div>
-  );
-}
 
 const ImageGenTab = ({
   prompt,
