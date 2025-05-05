@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 import uuid
 from urllib.parse import urljoin
 
+from models.models import Clip
 from services.storage.storage_service import upload_to_r2, upload_blob_to_r2
 
 load_dotenv()
@@ -29,24 +30,48 @@ print("Creation blueprint registered")
 client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
 @creation_bp.route("/creations", methods=["POST"])
-def get_creations():
+def new_creations():
     # Get json from request body
     data = request.get_json()
     if not data:
         return jsonify({"error": "No data provided"}), 400
     
     print("Data:", data)
+    # return jsonify({"content": "good request"}), 200
+    workspace = request.args.get("workspace_id")
+    if not workspace:
+        return jsonify({"error": "No workspace_id provided"}), 400
+    
+    oldClips = Clip.objects(workspace_id=workspace)
+    if oldClips:
+        for clip in oldClips:
+            clip.delete()
+    
+    newClips = [Clip(workspace_id=workspace, prompt="", clip_url="", status="processing") for scriptSegment in data]
+
     script_content = determine_illustration_content(json.dumps(data, ensure_ascii=False, indent=2))
     print("Script content:", script_content)
     materials = [None for _ in range(len(data))]
     materials = asyncio.run(get_all_vid_segment(script_content, materials))
     print("Videos done:", materials)
+    for idx in range(len(materials)):
+        if materials[idx] is not None:
+            newClips[idx].clip_url = materials[idx]
+            newClips[idx].prompt = script_content[idx].description
+            newClips[idx].status = "completed"
+            newClips[idx].save();
+    
     materials = asyncio.run(get_all_image_segment(script_content, materials))
     # for idx in range(len(script_content)):
     #     if materials[idx] is not None:
     #         script_content[idx].content = materials[idx]
     print("All done")
-    
+    for idx in range(len(materials)):
+        if materials[idx] is not None:
+            newClips[idx].clip_url = materials[idx]
+            newClips[idx].prompt = script_content[idx].description
+            newClips[idx].status = "completed"
+            newClips[idx].save();
     
     return jsonify(materials), 200
 

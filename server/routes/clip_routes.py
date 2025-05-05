@@ -98,6 +98,23 @@ def list_clips():
         "thumbnail": clip.thumbnail if hasattr(clip, "thumbnail") else None
     } for clip in clips]), 200
 
+@clip_bp.route("/clips-by-workspace", methods=["GET"])
+def list_clips_by_workspace():
+    workspace_id = request.args.get("workspace_id")
+    if not workspace_id:
+        return jsonify({"error": "Missing workspace_id"}), 400
+
+    clips = Clip.objects(workspace_id=workspace_id)
+    return jsonify([{
+        "clip_id": str(clip.id),
+        "workspace_id": str(clip.workspace_id.id),
+        "prompt": clip.prompt,
+        "clip_url": clip.clip_url,
+        "status": clip.status,
+        "created_at": clip.created_at.isoformat(),
+        "updated_at": clip.updated_at.isoformat()
+    } for clip in clips]), 200
+
 # @clip_bp.route("/clips", methods=["GET"])
 # def list_clips():
 #     clips = Clip.objects()
