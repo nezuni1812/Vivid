@@ -165,7 +165,7 @@ export default function CreateVideo() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <VoiceConfig />
+                      <VoiceConfig workspace_id={workspace_id ?? ""}/>
                     </CardContent>
                   </Card>
                 </div>

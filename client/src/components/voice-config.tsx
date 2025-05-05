@@ -36,7 +36,7 @@ const voiceProviders = [
   // },
 ]
 
-export default function VoiceConfig() {
+export default function VoiceConfig({workspace_id}:{workspace_id:string}) {
   const [provider, setProvider] = useState("gtts")
   const [voice, setVoice] = useState("default")
   const [speed, setSpeed] = useState([1])
@@ -137,7 +137,7 @@ export default function VoiceConfig() {
       formData.append("audio_file", selectedVoiceFile)
       
       // Cần workspaceId thay vì scriptId
-      formData.append("workspace_id", workspaceId) // Lấy từ context
+      formData.append("workspace_id", workspace_id) // Lấy từ context
       
       // Thêm language (tùy chọn)
       formData.append("language", "vietnamese")
