@@ -45,6 +45,7 @@ def new_creations():
     oldClips = Clip.objects(workspace_id=workspace)
     if oldClips:
         for clip in oldClips:
+            # TODO: please remove the old cloudflare image file if its an image
             clip.delete()
     
     newClips = [Clip(workspace_id=workspace, prompt="", clip_url="", status="processing") for scriptSegment in data]
