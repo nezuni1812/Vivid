@@ -219,8 +219,7 @@ export default function CesdkEditor({
       engine.block.setString(
         audio,
         "audio/fileURI",
-        // audioUrl
-        "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/audios/67ef5c1032c9368838561563/Hinh_dang_that_su_cua_Trai_at.mp3"
+        encodeURI(audioUrl)
       );
       console.log("Audio URL", audioUrl);
 
