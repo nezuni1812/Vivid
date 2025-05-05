@@ -49,6 +49,8 @@ def new_creations():
             clip.delete()
     
     newClips = [Clip(workspace_id=workspace, prompt="", clip_url="", status="processing") for scriptSegment in data]
+    for clip in newClips:
+        clip.save()
 
     script_content = determine_illustration_content(json.dumps(data, ensure_ascii=False, indent=2))
     print("Script content:", script_content)
@@ -198,7 +200,7 @@ async def get_video(description) -> str:
         for vid in data["videos"]:
             if vid["duration"] > 5:
                 for video_file in vid["video_files"]:
-                    if video_file["height"] >= 1080:
+                    if 2048 > video_file["height"] >= 1080:
                         print(f"{description}: {video_file['link']}")
                         # print(vi["link"])
                         return video_file["link"]
