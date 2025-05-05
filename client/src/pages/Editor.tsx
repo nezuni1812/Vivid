@@ -30,7 +30,7 @@ export const ExportVid = async (engine: any) => {
     videoBitrate: 0,
     audioBitrate: 0,
     timeOffset: 0,
-    duration: 10,
+    // duration: 10,
     framerate: 30,
     targetWidth: 1920,
     targetHeight: 1080,
@@ -168,7 +168,7 @@ export default function CesdkEditor({
       const audioUrl =
         location.state?.audioUrl ??
         "https://cdn.img.ly/assets/demo/v1/ly.img.audio/audios/far_from_home.m4a";
-
+        
       let engine = cesdkInstance.engine;
 
       const track = engine.block.create("track");
@@ -220,6 +220,7 @@ export default function CesdkEditor({
         audio,
         "audio/fileURI",
         encodeURI(audioUrl)
+        // "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/audios/6818bd3fc154edd026497deb/Recording.mp3"
       );
       console.log("Audio URL", audioUrl);
 
