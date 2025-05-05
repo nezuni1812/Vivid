@@ -447,9 +447,9 @@ export default function PublishOptions({
     setIsExporting(true);
     try {
       const data = await exportVid();
-      if (data && data.url) {
+      if (data && data.content) {
         alert("Video đã được xuất thành công!");
-        setVideoLink(data.url);
+        setVideoLink(data.content);
         setActiveTab("publish");
       } else {
         setError("Failed to export video.");
