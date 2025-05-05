@@ -4,6 +4,8 @@ from services.storage.storage_service import upload_to_r2, delete_from_r2
 from controllers.script_controller import ScriptController
 from models.models import Audio, Script, Workspace
 import os
+import tempfile
+from pydub import AudioSegment
 import json  # Thêm dòng này vào đầu file
 
 from datetime import datetime
@@ -168,28 +170,39 @@ class AudioController:
             # Lấy script_id từ kết quả trả về
             script_id = script_result[0].get("script_id")
             
-            # Upload to storage
-            file_name = f"audios/{workspace_id}/{title.replace(' ', '_')}.mp3"
-            audio_url = await upload_to_r2(audio_file, file_name)
+            # Chuyển đổi file sang định dạng MP3
+            temp_mp3 = os.path.join(tempfile.gettempdir(), f"{title}_converted.mp3")
+            audio = AudioSegment.from_file(audio_file)
+            audio.export(temp_mp3, format="mp3")
 
-            # Save to database
-            audio = Audio(
-                workspace_id=workspace_id,
-                script_id=script_id,  # Sử dụng script_id đã lấy ở trên
-                audio_url=audio_url,
-                timings=timings_string,
-                status="completed"
-            )
-            audio.save()
+            try:
+                # Upload to storage - QUAN TRỌNG: Upload file đã chuyển đổi
+                file_name = f"audios/{workspace_id}/{title.replace(' ', '_')}.mp3"
+                audio_url = await upload_to_r2(temp_mp3, file_name)  # Sử dụng temp_mp3 thay vì audio_file
 
-            return {
-                "status": "success",
-                "script_id": script_id,
-                "audio_url": audio_url,
-                "text": result_text,
-                "timings": eval(timings_string)  
-            }, 200
-            
+                # Save to database
+                audio = Audio(
+                    workspace_id=workspace_id,
+                    script_id=script_id,
+                    audio_url=audio_url,
+                    timings=timings_string,
+                    status="completed"
+                )
+                audio.save()
+
+                return {
+                    "status": "success",
+                    "script_id": script_id,
+                    "audio_url": audio_url,
+                    "text": result_text,
+                    "timings": eval(timings_string)
+                }, 200
+                
+            finally:
+                # Đảm bảo xóa file tạm sau khi hoàn thành
+                if os.path.exists(temp_mp3):
+                    os.remove(temp_mp3)
+                
         except Exception as e:
             return {"error": str(e)}, 500
         
