@@ -54,8 +54,6 @@ const Resource = ({ workspace_id }: { workspace_id: string | undefined }) => {
 
     const fetchClips = async () => {
       try {
-        const storedUser = localStorage.getItem("currentUser");
-        const userId = storedUser ? JSON.parse(storedUser).user_id : null;
         const response = await fetch(
           `${new URL(
             "clips-by-workspace?workspace_id=" + workspace_id,
@@ -170,7 +168,11 @@ const Resource = ({ workspace_id }: { workspace_id: string | undefined }) => {
         className="sticky top-20"
         onClick={() => {
           navigate("/editor", {
-            state: { resourceList: scriptClips },
+            state: {
+              resourceList: scriptClips.map((clip) => clip?.clip_url),
+              timing: JSON.parse(audioData.timings),
+              audioUrl: audioData.audio_url,
+            },
           });
         }}
       >

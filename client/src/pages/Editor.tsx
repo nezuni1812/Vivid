@@ -66,7 +66,11 @@ export const ExportVid = async (engine: any) => {
   return data;
 };
 
-export default function CesdkEditor({ resourceList = null }: { resourceList?: string[] | null }) {
+export default function CesdkEditor({
+  resourceList = null,
+}: {
+  resourceList?: string[] | null;
+}) {
   const location = useLocation();
 
   const containerRef = useRef(null);
@@ -160,6 +164,10 @@ export default function CesdkEditor({ resourceList = null }: { resourceList?: st
       ];
 
       videoUrls = location.state?.resourceList ?? videoUrls;
+      const timing = location.state?.timing;
+      const audioUrl =
+        location.state?.audioUrl ??
+        "https://cdn.img.ly/assets/demo/v1/ly.img.audio/audios/far_from_home.m4a";
 
       let engine = cesdkInstance.engine;
 
@@ -174,7 +182,8 @@ export default function CesdkEditor({ resourceList = null }: { resourceList?: st
       // engine.block.setDuration(page, 20);
 
       engine.block.appendChild(page, track);
-      for (const url of videoUrls) {
+      for (let i = 0; i < videoUrls.length; i++) {
+        const url = videoUrls[i];
         const video2 = cesdkInstance.engine.block.create("graphic");
         cesdkInstance.engine.block.setShape(
           video2,
@@ -188,10 +197,20 @@ export default function CesdkEditor({ resourceList = null }: { resourceList?: st
           url.endsWith("mp4")
             ? "fill/video/fileURI"
             : "fill/image/imageFileURI",
-          // "https://videos.pexels.com/video-files/5125962/5125962-hd_1366_720_60fps.mp4"
           url
         );
         cesdkInstance.engine.block.setFill(video2, videoFill2);
+        // engine.block.setTimeOffset(video2, (i + 1) * 3);
+        engine.block.setDuration(
+          video2,
+          timing[i].end_time - timing[i].start_time
+        );
+        console.log(
+          "Video",
+          i,
+          engine.block.getTimeOffset(video2),
+          engine.block.supportsTimeOffset(video2)
+        );
 
         engine.block.appendChild(track, video2);
       }
@@ -200,11 +219,13 @@ export default function CesdkEditor({ resourceList = null }: { resourceList?: st
       engine.block.setString(
         audio,
         "audio/fileURI",
-        "https://cdn.img.ly/assets/demo/v1/ly.img.audio/audios/far_from_home.m4a"
+        // audioUrl
+        "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/audios/67ef5c1032c9368838561563/Hinh_dang_that_su_cua_Trai_at.mp3"
       );
+      console.log("Audio URL", audioUrl);
 
       const track1 = engine.block.create("track");
-      
+
       const text = engine.block.create("text");
       engine.block.appendChild(track1, text);
       engine.block.replaceText(text, "Hello World");
@@ -212,10 +233,10 @@ export default function CesdkEditor({ resourceList = null }: { resourceList?: st
       engine.block.setHeight(text, 100);
       engine.block.setPositionY(text, 600);
       // engine.block.alignHorizontally([text], "Right");
-      
+
       engine.block.setTextFontSize(text, 12);
       engine.block.setTextColor(text, { r: 255, g: 255, b: 255, a: 1.0 });
-      
+
       const text1 = engine.block.create("text");
       engine.block.appendChild(track1, text1);
       engine.block.replaceText(text1, "Hi");
