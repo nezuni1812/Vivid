@@ -58,7 +58,12 @@ const LOCAL_STORAGE_KEY = "facebook_stats_auth";
 interface PublishOptionsProps {
   isOpen?: boolean;
   onClose?: () => void;
-  exportVid?: (quality: string, format: string, fps: string) => Promise<any>;
+  exportVid?: (
+    quality: string,
+    format: string,
+    fps: string,
+    updateProgress: (current: number, total: number) => void
+  ) => Promise<any>;
 }
 
 interface YouTubeUserInfo {
@@ -99,6 +104,16 @@ export default function PublishOptions({
   const [isTiktokLoading, setIsTiktokLoading] = useState(false);
   const [isFacebookLoading, setIsFacebookLoading] = useState(false);
   const [isQuickShareLoading, setIsQuickShareLoading] = useState(false);
+
+  // State cho xuất video
+  const [exportProgress, setExportProgress] = useState(0);
+  const updateProgress = (current: number, total: number) => {
+    if (total > 0) {
+      setExportProgress(+((current / total) * 100).toFixed(2));
+    } else {
+      setExportProgress(0);
+    }
+  };
 
   // Biến lưu tạm link video
   const [VideoLink, setVideoLink] = useState<string>(
@@ -152,7 +167,11 @@ export default function PublishOptions({
       if (event.origin !== window.location.origin) return;
       const { accessToken, error, error_type } = event.data;
       if (error) {
-        setError(`Đăng nhập TikTok thất bại: ${error} (${error_type || "Unknown error type"})`);
+        setError(
+          `Đăng nhập TikTok thất bại: ${error} (${
+            error_type || "Unknown error type"
+          })`
+        );
         return;
       }
       if (accessToken) {
@@ -439,11 +458,10 @@ export default function PublishOptions({
   };
 
   const handleExport = async () => {
-    
     console.log("Fps:", fps);
     console.log("Quality:", quality);
     console.log("Format:", format);
-    
+
     if (!exportVid) {
       setError("Export function not available.");
       return;
@@ -451,7 +469,7 @@ export default function PublishOptions({
 
     setIsExporting(true);
     try {
-      const data = await exportVid(quality, format, fps);
+      const data = await exportVid(quality, format, fps, updateProgress);
       if (data && data.content) {
         alert("Video đã được xuất thành công!");
         setVideoLink(data.content);
@@ -462,7 +480,10 @@ export default function PublishOptions({
       }
     } catch (error) {
       console.error("Export error:", error);
-      setError("Error exporting video: " + (error instanceof Error ? error.message : "Unknown error"));
+      setError(
+        "Error exporting video: " +
+          (error instanceof Error ? error.message : "Unknown error")
+      );
     } finally {
       setIsExporting(false);
       setActiveTab("publish");
@@ -971,7 +992,7 @@ export default function PublishOptions({
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
                   </svg>
-                  Đang xử lý...
+                  {`Đang xử lý... ${exportProgress}%`}
                 </>
               ) : (
                 "Xuất video"

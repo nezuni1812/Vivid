@@ -172,6 +172,7 @@ const Resource = ({ workspace_id }: { workspace_id: string | undefined }) => {
               resourceList: scriptClips.map((clip) => clip?.clip_url),
               timing: JSON.parse(audioData.timings),
               audioUrl: audioData.audio_url,
+              workspaceId: workspace_id,
             },
           });
         }}

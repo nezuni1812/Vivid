@@ -10,7 +10,7 @@ import PublishOptions from "./publish-options"
 
 interface PublishOptionsDialogProps {
   trigger?: React.ReactNode
-  exportVid?: (quality: string, format: string, fps: string) => Promise<any>;
+  exportVid?: (quality: string, format: string, fps: string, updateProgress: (current: number, total: number) => void) => Promise<any>;
 }
 
 export default function PublishOptionsDialog({ trigger, exportVid }: PublishOptionsDialogProps) {

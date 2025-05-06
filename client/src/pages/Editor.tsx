@@ -7,18 +7,25 @@ import PublishOptionsDialog from "../components/publish-options-dialog";
 
 export const ExportVid = async (
   engine: any,
+  workspaceId: string,
   height = "1080p",
   format = "mp4",
   fps = "30",
+  updateProgress: (current: number, total: number) => void,
 ) => {
   const scene = engine.scene.get();
   const page = engine.scene.getCurrentPage();
-  
+
+  if (!workspaceId) {
+    console.error("No workspace ID provided for video export.");
+    return;
+  }
+
   console.log("Input: ", {
     height: height,
     fps: fps,
     format: format,
-  })
+  });
 
   format = format.toLowerCase();
   if (format !== "mp4" && format !== "mov") {
@@ -51,11 +58,11 @@ export const ExportVid = async (
     fps: fps,
     format: format,
   });
-  
+
   // return new Promise(async (resolve) => {
-  //   resolve({ content: "hoio" });
+  //   setTimeout(() => resolve({ content: "hoio" }), 1000);
   // });
-  
+
   // Video Export
   const progressCallback = (
     renderedFrames: any,
@@ -70,6 +77,7 @@ export const ExportVid = async (
       "frames out of",
       totalFrames
     );
+    updateProgress(renderedFrames, totalFrames);
   };
   const videoOptions = {
     h264Profile: 77,
@@ -92,8 +100,8 @@ export const ExportVid = async (
   console.log("Video Blob:", videoBlob);
 
   const multipartForm = new FormData();
-  multipartForm.append("file", videoBlob, "video.mp4");
-  multipartForm.append("filename", "generated_video.mp4");
+  multipartForm.append("file", videoBlob, `video.${format}`);
+  multipartForm.append("filename", `${workspaceId}/generated_video.${format}`); // Add a name for the file
 
   const response = await fetch(
     `${import.meta.env.VITE_BACKEND_URL}/creations/save`,
@@ -119,6 +127,8 @@ export default function CesdkEditor({
   resourceList?: string[] | null;
 }) {
   const location = useLocation();
+
+  const workspaceId = location.state?.workspaceId ?? null;
 
   const containerRef = useRef(null);
   let cesdkInstance: any;
@@ -386,9 +396,12 @@ export default function CesdkEditor({
           Export video
         </Button> */}
         <PublishOptionsDialog
-          exportVid={(quality: string, format: string, fps: string) =>
-            ExportVid(mainEngine, quality, format, fps)
-          }
+          exportVid={(
+            quality: string,
+            format: string,
+            fps: string,
+            updateProgress: (current: number, total: number) => void
+          ) => ExportVid(mainEngine, workspaceId, quality, format, fps, updateProgress)}
         />
         <CreateTab />
       </div>
