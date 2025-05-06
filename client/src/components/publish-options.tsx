@@ -58,7 +58,7 @@ const LOCAL_STORAGE_KEY = "facebook_stats_auth";
 interface PublishOptionsProps {
   isOpen?: boolean;
   onClose?: () => void;
-  exportVid?: () => Promise<any>;
+  exportVid?: (quality: string, format: string, fps: string) => Promise<any>;
 }
 
 interface YouTubeUserInfo {
@@ -439,6 +439,11 @@ export default function PublishOptions({
   };
 
   const handleExport = async () => {
+    
+    console.log("Fps:", fps);
+    console.log("Quality:", quality);
+    console.log("Format:", format);
+    
     if (!exportVid) {
       setError("Export function not available.");
       return;
@@ -446,11 +451,12 @@ export default function PublishOptions({
 
     setIsExporting(true);
     try {
-      const data = await exportVid();
+      const data = await exportVid(quality, format, fps);
       if (data && data.content) {
         alert("Video đã được xuất thành công!");
         setVideoLink(data.content);
         setActiveTab("publish");
+        // return;
       } else {
         setError("Failed to export video.");
       }

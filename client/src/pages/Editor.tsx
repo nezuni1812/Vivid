@@ -5,10 +5,57 @@ import { Button } from "../components/ui/button";
 import ReactDOM from "react-dom/client";
 import PublishOptionsDialog from "../components/publish-options-dialog";
 
-export const ExportVid = async (engine: any) => {
+export const ExportVid = async (
+  engine: any,
+  height = "1080p",
+  format = "mp4",
+  fps = "30",
+) => {
   const scene = engine.scene.get();
   const page = engine.scene.getCurrentPage();
+  
+  console.log("Input: ", {
+    height: height,
+    fps: fps,
+    format: format,
+  })
 
+  format = format.toLowerCase();
+  if (format !== "mp4" && format !== "mov") {
+    format = "mp4";
+  }
+
+  const test = parseInt(fps);
+  if (isNaN(test)) {
+    fps = "30";
+  }
+  if (parseInt(fps) < 24 || parseInt(fps) > 60) {
+    fps = "30";
+  }
+
+  if (height === "4k") {
+    height = "2160";
+  } else if (height === "720p") {
+    height = "720";
+  } else if (height === "1080p") {
+    height = "1080";
+  } else {
+    height = "720";
+  }
+
+  const width = Math.round((16 / 9) * parseInt(height)) + "";
+
+  console.log("Exporting video with settings:", {
+    height: height,
+    width: width,
+    fps: fps,
+    format: format,
+  });
+  
+  // return new Promise(async (resolve) => {
+  //   resolve({ content: "hoio" });
+  // });
+  
   // Video Export
   const progressCallback = (
     renderedFrames: any,
@@ -31,13 +78,13 @@ export const ExportVid = async (engine: any) => {
     audioBitrate: 0,
     timeOffset: 0,
     // duration: 10,
-    framerate: 30,
-    targetWidth: 1920,
-    targetHeight: 1080,
+    framerate: fps,
+    targetWidth: width,
+    targetHeight: height,
   };
   const videoBlob = await engine.block.exportVideo(
     page,
-    "video/mp4",
+    `video/${format}`,
     progressCallback,
     videoOptions
   );
@@ -168,7 +215,7 @@ export default function CesdkEditor({
       const audioUrl =
         location.state?.audioUrl ??
         "https://cdn.img.ly/assets/demo/v1/ly.img.audio/audios/far_from_home.m4a";
-        
+
       let engine = cesdkInstance.engine;
 
       const track = engine.block.create("track");
@@ -211,12 +258,15 @@ export default function CesdkEditor({
           engine.block.getTimeOffset(video2),
           engine.block.supportsTimeOffset(video2)
         );
-        const zoomAnimation = engine.block.createAnimation('zoom');
-        const fadeOutAnimation = engine.block.createAnimation('fade');
-        engine.block.setDuration(zoomAnimation, .4 * (timing[i].end_time - timing[i].start_time));
+        const zoomAnimation = engine.block.createAnimation("zoom");
+        const fadeOutAnimation = engine.block.createAnimation("fade");
+        engine.block.setDuration(
+          zoomAnimation,
+          0.4 * (timing[i].end_time - timing[i].start_time)
+        );
         engine.block.setInAnimation(video2, zoomAnimation);
         engine.block.setOutAnimation(video2, fadeOutAnimation);
-        
+
         engine.block.appendChild(track, video2);
       }
       const audio = engine.block.create("audio");
@@ -335,7 +385,11 @@ export default function CesdkEditor({
         >
           Export video
         </Button> */}
-        <PublishOptionsDialog exportVid={() => ExportVid(mainEngine)} />
+        <PublishOptionsDialog
+          exportVid={(quality: string, format: string, fps: string) =>
+            ExportVid(mainEngine, quality, format, fps)
+          }
+        />
         <CreateTab />
       </div>
     </div>
@@ -450,7 +504,6 @@ const OpenImagePopup = (imageUrl: string) => {
   handleClick();
 };
 
-
 const ImageGenTab = ({
   prompt,
   setPrompt,
@@ -484,7 +537,12 @@ const ImageGenTab = ({
       <h2 className="font-medium text-lg">Kết quả</h2>
       <p>Kéo vào timeline để sử dụng</p>
       {newImage ? (
-        <div className="image-container" onClick={() => {OpenImagePopup(newImage)}}>
+        <div
+          className="image-container"
+          onClick={() => {
+            OpenImagePopup(newImage);
+          }}
+        >
           <div className="img-wrapper">
             <img src={newImage} alt="New generated image" draggable />
           </div>
