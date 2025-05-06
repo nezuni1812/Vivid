@@ -82,8 +82,7 @@ const TikTokStats = () => {
   const [refreshing, setRefreshing] = useState(false)
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
   const videosPerPage = 10
-
-  const accessToken = localStorage.getItem("tiktok_access_token")
+  const [accessToken, setAccessToken] = useState<string | null>(localStorage.getItem("tiktok_access_token"));
 
   // Hàm lọc video theo thời gian
   const filterVideosByTimeRange = (videos: TikTokVideo[], range: TimeRange) => {
@@ -165,17 +164,41 @@ const TikTokStats = () => {
       : null
 
   useEffect(() => {
-    fetchTikTokVideos()
-    fetchUserInfo()
-  }, [])
+    if (accessToken) {
+      setLoading(true);
+      Promise.all([fetchTikTokVideos(accessToken), fetchUserInfo(accessToken)]).then(() => {
+        setLoading(false);
+      });
+    }
+  }, [accessToken]);
+
+  useEffect(() => {
+    const handleMessage = async (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      const { accessToken, error, error_type } = event.data;
+      if (error) {
+        setError(`Đăng nhập TikTok thất bại: ${error} (${error_type || "Unknown error type"})`);
+        return;
+      }
+      if (accessToken) {
+        localStorage.setItem("tiktok_access_token", accessToken);
+        setAccessToken(accessToken); 
+        setLoading(true);
+        await Promise.all([fetchTikTokVideos(accessToken), fetchUserInfo(accessToken)]);
+      }
+    };
+  
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
 
   useEffect(() => {
     setFilteredVideos(filterVideosByTimeRange(videos, timeRange))
     setCurrentPage(1)
   }, [timeRange, videos])
 
-  const fetchTikTokVideos = async () => {
-    if (!accessToken) {
+  const fetchTikTokVideos = async (token: string) => {
+    if (!token) {
       setError("Không tìm thấy access token. Vui lòng đăng nhập vào TikTok.")
       setLoading(false)
       return
@@ -200,7 +223,7 @@ const TikTokStats = () => {
       const response = await fetch(`https://open.tiktokapis.com/v2/video/list/?fields=${encodeURIComponent(fields)}`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -241,10 +264,10 @@ const TikTokStats = () => {
     }
   }
 
-  const fetchUserInfo = async () => {
-    if (!accessToken) {
-      setError("Không tìm thấy access token. Vui lòng đăng nhập vào TikTok.")
-      return
+  const fetchUserInfo = async (token: string) => {
+    if (!token) {
+      setError("Không tìm thấy access token. Vui lòng đăng nhập vào TikTok.");
+      return;
     }
 
     try {
@@ -268,7 +291,7 @@ const TikTokStats = () => {
         {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         }
@@ -302,7 +325,9 @@ const TikTokStats = () => {
   }
 
   const handleRefresh = () => {
-    fetchTikTokVideos()
+    if (accessToken) {
+      fetchTikTokVideos(accessToken)
+    }
   }
 
   const handlePeriodChange = (range: TimeRange) => () => {
@@ -352,7 +377,7 @@ const TikTokStats = () => {
     </div>
   )
 
-  if (loading && !refreshing)
+  if (loading && !refreshing && accessToken)
     return (
       <div className="mx-auto">
         <div className="flex justify-between items-center mb-6">
@@ -384,7 +409,7 @@ const TikTokStats = () => {
         </Alert>
       )}
 
-      {!loading && !userInfo ? (
+      {!accessToken || !userInfo ? (
         <Card className="p-8 text-center">
           <CardHeader>
             <CardTitle>Chào mừng đến với Thống kê Video TikTok</CardTitle>

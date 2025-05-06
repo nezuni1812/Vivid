@@ -34,8 +34,8 @@ export default function TikTokLogin() {
       return;
     }
     if (access_token) {
-      console.log("Access token received:", access_token);
-      localStorage.setItem("tiktokAccessToken", access_token);
+      // console.log("Access token received:", access_token);
+      localStorage.setItem("tiktok_access_token", access_token);
       // navigate("/tiktok-stats");
     }
   }, [searchParams, navigate]);

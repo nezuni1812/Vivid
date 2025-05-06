@@ -50,7 +50,7 @@ class Script(Document):
     source_content = StringField() 
     generated_script = StringField()  # AI generated script
     language = StringField(default="en")
-    style = IntField(default=1)  # 1: serious, 2: fun
+    style = IntField(default=1)  # 1: children, 2: general, 3: advanced
     status = StringField(default="draft", choices=["draft", "processing", "completed", "error"])
     created_at = DateTimeField(default=datetime.utcnow)
     updated_at = DateTimeField(default=datetime.utcnow)

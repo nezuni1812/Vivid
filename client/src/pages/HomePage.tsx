@@ -101,7 +101,8 @@ const HomePage = () => {
   const [isWorkspaceLoading, setIsWorkspaceLoading] = useState(false);
   const [isClipsLoading, setIsClipsLoading] = useState(false);
   const [isPublishedClipsLoading, setIsPublishedClipsLoading] = useState(false);
-  const [isUploadHovered, setIsUploadHovered] = useState(false);
+  const [isTikTokLoading, setIsTikTokLoading] = useState(false);
+  const [isTikTokClipsLoading, setIsTikTokClipsLoading] = useState(false);
   const [isChannelsHovered, setIsChannelsHovered] = useState(false);
   const [isSdkLoaded, setSdkLoaded] = useState(false);
   const [youtubeUserInfo, setYoutubeUserInfo] = useState<YouTubeUserInfo | null>(null);
@@ -222,42 +223,20 @@ const HomePage = () => {
     }
   };
 
-  const fetchPublishedClips = async () => {
-    setIsPublishedClipsLoading(true);
-    try {
-      const storedUser = localStorage.getItem("currentUser");
-      const userId = storedUser ? JSON.parse(storedUser).user_id : null;
-  
-      if (!userId) {
-        throw new Error("User ID not found");
-      }
-  
-      const response = await fetch(`http://localhost:5000/published-clips?user_id=${userId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-  
-      if (!response.ok) {
-        throw new Error("Failed to fetch published clips");
-      }
-  
-      const publishedClipsData = await response.json();
-  
-      const enrichedPublishedClips: PublishedClip[] = await Promise.all(
-        publishedClipsData.map(async (publishedClip: any) => {
+  const fetchYouTubePublished = async (publishedClipsData: any[]): Promise<PublishedClip[]> => {
+    return Promise.all(
+      publishedClipsData
+        .filter((clip) => clip.platform === "YouTube")
+        .map(async (publishedClip: any) => {
           let title = "Video không có tiêu đề";
           let thumbnail = "/placeholder.svg?height=120&width=240";
           let views = 0;
-  
+
           const clipResponse = await fetch(`http://localhost:5000/clips/${publishedClip.clip_id}`, {
             method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
           });
-  
+
           let originalClip: Clip | undefined;
           if (clipResponse.ok) {
             const clipData = await clipResponse.json();
@@ -272,9 +251,8 @@ const HomePage = () => {
               thumbnail: clipData.thumbnail || thumbnail,
             };
           }
-  
-          if (publishedClip.platform === "YouTube" && !accessToken) {
-            // console.warn("No YouTube access token available");
+
+          if (!accessToken) {
             return {
               _id: publishedClip.published_clip_id || publishedClip._id,
               clip_id: publishedClip.clip_id,
@@ -289,125 +267,32 @@ const HomePage = () => {
               originalClip,
             };
           }
-  
-          if (publishedClip.platform === "Facebook" && !facebookAccessToken) {
-            // console.warn("No Facebook access token available");
-            return {
-              _id: publishedClip.published_clip_id || publishedClip._id,
-              clip_id: publishedClip.clip_id,
-              platform: publishedClip.platform,
-              external_id: publishedClip.external_id,
-              url: publishedClip.url,
-              metadata: publishedClip.metadata,
-              published_at: publishedClip.published_at,
-              views,
-              title,
-              thumbnail,
-              originalClip,
-            };
-          }
-  
-          if (publishedClip.platform === "TikTok" && !tiktokAccessToken) {
-            // console.warn("No TikTok access token available");
-            return {
-              _id: publishedClip.published_clip_id || publishedClip._id,
-              clip_id: publishedClip.clip_id,
-              platform: publishedClip.platform,
-              external_id: publishedClip.external_id,
-              url: publishedClip.url,
-              metadata: publishedClip.metadata,
-              published_at: publishedClip.published_at,
-              views,
-              title,
-              thumbnail,
-              originalClip,
-            };
-          }
-  
-          // Gọi API cho YouTube
-          if (publishedClip.platform === "YouTube" && accessToken) {
-            try {
-              const youtubeResponse = await fetch(
-                `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${publishedClip.external_id}`,
-                {
-                  headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                  },
-                }
-              );
-              if (!youtubeResponse.ok) {
-                throw new Error(`YouTube API error: ${youtubeResponse.statusText}`);
+
+          try {
+            const youtubeResponse = await fetch(
+              `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${publishedClip.external_id}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                },
               }
-              const youtubeData = await youtubeResponse.json();
-              if (youtubeData.items && youtubeData.items.length > 0) {
-                const video = youtubeData.items[0];
-                title = video.snippet.title || title;
-                thumbnail = video.snippet.thumbnails?.medium?.url || thumbnail;
-                views = parseInt(video.statistics.viewCount || "0");
-              } else {
-                console.warn(`No YouTube video found for ID: ${publishedClip.external_id}`);
-              }
-            } catch (error) {
-              console.error(`Error fetching YouTube video ${publishedClip.external_id}:`, error);
+            );
+            if (!youtubeResponse.ok) {
+              throw new Error(`YouTube API error: ${youtubeResponse.statusText}`);
             }
-          }
-  
-          // Gọi API cho Facebook
-          if (publishedClip.platform === "Facebook" && facebookAccessToken) {
-            try {
-              const facebookResponse = await fetch(
-                `https://graph.facebook.com/v19.0/${publishedClip.external_id}?fields=title,picture,video_insights{name,values}&access_token=${facebookAccessToken}`
-              );
-              if (!facebookResponse.ok) {
-                throw new Error(`Facebook API error: ${facebookResponse.statusText}`);
-              }
-              const facebookData = await facebookResponse.json();
-              title = facebookData.title || title;
-              thumbnail = facebookData.picture || thumbnail;
-              const viewsInsight = facebookData.video_insights?.data?.find(
-                (insight: any) => insight.name === "total_video_views"
-              );
-              views = viewsInsight ? viewsInsight.values[0].value : 0;
-            } catch (error) {
-              console.error(`Error fetching Facebook video ${publishedClip.external_id}:`, error);
+            const youtubeData = await youtubeResponse.json();
+            if (youtubeData.items && youtubeData.items.length > 0) {
+              const video = youtubeData.items[0];
+              title = video.snippet.title || title;
+              thumbnail = video.snippet.thumbnails?.medium?.url || thumbnail;
+              views = parseInt(video.statistics.viewCount || "0");
+            } else {
+              console.warn(`No YouTube video found for ID: ${publishedClip.external_id}`);
             }
+          } catch (error) {
+            console.error(`Error fetching YouTube video ${publishedClip.external_id}:`, error);
           }
-  
-          // Gọi API cho TikTok
-          if (publishedClip.platform === "TikTok" && tiktokAccessToken) {
-            try {
-              const tiktokResponse = await fetch(
-                `https://open.tiktokapis.com/v2/video/query/?fields=id,title,cover_image_url,view_count`,
-                {
-                  method: "POST",
-                  headers: {
-                    Authorization: `Bearer ${tiktokAccessToken}`,
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    filters: {
-                      video_ids: [publishedClip.external_id],
-                    },
-                  }),
-                }
-              );
-              if (!tiktokResponse.ok) {
-                throw new Error(`TikTok API error: ${tiktokResponse.statusText}`);
-              }
-              const tiktokData = await tiktokResponse.json();
-              const video = tiktokData.data?.videos?.[0];
-              if (video && video.id === publishedClip.external_id) {
-                title = video.title || title;
-                thumbnail = video.cover_image_url || thumbnail;
-                views = video.view_count || 0;
-              } else {
-                console.warn(`No TikTok video found for ID: ${publishedClip.external_id}`);
-              }
-            } catch (error) {
-              console.error(`Error fetching TikTok video ${publishedClip.external_id}:`, error);
-            }
-          }
-  
+
           return {
             _id: publishedClip.published_clip_id || publishedClip._id,
             clip_id: publishedClip.clip_id,
@@ -422,19 +307,268 @@ const HomePage = () => {
             originalClip,
           };
         })
-      );
-  
+    );
+  };
+
+  const fetchFacebookPublished = async (publishedClipsData: any[]): Promise<PublishedClip[]> => {
+    return Promise.all(
+      publishedClipsData
+        .filter((clip) => clip.platform === "Facebook")
+        .map(async (publishedClip: any) => {
+          let title = "Video không có tiêu đề";
+          let thumbnail = "/placeholder.svg?height=120&width=240";
+          let views = 0;
+
+          const clipResponse = await fetch(`http://localhost:5000/clips/${publishedClip.clip_id}`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          });
+
+          let originalClip: Clip | undefined;
+          if (clipResponse.ok) {
+            const clipData = await clipResponse.json();
+            originalClip = {
+              _id: clipData.clip_id,
+              workspace_id: clipData.workspace_id,
+              prompt: clipData.prompt,
+              clip_url: clipData.clip_url,
+              status: clipData.status,
+              created_at: clipData.created_at,
+              updated_at: clipData.updated_at,
+              thumbnail: clipData.thumbnail || thumbnail,
+            };
+          }
+
+          if (!facebookAccessToken) {
+            return {
+              _id: publishedClip.published_clip_id || publishedClip._id,
+              clip_id: publishedClip.clip_id,
+              platform: publishedClip.platform,
+              external_id: publishedClip.external_id,
+              url: publishedClip.url,
+              metadata: publishedClip.metadata,
+              published_at: publishedClip.published_at,
+              views,
+              title,
+              thumbnail,
+              originalClip,
+            };
+          }
+
+          try {
+            const facebookResponse = await fetch(
+              `https://graph.facebook.com/v19.0/${publishedClip.external_id}?fields=title,picture,video_insights{name,values}&access_token=${facebookAccessToken}`
+            );
+            if (!facebookResponse.ok) {
+              throw new Error(`Facebook API error: ${facebookResponse.statusText}`);
+            }
+            const facebookData = await facebookResponse.json();
+            title = facebookData.title || title;
+            thumbnail = facebookData.picture || thumbnail;
+            const viewsInsight = facebookData.video_insights?.data?.find(
+              (insight: any) => insight.name === "total_video_views"
+            );
+            views = viewsInsight ? viewsInsight.values[0].value : 0;
+          } catch (error) {
+            console.error(`Error fetching Facebook video ${publishedClip.external_id}:`, error);
+          }
+
+          return {
+            _id: publishedClip.published_clip_id || publishedClip._id,
+            clip_id: publishedClip.clip_id,
+            platform: publishedClip.platform,
+            external_id: publishedClip.external_id,
+            url: publishedClip.url,
+            metadata: publishedClip.metadata,
+            published_at: publishedClip.published_at,
+            views,
+            title,
+            thumbnail,
+            originalClip,
+          };
+        })
+    );
+  };
+
+  const fetchTikTokPublished = async (publishedClipsData: any[]): Promise<PublishedClip[]> => {
+    return Promise.all(
+      publishedClipsData
+        .filter((clip) => clip.platform === "TikTok")
+        .map(async (publishedClip: any) => {
+          let title = "Video không có tiêu đề";
+          let thumbnail = "/placeholder.svg?height=120&width=240";
+          let views = 0;
+
+          const clipResponse = await fetch(`http://localhost:5000/clips/${publishedClip.clip_id}`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          });
+
+          let originalClip: Clip | undefined;
+          if (clipResponse.ok) {
+            const clipData = await clipResponse.json();
+            originalClip = {
+              _id: clipData.clip_id,
+              workspace_id: clipData.workspace_id,
+              prompt: clipData.prompt,
+              clip_url: clipData.clip_url,
+              status: clipData.status,
+              created_at: clipData.created_at,
+              updated_at: clipData.updated_at,
+              thumbnail: clipData.thumbnail || thumbnail,
+            };
+          }
+
+          if (!tiktokAccessToken) {
+            return {
+              _id: publishedClip.published_clip_id || publishedClip._id,
+              clip_id: publishedClip.clip_id,
+              platform: publishedClip.platform,
+              external_id: publishedClip.external_id,
+              url: publishedClip.url,
+              metadata: publishedClip.metadata,
+              published_at: publishedClip.published_at,
+              views,
+              title,
+              thumbnail,
+              originalClip,
+            };
+          }
+
+          try {
+            const tiktokResponse = await fetch(
+              `https://open.tiktokapis.com/v2/video/query/?fields=id,title,cover_image_url,view_count`,
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${tiktokAccessToken}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  filters: {
+                    video_ids: [publishedClip.external_id],
+                  },
+                }),
+              }
+            );
+            if (!tiktokResponse.ok) {
+              const errorData = await tiktokResponse.json();
+              if (tiktokResponse.status === 401) {
+                localStorage.removeItem("tiktok_access_token");
+                throw new Error("Phiên đăng nhập TikTok hết hạn. Vui lòng đăng nhập lại.");
+              }
+              throw new Error(`TikTok API error: ${errorData.error?.message || tiktokResponse.statusText}`);
+            }
+            const tiktokData = await tiktokResponse.json();
+            const video = tiktokData.data?.videos?.[0];
+            if (video && video.id === publishedClip.external_id) {
+              title = video.title || title;
+              thumbnail = video.cover_image_url || thumbnail;
+              views = video.view_count || 0;
+            } else {
+              console.warn(`No TikTok video found for ID: ${publishedClip.external_id}`);
+            }
+          } catch (error) {
+            console.error(`Error fetching TikTok video ${publishedClip.external_id}:`, error);
+          }
+
+          return {
+            _id: publishedClip.published_clip_id || publishedClip._id,
+            clip_id: publishedClip.clip_id,
+            platform: publishedClip.platform,
+            external_id: publishedClip.external_id,
+            url: publishedClip.url,
+            metadata: publishedClip.metadata,
+            published_at: publishedClip.published_at,
+            views,
+            title,
+            thumbnail,
+            originalClip,
+          };
+        })
+    );
+  };
+
+  const fetchPublishedClips = async () => {
+    setIsPublishedClipsLoading(true);
+    try {
+      const storedUser = localStorage.getItem("currentUser");
+      const userId = storedUser ? JSON.parse(storedUser).user_id : null;
+
+      if (!userId) {
+        throw new Error("User ID not found");
+      }
+
+      const response = await fetch(`http://localhost:5000/published-clips?user_id=${userId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch published clips");
+      }
+
+      const publishedClipsData = await response.json();
+
+      const [youtubeClips, facebookClips, tiktokClips] = await Promise.all([
+        fetchYouTubePublished(publishedClipsData),
+        fetchFacebookPublished(publishedClipsData),
+        fetchTikTokPublished(publishedClipsData),
+      ]);
+
+      const enrichedPublishedClips = [...youtubeClips, ...facebookClips, ...tiktokClips];
       setPublishedClips(enrichedPublishedClips);
     } catch (error) {
       console.error("Error fetching published clips:", error);
+      setError(`Lỗi khi tải clip đã xuất bản: ${error instanceof Error ? error.message : "Lỗi không xác định"}`);
     } finally {
       setIsPublishedClipsLoading(false);
     }
   };
 
+  // Lấy thông tin người dùng TikTok
+  const fetchTikTokUserInfo = async () => {
+    if (!tiktokAccessToken) {
+      setError("Không tìm thấy access token TikTok. Vui lòng đăng nhập.");
+      return;
+    }
+    setIsTikTokLoading(true);
+    try {
+      const fields = ["open_id", "union_id", "avatar_url", "display_name", "username"].join(",");
+      const response = await fetch(`https://open.tiktokapis.com/v2/user/info/?fields=${encodeURIComponent(fields)}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${tiktokAccessToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 401) {
+          localStorage.removeItem("tiktok_access_token");
+          setError("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
+        } else {
+          throw new Error(`API error: ${errorData.error?.message || response.statusText}`);
+        }
+      }
+      const data = await response.json();
+      if (data.data && data.data.user) {
+        setTikTokUserInfo(data.data.user);
+      } else {
+        setError("Không thể lấy thông tin người dùng TikTok");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Lỗi khi lấy thông tin người dùng TikTok");
+    } finally {
+      setIsTikTokLoading(false);
+    }
+  };
+
   // Xử lý message từ TikTok login
   useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
+    const handleMessage = async (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
       const { accessToken, error, error_type } = event.data;
       if (error) {
@@ -443,13 +577,53 @@ const HomePage = () => {
       }
       if (accessToken) {
         localStorage.setItem("tiktok_access_token", accessToken);
-        setTikTokUserInfo(null);
+        setIsTikTokLoading(true);
+        setIsPublishedClipsLoading(true);
+        try {
+          const storedUser = localStorage.getItem("currentUser");
+          const userId = storedUser ? JSON.parse(storedUser).user_id : null;
+          if (!userId) {
+            throw new Error("User ID not found");
+          }
+          const response = await fetch(`http://localhost:5000/published-clips?user_id=${userId}`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          });
+          if (!response.ok) {
+            throw new Error("Failed to fetch published clips");
+          }
+          const publishedClipsData = await response.json();
+          if (!Array.isArray(publishedClipsData) || publishedClipsData.length === 0) {
+            setError("Không tìm thấy clip đã xuất bản nào từ backend.");
+          }
+
+          await Promise.all([
+            fetchTikTokUserInfo()
+          ]);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Lỗi khi tải dữ liệu TikTok");
+        } finally {
+          setIsTikTokLoading(false);
+          setIsPublishedClipsLoading(false);
+        }
       }
     };
-
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, []);
+  }, [fetchTikTokUserInfo]);
+
+  useEffect(() => {
+    if (tiktokAccessToken) {
+      fetchPublishedClips();
+    }
+  }, [tiktokAccessToken]);
+
+  const handleTikTokLogout = () => {
+    localStorage.removeItem("tiktok_access_token");
+    setTikTokUserInfo(null);
+    setError(null);
+    fetchPublishedClips();
+  };  
 
   //Load FB
   useEffect(() => {
@@ -564,6 +738,7 @@ const HomePage = () => {
           selectedPageId: pageList[0].id,
         });
         setSelectedPage(pageList[0]);
+        fetchPublishedClips();
       } else {
         setError(
           "Không tìm thấy Trang Facebook. Bạn cần là quản trị viên của ít nhất một Trang."
@@ -572,6 +747,12 @@ const HomePage = () => {
       }
     });
   };
+
+  useEffect(() => {
+    if (facebookAccessToken) {
+      fetchPublishedClips();
+    }
+  }, [facebookAccessToken]);
 
   // Xử lý đăng xuất Facebook
   const handleFacebookLogout = () => {
@@ -630,57 +811,6 @@ const HomePage = () => {
         err instanceof Error
           ? err.message
           : "Lỗi khi lấy thông tin kênh YouTube"
-      );
-    }
-  };
-
-  // Lấy thông tin người dùng TikTok
-  const fetchTikTokUserInfo = async () => {
-    if (!tiktokAccessToken) {
-      setError("Không tìm thấy access token TikTok. Vui lòng đăng nhập.");
-      return;
-    }
-
-    try {
-      const fields = [
-        "open_id",
-        "union_id",
-        "avatar_url",
-        "display_name",
-        "username",
-      ].join(",");
-
-      const response = await fetch(
-        `https://open.tiktokapis.com/v2/user/info/?fields=${encodeURIComponent(
-          fields
-        )}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${tiktokAccessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          `API error: ${errorData.error?.message || response.statusText}`
-        );
-      }
-
-      const data = await response.json();
-      if (data.data && data.data.user) {
-        setTikTokUserInfo(data.data.user);
-      } else {
-        setError("Không thể lấy thông tin người dùng TikTok");
-      }
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Lỗi khi lấy thông tin người dùng TikTok"
       );
     }
   };
@@ -1144,15 +1274,26 @@ const HomePage = () => {
                     <div className="p-3 border-b">
                       <h3 className="font-medium text-sm mb-2">Kênh TikTok</h3>
                       {tiktokUserInfo ? (
-                        <div className="flex items-center p-2 bg-gray-100 rounded-md">
-                          <img
-                            src={tiktokUserInfo.avatar_url}
-                            alt="Avatar"
-                            className="w-10 h-10 rounded-full mr-3"
-                          />
-                          <span className="text-sm font-medium">
-                            {tiktokUserInfo.display_name} ({tiktokUserInfo.username})
-                          </span>
+                        <div className="space-y-2">
+                          <div className="flex items-center p-2 bg-gray-100 rounded-md">
+                            <img
+                              src={tiktokUserInfo.avatar_url}
+                              alt="Avatar"
+                              className="w-10 h-10 rounded-full mr-3"
+                            />
+                            <span className="text-sm font-medium">
+                              {tiktokUserInfo.display_name} ({tiktokUserInfo.username})
+                            </span>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleTikTokLogout}
+                            className="w-full flex items-center gap-2"
+                          >
+                            <FaTiktok className="text-black" />
+                            <span>Đăng xuất</span>
+                          </Button>
                         </div>
                       ) : (
                         <TikTokLogin />
