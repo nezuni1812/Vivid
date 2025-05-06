@@ -211,7 +211,12 @@ export default function CesdkEditor({
           engine.block.getTimeOffset(video2),
           engine.block.supportsTimeOffset(video2)
         );
-
+        const zoomAnimation = engine.block.createAnimation('zoom');
+        const fadeOutAnimation = engine.block.createAnimation('fade');
+        engine.block.setDuration(zoomAnimation, .4 * (timing[i].end_time - timing[i].start_time));
+        engine.block.setInAnimation(video2, zoomAnimation);
+        engine.block.setOutAnimation(video2, fadeOutAnimation);
+        
         engine.block.appendChild(track, video2);
       }
       const audio = engine.block.create("audio");
@@ -225,21 +230,6 @@ export default function CesdkEditor({
       console.log("Audio URL", audioUrl);
 
       const track1 = engine.block.create("track");
-
-      const text = engine.block.create("text");
-      engine.block.appendChild(track1, text);
-      engine.block.replaceText(text, "Hello World");
-      engine.block.setWidth(text, 900);
-      engine.block.setHeight(text, 100);
-      engine.block.setPositionY(text, 600);
-      // engine.block.alignHorizontally([text], "Right");
-
-      engine.block.setTextFontSize(text, 12);
-      engine.block.setTextColor(text, { r: 255, g: 255, b: 255, a: 1.0 });
-
-      const text1 = engine.block.create("text");
-      engine.block.appendChild(track1, text1);
-      engine.block.replaceText(text1, "Hi");
 
       engine.block.appendChild(page, track1);
       engine.block.fillParent(track);
@@ -346,7 +336,6 @@ export default function CesdkEditor({
           Export video
         </Button> */}
         <PublishOptionsDialog exportVid={() => ExportVid(mainEngine)} />
-        <OpenImagePopup />
         <CreateTab />
       </div>
     </div>
@@ -433,7 +422,7 @@ const CreateTab = () => {
   );
 };
 
-const OpenImagePopup = () => {
+const OpenImagePopup = (imageUrl: string) => {
   const handleClick = () => {
     const popup = window.open(
       "",
@@ -442,31 +431,25 @@ const OpenImagePopup = () => {
     );
 
     if (popup) {
-      popup.document.title = "Image Popup";
+      popup.document.title = "Generated image";
 
-      const script = popup.document.createElement("script");
-      script.src = "https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"; // or your preferred version
-      popup.document.head.appendChild(script);
-
-      const rootDiv = popup.document.createElement("div");
-      rootDiv.id = "react-popup-root";
-      popup.document.body.appendChild(rootDiv);
-
-      // Add some basic styling
       const style = popup.document.createElement("style");
       style.textContent = `
-        body { margin: 0; font-family: sans-serif; padding: 1rem; }
+        body { margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; background: #f9f9f9; }
+        img { max-width: 100%; max-height: 100%; }
       `;
       popup.document.head.appendChild(style);
 
-      // Mount React component into popup
-      const root = ReactDOM.createRoot(rootDiv);
-      root.render(<CreateTab />);
+      const img = popup.document.createElement("img");
+      img.src = imageUrl;
+      img.alt = "Popup Image";
+      popup.document.body.appendChild(img);
     }
   };
 
-  return <button onClick={handleClick}>Open Image window in Popup</button>;
+  handleClick();
 };
+
 
 const ImageGenTab = ({
   prompt,
@@ -501,7 +484,7 @@ const ImageGenTab = ({
       <h2 className="font-medium text-lg">Kết quả</h2>
       <p>Kéo vào timeline để sử dụng</p>
       {newImage ? (
-        <div className="image-container">
+        <div className="image-container" onClick={() => {OpenImagePopup(newImage)}}>
           <div className="img-wrapper">
             <img src={newImage} alt="New generated image" draggable />
           </div>
