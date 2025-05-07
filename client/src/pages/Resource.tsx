@@ -95,10 +95,10 @@ const Resource = ({ workspace_id }: { workspace_id: string | undefined }) => {
   }, [workspace_id]);
 
   const updateImage = async (index: number, prompt: string) => {
-    if (scriptClips[index].resource_type === "video") {
-      console.log("Video file, skipping image generation.");
-      return;
-    }
+    // if (scriptClips[index].resource_type === "video") {
+    //   console.log("Video file, skipping image generation.");
+    //   return;
+    // }
 
     const res = await fetch(
       import.meta.env.VITE_BACKEND_URL + "/creations/edit",
@@ -108,6 +108,7 @@ const Resource = ({ workspace_id }: { workspace_id: string | undefined }) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          id: scriptClips[index].resource_id,
           what: "image",
           script: JSON.parse(audioData.timings)[index].content,
           prompt: prompt,

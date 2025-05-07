@@ -125,9 +125,15 @@ def gen_on_prompt():
         filename = data.get("filename", None)  
         if (filename is not None):
             filename = filename.split("/")[-1]
+        else:
+            filename = f"{uuid.uuid4().hex}.png"
             
         filename = asyncio.run(get_image(data["script"], filename=filename, additional=data.get("prompt", None)))
         print("Generating image with description:", data["prompt"], " with filename:", filename)
+        resource = Resource.objects(id=data["id"]).first()
+        resource.resource_url = filename
+        resource.resource_type = "image"
+        resource.save()
         return jsonify({"what": "image", "content": filename}), 200
     
     # return jsonify({"what": "script", "content": "http://localhost/2098u53g84u.png"}), 200
@@ -214,14 +220,15 @@ async def get_image(description, filename=None, additional=None) -> str:
     response = client.models.generate_content(
     model="models/gemini-2.0-flash-exp",
         contents=[
-            f"""Return the image description in great details, relating to technical concept about the following concept, so a image generation AI can understand your prompt: {description}""",
+            f"""Return the image description in great details, 
+            relating to technical concept about the following concept, 
+            so a image generation AI can understand your prompt: {description}, and the following (it might be in Vietnamese to translate to English): {additional}""",
             ],
         config=types.GenerateContentConfig(response_modalities=['Text'])
     )
     
     prompt_content = [
         f"""Generate 1 single image about the following description""",
-        f"and satisfies the following requirements: {additional}" if additional else " ",
         ": ",
         response.text,
     ]
