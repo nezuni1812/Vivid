@@ -86,7 +86,7 @@ def create_image():
         return jsonify({"error": "No data provided"}), 400
     
     print("Data:", data)
-    return jsonify({"content": "good request"}), 200
+    # return jsonify({"content": "good request"}), 200
 
     filename = asyncio.run(get_image(data["prompt"]))
     print("Generating image with description:", data["prompt"], " with filename:", filename)
