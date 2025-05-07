@@ -18,11 +18,12 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
-import { Video, CheckCircle, Eye, Calendar, RefreshCw, LinkIcon } from "lucide-react"
+import { Video, CheckCircle, Eye, Calendar, RefreshCw, LinkIcon, Share2, DownloadIcon } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { useAuth } from "../context/AuthContext";
 import FacebookUploader from "../components/facebook-upload";
 import TikTokLogin from "../pages/TikTokLogin";
+import ShareVideoDialog from "../components/share-video-dialog";
 
 interface Workspace {
   _id: string;
@@ -111,6 +112,7 @@ const HomePage = () => {
   const [selectedPage, setSelectedPage] = useState<FacebookPage | null>(null);
   const [error, setError] = useState<string | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [selectedClip, setSelectedClip] = useState<Clip | null>(null);
 
   const navigateToWorkspaceResources = () => {
     navigate("/workspace-resources")
@@ -498,35 +500,204 @@ const HomePage = () => {
     try {
       const storedUser = localStorage.getItem("currentUser");
       const userId = storedUser ? JSON.parse(storedUser).user_id : null;
-
+  
       if (!userId) {
         throw new Error("User ID not found");
       }
-
+  
       const response = await fetch(`http://localhost:5000/published-clips?user_id=${userId}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
         },
       });
-
+  
       if (!response.ok) {
         throw new Error("Failed to fetch published clips");
       }
-
+  
       const publishedClipsData = await response.json();
-
-      const [youtubeClips, facebookClips, tiktokClips] = await Promise.all([
-        fetchYouTubePublished(publishedClipsData),
-        fetchFacebookPublished(publishedClipsData),
-        fetchTikTokPublished(publishedClipsData),
-      ]);
-
-      const enrichedPublishedClips = [...youtubeClips, ...facebookClips, ...tiktokClips];
+  
+      const enrichedPublishedClips: PublishedClip[] = await Promise.all(
+        publishedClipsData.map(async (publishedClip: any) => {
+          let title = "Video không có tiêu đề";
+          let thumbnail = "/placeholder.svg?height=120&width=240";
+          let views = 0;
+  
+          const clipResponse = await fetch(`http://localhost:5000/clips/${publishedClip.clip_id}`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+  
+          let originalClip: Clip | undefined;
+          if (clipResponse.ok) {
+            const clipData = await clipResponse.json();
+            originalClip = {
+              _id: clipData.clip_id,
+              workspace_id: clipData.workspace_id,
+              prompt: clipData.prompt,
+              clip_url: clipData.clip_url,
+              status: clipData.status,
+              created_at: clipData.created_at,
+              updated_at: clipData.updated_at,
+              thumbnail: clipData.thumbnail || thumbnail,
+            };
+          }
+  
+          if (publishedClip.platform === "YouTube" && !accessToken) {
+            // console.warn("No YouTube access token available");
+            return {
+              _id: publishedClip.published_clip_id || publishedClip._id,
+              clip_id: publishedClip.clip_id,
+              platform: publishedClip.platform,
+              external_id: publishedClip.external_id,
+              url: publishedClip.url,
+              metadata: publishedClip.metadata,
+              published_at: publishedClip.published_at,
+              views,
+              title,
+              thumbnail,
+              originalClip,
+            };
+          }
+  
+          if (publishedClip.platform === "Facebook" && !facebookAccessToken) {
+            // console.warn("No Facebook access token available");
+            return {
+              _id: publishedClip.published_clip_id || publishedClip._id,
+              clip_id: publishedClip.clip_id,
+              platform: publishedClip.platform,
+              external_id: publishedClip.external_id,
+              url: publishedClip.url,
+              metadata: publishedClip.metadata,
+              published_at: publishedClip.published_at,
+              views,
+              title,
+              thumbnail,
+              originalClip,
+            };
+          }
+  
+          if (publishedClip.platform === "TikTok" && !tiktokAccessToken) {
+            // console.warn("No TikTok access token available");
+            return {
+              _id: publishedClip.published_clip_id || publishedClip._id,
+              clip_id: publishedClip.clip_id,
+              platform: publishedClip.platform,
+              external_id: publishedClip.external_id,
+              url: publishedClip.url,
+              metadata: publishedClip.metadata,
+              published_at: publishedClip.published_at,
+              views,
+              title,
+              thumbnail,
+              originalClip,
+            };
+          }
+  
+          // Gọi API cho YouTube
+          if (publishedClip.platform === "YouTube" && accessToken) {
+            try {
+              const youtubeResponse = await fetch(
+                `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${publishedClip.external_id}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                  },
+                }
+              );
+              if (!youtubeResponse.ok) {
+                throw new Error(`YouTube API error: ${youtubeResponse.statusText}`);
+              }
+              const youtubeData = await youtubeResponse.json();
+              if (youtubeData.items && youtubeData.items.length > 0) {
+                const video = youtubeData.items[0];
+                title = video.snippet.title || title;
+                thumbnail = video.snippet.thumbnails?.medium?.url || thumbnail;
+                views = parseInt(video.statistics.viewCount || "0");
+              } else {
+                console.warn(`No YouTube video found for ID: ${publishedClip.external_id}`);
+              }
+            } catch (error) {
+              console.error(`Error fetching YouTube video ${publishedClip.external_id}:`, error);
+            }
+          }
+  
+          // Gọi API cho Facebook
+          if (publishedClip.platform === "Facebook" && facebookAccessToken) {
+            try {
+              const facebookResponse = await fetch(
+                `https://graph.facebook.com/v19.0/${publishedClip.external_id}?fields=title,picture,video_insights{name,values}&access_token=${facebookAccessToken}`
+              );
+              if (!facebookResponse.ok) {
+                throw new Error(`Facebook API error: ${facebookResponse.statusText}`);
+              }
+              const facebookData = await facebookResponse.json();
+              title = facebookData.title || title;
+              thumbnail = facebookData.picture || thumbnail;
+              const viewsInsight = facebookData.video_insights?.data?.find(
+                (insight: any) => insight.name === "total_video_views"
+              );
+              views = viewsInsight ? viewsInsight.values[0].value : 0;
+            } catch (error) {
+              console.error(`Error fetching Facebook video ${publishedClip.external_id}:`, error);
+            }
+          }
+  
+          // Gọi API cho TikTok
+          if (publishedClip.platform === "TikTok" && tiktokAccessToken) {
+            try {
+              const tiktokResponse = await fetch(
+                `https://open.tiktokapis.com/v2/video/list/?fields=id,title,cover_image_url,view_count`,
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${tiktokAccessToken}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    video_ids: [publishedClip.external_id],
+                  }),
+                }
+              );
+              if (!tiktokResponse.ok) {
+                throw new Error(`TikTok API error: ${tiktokResponse.statusText}`);
+              }
+              const tiktokData = await tiktokResponse.json();
+              if (tiktokData.data && tiktokData.data.videos && tiktokData.data.videos.length > 0) {
+                const video = tiktokData.data.videos[0];
+                title = video.title || title;
+                thumbnail = video.cover_image_url || thumbnail;
+                views = video.view_count || 0;
+              } else {
+                console.warn(`No TikTok video found for ID: ${publishedClip.external_id}`);
+              }
+            } catch (error) {
+              console.error(`Error fetching TikTok video ${publishedClip.external_id}:`, error);
+            }
+          }
+  
+          return {
+            _id: publishedClip.published_clip_id || publishedClip._id,
+            clip_id: publishedClip.clip_id,
+            platform: publishedClip.platform,
+            external_id: publishedClip.external_id,
+            url: publishedClip.url,
+            metadata: publishedClip.metadata,
+            published_at: publishedClip.published_at,
+            views,
+            title,
+            thumbnail,
+            originalClip,
+          };
+        })
+      );
+  
       setPublishedClips(enrichedPublishedClips);
     } catch (error) {
       console.error("Error fetching published clips:", error);
-      setError(`Lỗi khi tải clip đã xuất bản: ${error instanceof Error ? error.message : "Lỗi không xác định"}`);
     } finally {
       setIsPublishedClipsLoading(false);
     }
@@ -760,13 +931,42 @@ const HomePage = () => {
 
   // Xử lý đăng xuất Facebook
   const handleFacebookLogout = () => {
-    if (window.FB) {
-      window.FB.logout(() => {
-        resetFacebookAuthState();
-      });
-    } else {
+    console.log("Attempting to log out from Facebook");
+  
+    const resetFacebookAuthState = () => {
+      console.log("Resetting Facebook auth state");
+      setAuthState({ isLoggedIn: false, pages: [] });
+      setSelectedPage(null);
+      setError(null);
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
+    };
+  
+    if (!window.FB) {
+      console.warn("Facebook SDK not loaded");
+      setError("Facebook SDK chưa sẵn sàng. Vui lòng làm mới trang.");
       resetFacebookAuthState();
+      return;
     }
+  
+    window.FB.getLoginStatus((response: any) => {
+      console.log("Current login status:", response);
+      if (response.status === "connected") {
+        try {
+          window.FB.logout((logoutResponse: any) => {
+            console.log("Facebook logout response:", logoutResponse);
+            resetFacebookAuthState();
+          });
+        } catch (err) {
+          console.error("Error during Facebook logout:", err);
+          setError("Không thể đăng xuất Facebook. Vui lòng thử lại.");
+          resetFacebookAuthState();
+        }
+      } else {
+        // Người dùng không đăng nhập hoặc token không hợp lệ, đặt lại trạng thái
+        console.log("No active Facebook session, resetting state");
+        resetFacebookAuthState();
+      }
+    });
   };
 
   const resetFacebookAuthState = () => {
@@ -1059,13 +1259,26 @@ const HomePage = () => {
 
   // Render clip card
   const renderClipCard = (clip: Clip) => (
-    <Card key={clip._id} className="overflow-hidden hover:shadow-md transition-shadow">
+    <Card key={clip._id} className="overflow-hidden hover:shadow-md transition-shadow group">
       <div className="relative">
         <img
           src={clip.thumbnail || "/placeholder.svg?height=120&width=240"}
           alt={clip.prompt}
           className="w-full h-36 object-cover"
         />
+        {clip.status === "completed" && clip.clip_url && (
+          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              variant="secondary"
+              size="icon"
+              className="h-8 w-8 rounded-full bg-white/90 hover:bg-white shadow-md"
+              onClick={() => setSelectedClip(clip)}
+            >
+              <Share2 className="w-4 h-4 text-gray-700" />
+              <span className="sr-only">Chia sẻ</span>
+            </Button>
+          </div>
+        )}
       </div>
       <CardContent className="p-3">
         <div className="flex justify-between items-start mb-2">
@@ -1082,16 +1295,16 @@ const HomePage = () => {
               <span className="capitalize">{clip.status === "processing" ? "Đang xử lý" : "Hoàn thành"}</span>
             </div>
           </div>
-          {clip.status === "completed" && (
+          {clip.status === "completed" && clip.clip_url && (
             <a
               href={clip.clip_url}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-blue-600 hover:underline mt-1"
               onClick={(e) => e.stopPropagation()}
-              >
-              <LinkIcon className="h-3 w-3" />
-              <span>Xem video</span>
+            >
+              <DownloadIcon className="h-3 w-3" />
+              <span>Tải video</span>
             </a>
           )}
         </div>
@@ -1610,6 +1823,19 @@ const HomePage = () => {
           </div>
         </div>
       )}
+      
+      <ShareVideoDialog
+        isOpen={!!selectedClip}
+        onClose={() => setSelectedClip(null)}
+        clipUrl={selectedClip?.clip_url || ""}
+        clipId={selectedClip?._id || ""}
+        clipPrompt={selectedClip?.prompt || ""}
+        facebookAuth={authState} // Truyền authState
+        setFacebookAuth={setAuthState} // Truyền setter cho authState
+        selectedFacebookPage={selectedPage} // Truyền selectedPage
+        setSelectedFacebookPage={setSelectedPage} // Truyền setter cho selectedPage
+        setError={setError} // Truyền setError để đồng bộ lỗi
+      />
     </div>
   );
 };

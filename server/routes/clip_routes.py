@@ -3,6 +3,7 @@ import asyncio
 import os
 from models.models import Clip, Workspace
 from services.storage.storage_service import upload_to_r2
+from flask_cors import cross_origin
 
 clip_bp = Blueprint('clip', __name__)
 
@@ -12,14 +13,33 @@ def create_clip():
     workspace_id = request.form.get("workspace_id")
     prompt = request.form.get("prompt")
     video_file = request.files.get("video_file")
+    status = request.form.get("status")
 
-    if not all([workspace_id, prompt, video_file]):
+    if not all([workspace_id, prompt]):
         return jsonify({"error": "Missing required fields"}), 400
 
     # Kiểm tra workspace tồn tại
+    print(f"Workspace ID: {workspace_id}")
     workspace = Workspace.objects(id=workspace_id).first()
     if not workspace:
         return jsonify({"error": "Workspace not found"}), 404
+
+    # Nếu video_file không được cung cấp, chỉ lưu thông tin clip mà không có URL
+    if not video_file:
+        new_clip = Clip(
+            workspace_id=workspace,
+            prompt=prompt,
+            clip_url=None,
+            status=status,
+        )
+        new_clip.save()
+
+        return jsonify({
+            "clip_id": str(new_clip.id),
+            "prompt": new_clip.prompt,
+            "clip_url": new_clip.clip_url,
+            "status": new_clip.status
+        }), 201
 
     # Lưu file tạm thời
     file_path = f"temp_{video_file.filename}"
@@ -62,6 +82,32 @@ def create_clip():
         return jsonify(result), 500
     return jsonify(result), 201
 
+@clip_bp.route("/clips/<clip_id>/update", methods=["PATCH"])
+@cross_origin(origins=["http://localhost:5173"], methods=["PATCH", "OPTIONS"], allow_headers=["Content-Type"])
+def partial_update_clip(clip_id):
+    data = request.json
+
+    clip = Clip.objects(id=clip_id).first()
+    if not clip:
+        return jsonify({"error": "Clip not found"}), 404
+
+    if "prompt" in data:
+        clip.prompt = data["prompt"]
+    if "status" in data:
+        clip.status = data["status"]
+    if "clip_url" in data: 
+        clip.clip_url = data["clip_url"]
+
+    clip.save()
+
+    return jsonify({
+        "clip_id": str(clip.id),
+        "prompt": clip.prompt,
+        "clip_url": clip.clip_url,
+        "status": clip.status,
+        "updated_at": clip.updated_at.isoformat()
+    }), 200
+    
 @clip_bp.route("/clips/<clip_id>", methods=["GET"])
 def get_clip(clip_id):
     clip = Clip.objects(id=clip_id).first()

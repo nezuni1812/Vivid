@@ -366,6 +366,14 @@ const WorkspaceResources = () => {
                                     {resourceCounts.processing} đang xử lý
                                   </Badge>
                                 )}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="ml-auto"
+                                  onClick={() => navigate(`/workspace/${workspace._id}`)}
+                                >
+                                  <ExternalLink className="h-5 w-5" />
+                                </Button>
                               </div>
                             </TableCell>
                           </TableRow>

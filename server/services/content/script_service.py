@@ -18,6 +18,15 @@ def sanitize_text(text):
     text = ' '.join(text.split())
     return text
 
+# def sanitize_text_caption(text):
+#     """Làm sạch văn bản, loại bỏ ký tự đặc biệt nhưng giữ lại hashtag (#)"""
+#     if not text:
+#         return text
+#     text = text.replace('–', '-').replace('—', '-')
+#     text = re.sub(r'[^\w\s.,!?;:-#"]', '', text)
+#     text = ' '.join(text.split())
+#     return text
+
 def create_script_with_gemini(topic, style, length,  lang):
     """Tạo kịch bản với Gemini dựa trên dữ liệu Wiki hoặc khái niệm gốc"""
     client = genai.Client()
@@ -83,7 +92,7 @@ def create_description_with_gemini(topic, style, lang):
             model="gemini-2.0-flash",
             contents=[prompt]
         )
-        return sanitize_text(response.text)
+        return response.text
     except Exception as e:
         print(f"Lỗi khi tạo kịch bản với Gemini: {e}")
         print("Đang chuyển sang sử dụng Llama làm mô hình dự phòng...")
@@ -248,7 +257,7 @@ def create_description_with_llama(topic, style, lang):
         else:
             content = result.get('result', '')
             
-        return sanitize_text(content)
+        return content
         
     except Exception as e:
         print(f"Lỗi khi tạo mô tả với Llama: {e}")
