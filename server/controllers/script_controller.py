@@ -2,7 +2,7 @@ from services.language.input_handler_service import detect_language_and_input
 from services.language.translator_service import translate_to_english
 from services.content.wiki_service import get_wikipedia_summary
 from services.content.script_service import create_script_with_gemini, create_title_with_gemini, create_description_with_gemini
-from models.models import Script, Workspace
+from models.models import Script, Workspace, Clip
 
 class ScriptController:
     @staticmethod
@@ -158,4 +158,43 @@ class ScriptController:
             )
             return {"description": description}, 200
         except Exception as e:
+            return {"error": str(e)}, 500
+        
+    @staticmethod
+    def create_caption_from_clip(clip_id):
+        """Tạo caption từ clip_id bằng cách tìm script qua workspace"""
+        try:
+            # Bước 1: Tìm clip dựa trên clip_id
+            clip = Clip.objects(id=clip_id).first()
+            if not clip:
+                return {"error": "Không tìm thấy clip"}, 404
+            
+            # Bước 2: Lấy workspace_id từ clip
+            workspace_id = clip.workspace_id
+            
+            # Bước 3: Tìm script mới nhất trong workspace đó
+            script = Script.objects(workspace_id=workspace_id).order_by('-created_at').first()
+            if not script:
+                # Nếu không tìm thấy script nào, tạo caption từ thông tin clip
+                title = clip.prompt.strip()
+                description = f"Video khoa học về chủ đề: {clip.prompt}"
+                return {"title": title, "description": description}, 200
+            
+            # Bước 4: Sử dụng các phương thức hiện có để tạo title và description
+            title_result, title_status = ScriptController.create_title_from_script(str(script.id))
+            if title_status != 200:
+                title = clip.prompt.strip()  # Sử dụng prompt nếu không tạo được title
+            else:
+                title = title_result.get("title")
+                
+            desc_result, desc_status = ScriptController.create_description_from_script(str(script.id))
+            if desc_status != 200:
+                description = f"Video khoa học về chủ đề: {clip.prompt}"  # Mô tả mặc định
+            else:
+                description = desc_result.get("description")
+            
+            return {"title": title, "description": description, "script_id": str(script.id)}, 200
+            
+        except Exception as e:
+            print(f"Lỗi trong create_caption_from_clip: {str(e)}")
             return {"error": str(e)}, 500

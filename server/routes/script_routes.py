@@ -209,3 +209,18 @@ def create_caption_from_script(script_id):
         
     except Exception as e:
         return jsonify({"error": f"Lỗi khi tạo caption: {str(e)}"}), 500
+    
+@script_bp.route("/caption-from-clip/<clip_id>", methods=["GET", "OPTIONS"])
+@cross_origin(origins=["http://localhost:5173"], methods=["GET", "OPTIONS"], allow_headers=["Content-Type"])
+def create_caption_from_clip(clip_id):
+    """Tạo caption (title và description) cho video dựa trên clip_id"""
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
+
+    try:
+        # Sử dụng phương thức mới trong controller
+        result, status = ScriptController.create_caption_from_clip(clip_id)
+        return jsonify(result), status
+        
+    except Exception as e:
+        return jsonify({"error": f"Lỗi khi tạo caption: {str(e)}"}), 500
