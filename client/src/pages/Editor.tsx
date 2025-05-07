@@ -4,11 +4,6 @@ import * as Tabs from "@radix-ui/react-tabs";
 import { Button } from "../components/ui/button";
 import ReactDOM from "react-dom/client";
 import PublishOptionsDialog from "../components/publish-options-dialog";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { Textarea } from "../components/ui/textarea";
-import { Input } from "../components/ui/input";
-import { ArrowLeft, ImageIcon, Search } from "lucide-react";
-import { FaFolder } from "react-icons/fa";
 
 export const ExportVid = async (
   engine: any,
@@ -268,9 +263,9 @@ export default function CesdkEditor({
           video2,
           timing[i].end_time - timing[i].start_time
         );
-        if (url.endsWith("mp4")) {
-          engine.block.setMuted(video2, true);
-        }
+        // if (url.endsWith("mp4")) {
+        //   engine.block.setMuted(video2, true);
+        // }
         console.log(
           "Video",
           i,
@@ -392,9 +387,8 @@ export default function CesdkEditor({
   };*/
 
   return (
-    <div className="container mx-auto py-6 px-4 md:px-10 bg-gray-50 min-h-screen">
-      <div className="flex gap-2 w-full">
-        <div ref={containerRef} className="h-full flex-7" />
+    <div className="flex gap-2 w-full">
+      <div ref={containerRef} className="h-full flex-7" />
 
       <div className="new-resource flex-3 pr-2">
         {/* <Button
@@ -467,56 +461,44 @@ const CreateTab = () => {
   };
 
   return (
-    <Card className="mt-4">
-      <CardHeader>
-        <CardTitle>Tạo tài nguyên mới</CardTitle>
-        <CardDescription>Thêm hình ảnh hoặc video vào timeline</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs.Root
-          className="w-full"
-          defaultValue="tab1"
-          value={activeTab}
-          onValueChange={setActiveTab}
+    <Tabs.Root
+      className="w-full"
+      defaultValue="tab1"
+      value={activeTab}
+      onValueChange={setActiveTab}
+    >
+      <Tabs.List className="rounded-lg bg-[#f4f4f5] p-1 flex gap-1 w-max">
+        <Tabs.Trigger
+          className={`TabsTrigger rounded-sm p-1 ${
+            activeTab === "tab1" ? "bg-white shadow-sm" : "bg-[#f4f4f5]"
+          }`}
+          value="tab1"
         >
-          <Tabs.List className="rounded-lg bg-gray-100 p-1 flex gap-1 w-max mb-4">
-            <Tabs.Trigger
-              className={`rounded-sm px-3 py-1 text-sm font-medium transition-colors ${
-                activeTab === "tab1"
-                  ? "bg-white shadow-sm text-blue-600"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-              value="tab1"
-            >
-              Generate image
-            </Tabs.Trigger>
+          Generate image
+        </Tabs.Trigger>
 
-            <Tabs.Trigger
-              className={`rounded-sm px-3 py-1 text-sm font-medium transition-colors ${
-                activeTab === "tab2"
-                  ? "bg-white shadow-sm text-blue-600"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-              value="tab2"
-            >
-              Find video
-            </Tabs.Trigger>
-          </Tabs.List>
-          <Tabs.Content className="TabsContent flex flex-col gap-2" value="tab1">
-            <ImageGenTab
-              prompt={prompt}
-              setPrompt={setPrompt}
-              generateImageOnUserPrompt={generateImageOnUserPrompt}
-              newImage={newImage}
-            />
-          </Tabs.Content>
+        <Tabs.Trigger
+          className={`TabsTrigger rounded-sm p-1 ${
+            activeTab === "tab2" ? "bg-white shadow-sm" : "bg-[#f4f4f5]"
+          }`}
+          value="tab2"
+        >
+          Find video
+        </Tabs.Trigger>
+      </Tabs.List>
+      <Tabs.Content className="TabsContent flex flex-col gap-2" value="tab1">
+        <ImageGenTab
+          prompt={prompt}
+          setPrompt={setPrompt}
+          generateImageOnUserPrompt={generateImageOnUserPrompt}
+          newImage={newImage}
+        />
+      </Tabs.Content>
 
-          <Tabs.Content className="TabsContent flex flex-col gap-2" value="tab2">
-            <VideoGetTab />
-          </Tabs.Content>
-        </Tabs.Root>
-      </CardContent>
-    </Card>
+      <Tabs.Content className="TabsContent flex flex-col gap-2" value="tab2">
+        <VideoGetTab />
+      </Tabs.Content>
+    </Tabs.Root>
   );
 };
 
@@ -561,8 +543,8 @@ const ImageGenTab = ({
 }) => {
   return (
     <>
-      <h2 className="font-medium text-lg">Prompt</h2>
-      <Textarea
+      <h2 className="font-medium">Prompt</h2>
+      <textarea
         name="promp"
         id=""
         value={prompt}
@@ -570,20 +552,16 @@ const ImageGenTab = ({
           setPrompt(e.target.value);
         }}
         placeholder="Mô tả hình ảnh tại đây"
-        className="resize-none border rounded-sm p-2"
+        className="resize-none border rounded-sm p-1"
         rows={4}
-      ></Textarea>
+      ></textarea>
 
-      <Button
-        onClick={() => generateImageOnUserPrompt(prompt)}
-        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
-      >
-        <ImageIcon className="h-4 w-4" />
+      <Button onClick={() => generateImageOnUserPrompt(prompt)}>
         Tạo hình ảnh
       </Button>
 
       <h2 className="font-medium text-lg">Kết quả</h2>
-      <p className="text-gray-500">Kéo vào timeline để sử dụng</p>
+      <p>Kéo vào timeline để sử dụng</p>
       {newImage ? (
         <div
           className="image-container"
@@ -592,16 +570,11 @@ const ImageGenTab = ({
           }}
         >
           <div className="img-wrapper">
-            <img
-              src={newImage}
-              alt="New generated image"
-              draggable
-              className="w-full h-auto max-h-[20rem] object-contain rounded border border-gray-200"
-            />
+            <img src={newImage} alt="New generated image" draggable />
           </div>
         </div>
       ) : (
-        <p className="text-sm font-medium text-gray-500">Chưa có hình ảnh nào được tạo</p>
+        <p className="text-sm font-medium">Chưa có hình ảnh nào được tạo</p>
       )}
     </>
   );
@@ -610,21 +583,17 @@ const ImageGenTab = ({
 const VideoGetTab = () => {
   return (
     <>
-      <h2 className="font-medium text-lg">Tìm kiếm video</h2>
-      <Input
+      <h2 className="font-medium">Tìm kiếm video</h2>
+      <input
         type="text"
         name="search"
         placeholder="Dùng từ khóa để kiếm hình ảnh"
-        className="border rounded-sm p-2"
+        className="border rounded-sm p-1"
       />
-      <Button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
-        <Search className="h-4 w-4" />
-        Tìm kiếm
-      </Button>
+      <Button>Tìm kiếm</Button>
 
       <h2 className="font-medium text-lg">Kết quả</h2>
-      <p className="text-gray-500">Kéo vào timeline để sử dụng</p>
-      <p className="text-sm font-medium text-gray-500">Chưa có kết quả tìm kiếm</p>
+      <p>Kéo vào timeline để sử dụng</p>
     </>
   );
 };
