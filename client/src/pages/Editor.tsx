@@ -281,6 +281,8 @@ export default function CesdkEditor({
         engine.block.setInAnimation(video2, zoomAnimation);
         engine.block.setOutAnimation(video2, fadeOutAnimation);
 
+        console.log(engine.block.supportsPlaybackControl(page));
+        // engine.block.setMuted(page, true);
         engine.block.appendChild(track, video2);
       }
       const audio = engine.block.create("audio");
@@ -439,7 +441,6 @@ const CreateTab = () => {
         },
         body: JSON.stringify({
           prompt,
-          negative_prompt: "bad, ugly, deformed, blurry",
           width: 512,
           height: 512,
           samples: 1,
@@ -456,9 +457,7 @@ const CreateTab = () => {
 
     const data = await response.json();
     console.log("Image created:", data);
-    setNewImage(
-      "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/e1587b7049c14ef7a878f5c2301ac3e1.png"
-    );
+    setNewImage(data.content);
   };
 
   return (
