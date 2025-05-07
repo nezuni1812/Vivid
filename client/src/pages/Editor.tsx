@@ -11,7 +11,7 @@ export const ExportVid = async (
   height = "1080p",
   format = "mp4",
   fps = "30",
-  updateProgress: (current: number, total: number) => void,
+  updateProgress: (current: number, total: number) => void
 ) => {
   const scene = engine.scene.get();
   const page = engine.scene.getCurrentPage();
@@ -238,6 +238,7 @@ export default function CesdkEditor({
 
       // engine.block.setDuration(page, 20);
 
+      console.log("All video URLs", videoUrls);
       engine.block.appendChild(page, track);
       for (let i = 0; i < videoUrls.length; i++) {
         const url = videoUrls[i];
@@ -262,7 +263,9 @@ export default function CesdkEditor({
           video2,
           timing[i].end_time - timing[i].start_time
         );
-        engine.block.setMuted(video2, true);
+        if (url.endsWith("mp4")) {
+          engine.block.setMuted(video2, true);
+        }
         console.log(
           "Video",
           i,
@@ -402,7 +405,16 @@ export default function CesdkEditor({
             format: string,
             fps: string,
             updateProgress: (current: number, total: number) => void
-          ) => ExportVid(mainEngine, workspaceId, quality, format, fps, updateProgress)}
+          ) =>
+            ExportVid(
+              mainEngine,
+              workspaceId,
+              quality,
+              format,
+              fps,
+              updateProgress
+            )
+          }
         />
         <CreateTab />
       </div>
