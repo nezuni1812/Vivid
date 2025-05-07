@@ -262,6 +262,7 @@ export default function CesdkEditor({
           video2,
           timing[i].end_time - timing[i].start_time
         );
+        engine.block.setMuted(video2, true);
         console.log(
           "Video",
           i,
