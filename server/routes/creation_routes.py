@@ -226,11 +226,15 @@ async def get_image(description, filename=None, additional=None) -> str:
         response.text,
     ]
     print("Prompt content:", prompt_content)
-    finalresponse = client.models.generate_content(
-        model="models/gemini-2.0-flash-exp",
-        contents=prompt_content,
-        config=types.GenerateContentConfig(response_modalities=['Text', 'Image'])
-    )
+    try:
+        finalresponse = client.models.generate_content(
+            model="models/gemini-2.0-flash-exp",
+            contents=prompt_content,
+            config=types.GenerateContentConfig(response_modalities=['Text', 'Image'])
+        )
+    except Exception as e:
+        print("Error:", e)
+        return None
     for part in finalresponse.candidates[0].content.parts:
         if part.text is not None:
             print(part.text)
