@@ -401,20 +401,21 @@ export default function CesdkEditor({
         </Button> */}
         <PublishOptionsDialog
           exportVid={(
-            quality: string,
-            format: string,
-            fps: string,
-            updateProgress: (current: number, total: number) => void
+        quality: string,
+        format: string,
+        fps: string,
+        updateProgress: (current: number, total: number) => void
           ) =>
-            ExportVid(
-              mainEngine,
-              workspaceId,
-              quality,
-              format,
-              fps,
-              updateProgress
-            )
+        ExportVid(
+          mainEngine,
+          workspaceId ?? "",
+          quality,
+          format,
+          fps,
+          updateProgress
+        )
           }
+          workspaceId={workspaceId ?? ""}
         />
         <CreateTab />
       </div>

@@ -37,6 +37,7 @@ import {
   FileText,
   Share2,
   X,
+  Loader2,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import TikTokLogin from "../pages/TikTokLogin";
@@ -64,6 +65,7 @@ interface PublishOptionsProps {
     fps: string,
     updateProgress: (current: number, total: number) => void
   ) => Promise<any>;
+  workspaceId: string;
 }
 
 interface YouTubeUserInfo {
@@ -83,6 +85,7 @@ export default function PublishOptions({
   isOpen = true,
   onClose,
   exportVid,
+  workspaceId,
 }: PublishOptionsProps) {
   const { isSignedIn, accessToken, signIn } = useAuth();
   const [quality, setQuality] = useState("1080p");
@@ -99,7 +102,7 @@ export default function PublishOptions({
   const [activePlatform, setActivePlatform] = useState("youtube");
   const [activeTab, setActiveTab] = useState("export");
   const [isExporting, setIsExporting] = useState(false);
-
+  const [isCaptionLoading, setIsCaptionLoading] = useState(false);
   const [isYoutubeLoading, setIsYoutubeLoading] = useState(false);
   const [isTiktokLoading, setIsTiktokLoading] = useState(false);
   const [isFacebookLoading, setIsFacebookLoading] = useState(false);
@@ -138,6 +141,8 @@ export default function PublishOptions({
   });
   const [selectedPage, setSelectedPage] = useState<FacebookPage | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // State cho clip ID
+  const [clipId, setClipId] = useState<string | null>(null);
 
   // Load Facebook SDK
   useEffect(() => {
@@ -400,10 +405,30 @@ export default function PublishOptions({
     }
   }, [tiktokAccessToken, accessToken]);
 
-  const handleGenerateCaption = () => {
-    const newCaption = generateCaption();
-    setGeneratedCaption(newCaption);
-    setIsCaptionDialogOpen(true);
+  const handleGenerateCaption = async () => {
+    setIsCaptionLoading(true);
+    try {
+      const response = await fetch(`http://localhost:5000/caption-from-clip/${clipId}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Lỗi khi tạo caption.");
+      }
+
+      const data = await response.json();
+      setGeneratedCaption({
+        title: data.title || "",
+        description: data.description || "",
+      });
+      setIsCaptionDialogOpen(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Lỗi khi tạo caption.");
+    } finally {
+      setIsCaptionLoading(false);
+    }
   };
 
   const handleCaptionTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -457,26 +482,90 @@ export default function PublishOptions({
       });
   };
 
+  const createClip = async () => {
+    try {
+      const scriptResponse = await fetch(`http://localhost:5000/scripts?workspace_id=${workspaceId}`);
+      const scripts = await scriptResponse.json();
+      
+      const scriptTitle = scripts.length > 0 ? scripts[0].title : "Video export";
+      
+      const formData = new FormData();
+      formData.append("workspace_id", workspaceId);
+      formData.append("prompt", scriptTitle);
+      formData.append("status", "processing");
+
+      const response = await fetch("http://localhost:5000/clips", {
+        method: "POST",
+        body: formData, // Gửi FormData thay vì JSON
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setClipId(data.clip_id);
+        return data.clip_id;
+      } else {
+        throw new Error(data.error || "Failed to create clip");
+      }
+    } catch (error) {
+      console.error("Error creating clip:", error);
+      setError(error instanceof Error ? error.message : "Failed to create clip");
+      return null;
+    }
+  };
+
+  const updateClip = async (clipId: string, clipUrl: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/clips/${clipId}/update`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          clip_url: clipUrl, 
+          status: "completed",
+        }),
+      });
+  
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to update clip");
+      }
+    } catch (error) {
+      console.error("Error updating clip:", error);
+      setError(
+        error instanceof Error ? error.message : "Failed to update clip"
+      );
+    }
+  };
+
   const handleExport = async () => {
     console.log("Fps:", fps);
     console.log("Quality:", quality);
     console.log("Format:", format);
-
+  
     if (!exportVid) {
       setError("Export function not available.");
       return;
     }
-
+  
+    // Kiểm tra hoặc tạo clip
+    const clipId = await createClip();
+    if (!clipId) {
+      setError("Failed to create or find clip.");
+      return;
+    }
+  
     setIsExporting(true);
     try {
       const data = await exportVid(quality, format, fps, updateProgress);
       if (data && data.content) {
+        console.log("Export successful, updating clip with ID:", clipId, "URL:", data.content);
         alert("Video đã được xuất thành công!");
         setVideoLink(data.content);
+        await updateClip(clipId, data.content);
         setActiveTab("publish");
-        // return;
       } else {
-        setError("Failed to export video.");
+        setError("Failed to export video: No content returned.");
       }
     } catch (error) {
       console.error("Export error:", error);
@@ -561,7 +650,7 @@ export default function PublishOptions({
     i_desc: string
   ) => {
     const publishedData = {
-      clip_id: "123456789012345678901234", // Thay bằng id clip thật sự sau
+      clip_id: clipId,
       platform: i_platform,
       external_id: i_external_id,
       url: i_url,
@@ -614,7 +703,7 @@ export default function PublishOptions({
         // tags: ["API", "Video Generation", "test", "AI"],
       },
       status: {
-        privacyStatus: "private", // "public", "private", or "unlisted"
+        privacyStatus: "public", // "public", "private", or "unlisted"
       },
     };
 
@@ -856,14 +945,6 @@ export default function PublishOptions({
     } finally {
       setIsFacebookLoading(false);
     }
-  };
-
-  const generateCaption = () => {
-    return {
-      title: "Video tuyệt vời về hành trình khám phá",
-      description:
-        "Tham gia cùng chúng tôi trong chuyến phiêu lưu đầy thú vị! 🌍 #Adventure #Travel",
-    };
   };
 
   const content = (
@@ -1439,6 +1520,7 @@ export default function PublishOptions({
                           <Button
                             className="bg-slate-800 hover:bg-slate-700"
                             onClick={handleGenerateCaption}
+                            disabled={isCaptionLoading}
                           >
                             <FileText className="mr-2 h-4 w-4" />
                             Tạo caption tự động
@@ -1452,6 +1534,12 @@ export default function PublishOptions({
                               tảng.
                             </DialogDescription>
                           </DialogHeader>
+                          {isCaptionLoading ? (
+                            <div className="flex flex-col items-center justify-center py-8">
+                              <Loader2 className="h-8 w-8 text-slate-600 animate-spin" />
+                              <p className="mt-2 text-sm text-gray-600">Đang tạo caption...</p>
+                            </div>
+                          ) : (
                           <div className="space-y-3">
                             <div>
                               <label className="text-sm font-medium">
@@ -1470,9 +1558,11 @@ export default function PublishOptions({
                                 value={generatedCaption.description}
                                 onChange={handleCaptionDescriptionChange}
                                 className="min-h-[100px]"
+                                disabled={isCaptionLoading}
                               />
                             </div>
                           </div>
+                          )}
                           <DialogFooter>
                             <Button
                               onClick={handleAcceptCaption}
