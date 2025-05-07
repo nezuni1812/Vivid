@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react"
 import { FiPlus } from "react-icons/fi"
 import { FaFolder, FaTiktok, FaFacebook, FaYoutube, FaUserCircle } from "react-icons/fa"
 import { useNavigate } from "react-router-dom"
-import { House } from 'lucide-react'
+import { House, ImageUpscale } from 'lucide-react'
 import {
   Card,
   CardContent,
@@ -111,6 +111,10 @@ const HomePage = () => {
   const [selectedPage, setSelectedPage] = useState<FacebookPage | null>(null);
   const [error, setError] = useState<string | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const navigateToWorkspaceResources = () => {
+    navigate("/workspace-resources")
+  }
 
   function getFacebookAccessTokenFromLocalStorage(): string | null {
     const savedAuth = localStorage.getItem("facebook_stats_auth");
@@ -1483,11 +1487,22 @@ const HomePage = () => {
 
         {/* Workspace Section */}
         <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h2 className="text-xl font-bold">Workspaces</h2>
-              <p className="text-sm text-gray-500 mt-1">Quản lý các workspace của bạn</p>
-            </div>
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h2 className="text-xl font-bold">Workspaces</h2>
+            <p className="text-sm text-gray-500 mt-1">Quản lý các workspace của bạn</p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={navigateToWorkspaceResources}
+              className="flex items-center gap-2"
+            >
+              <ImageUpscale className="h-4 w-4" />
+              <span>Xem tài nguyên</span>
+            </Button>
+
             <Button
               onClick={() => setIsCreateModalOpen(true)}
               className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
@@ -1495,6 +1510,7 @@ const HomePage = () => {
               <FiPlus className="mr-2 h-4 w-4" /> Tạo Workspace
             </Button>
           </div>
+        </div>
 
           {isWorkspaceLoading ? (
             <div className="flex justify-center py-8">

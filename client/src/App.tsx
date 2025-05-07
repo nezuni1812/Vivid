@@ -17,6 +17,7 @@ import VideoEditor from "./pages/Editor";
 import Resource from "./pages/Resource";
 import FacebookStatPage from './pages/FacebookStatPage';
 import { AuthProvider } from "./context/AuthContext";
+import WorkspaceResources from "./pages/WorkspaceResources"
 
 function App() {
   const location = useLocation()
@@ -43,6 +44,7 @@ function App() {
                 path="/tiktok-stats"
                 element={<TikTokStats />}
               />
+              <Route path="/workspace-resources" element={<WorkspaceResources></WorkspaceResources>} />
               <Route path="/workspace/:id" element={<Workspace></Workspace>} />
               <Route path="/resource" element={<Resource></Resource>} />
               <Route path="/editor" element={<VideoEditor/>} />
