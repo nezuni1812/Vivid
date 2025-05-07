@@ -281,6 +281,8 @@ export default function CesdkEditor({
         engine.block.setInAnimation(video2, zoomAnimation);
         engine.block.setOutAnimation(video2, fadeOutAnimation);
 
+        console.log(engine.block.supportsPlaybackControl(page));
+        // engine.block.setMuted(page, true);
         engine.block.appendChild(track, video2);
       }
       const audio = engine.block.create("audio");

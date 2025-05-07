@@ -13,7 +13,8 @@ from dotenv import load_dotenv
 import uuid
 from urllib.parse import urljoin
 
-from models.models import Clip, Resource
+from models.models import Clip, Resource, Script
+from models import models
 from services.storage.storage_service import upload_to_r2, upload_blob_to_r2
 
 load_dotenv()
@@ -42,6 +43,16 @@ def new_creations():
     if not workspace:
         return jsonify({"error": "No workspace_id provided"}), 400
     
+    Resource.objects(workspace_id=workspace)
+    script = models.Script.objects(workspace_id=workspace).first()
+    # if not script:
+    #     return jsonify({"error": "No script found"}), 404
+        
+    
+    style = script.style
+    print("Style index:", style)
+    # return jsonify({"content": "good request"}), 200
+    
     oldClips = Resource.objects(workspace_id=workspace)
     if oldClips:
         for clip in oldClips:
@@ -64,7 +75,7 @@ def new_creations():
             newClips[idx].status = "completed"
             newClips[idx].save();
     
-    materials = asyncio.run(get_all_image_segment(script_content, materials))
+    materials = asyncio.run(get_all_image_segment(script_content, materials, style))
     # for idx in range(len(script_content)):
     #     if materials[idx] is not None:
     #         script_content[idx].content = materials[idx]
@@ -146,7 +157,7 @@ class Script(BaseModel):
     type: str
     description: str
     
-def determine_illustration_content(scripts, style=1) -> list[Script]:
+def determine_illustration_content(scripts) -> list[Script]:
     
     print("Determining illustration content")
     response = client.models.generate_content(
@@ -154,11 +165,11 @@ def determine_illustration_content(scripts, style=1) -> list[Script]:
         contents=[
             """
             From the script, determine each element in the script should best be illustrated with an image or a video. The script could be in Vietnamese so you can translate to English and infer base on the most important words in the script. 
-            If it should be illustrated with an image, return the image description in great details, relating to technical concept, so a image generation AI can understand your prompt. 
+            If it should be illustrated with an image, return the image description in great details, relating to technical concept, so a image generation AI can understand your prompt. Please dont mention image style because it will be added later. 
             If it should be illustrated with a video, return the video description, it should be keywords, could be something broad like Nature, Tigers, People. 
             Or it could be something specific like Group of people working. 
             Make a copy of the script and add the `type` (video or image), `description` for each element in the script. Always return in JSON format')
-            There only at maximum 5 image elements.
+            The amount of videos and images should be similar but there should be only at maximum 5 image elements.
             """,
             scripts,
         ],
@@ -185,12 +196,12 @@ async def get_all_vid_segment(script_list, materials):
 
     return materials
 
-async def get_all_image_segment(script_list, materials):
+async def get_all_image_segment(script_list, materials, style):
     tasks = []
     for script_idx in range(len(script_list)):
         if script_list[script_idx].type == 'image':
             async def task(idx=script_idx):
-                base64_image = await get_image(script_list[idx].description)
+                base64_image = await get_image(script_list[idx].description, style=style)
                 materials[idx] = base64_image
             tasks.append(task())
             
@@ -215,14 +226,28 @@ async def get_video(description) -> str:
         print(f"Error: {result.status_code}")
     return None;
 
-async def get_image(description, filename=None, additional=None) -> str:
+async def get_image(description, filename=None, additional=None, style=None) -> str:
     print(f"Generating image with description: {description}")
+    image_style = ""
+    if (style is None):
+        style = 2
+        
+    if (style == 1):
+        image_style = "cartoon illustration for kids, bright colors, happy characters, simple background"
+    elif (style == 2):
+        image_style = "realistic, high detail, vibrant colors, dynamic composition, cinematic lighting"
+    elif (style == 3):
+        image_style = "technical scientific diagram, vector style, realistic lab setting, educational infographic, monochromatic blue-gray palette"
+        
+    print("Image style:", image_style)
+            
     response = client.models.generate_content(
     model="models/gemini-2.0-flash-exp",
         contents=[
             f"""Return the image description in great details, 
             relating to technical concept about the following concept, 
-            so a image generation AI can understand your prompt: {description}, and the following (it might be in Vietnamese to translate to English): {additional}""",
+            so a image generation AI can understand your prompt: {description}, and the following (it might be in Vietnamese to translate to English): {additional}.""",
+            f"Image style: {image_style}",
             ],
         config=types.GenerateContentConfig(response_modalities=['Text'])
     )
