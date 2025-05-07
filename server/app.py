@@ -12,6 +12,8 @@ from routes.audio_routes import audio_bp
 from routes.script_routes import script_bp
 from routes.creation_routes import creation_bp
 from routes.tiktok_routes import tiktok_bp 
+from routes.resource_routes import resource_bp
+
 from dotenv import load_dotenv
 import os
 
@@ -45,7 +47,7 @@ app.register_blueprint(audio_bp)
 app.register_blueprint(script_bp)
 app.register_blueprint(tiktok_bp)  # Register TikTok Blueprint
 app.register_blueprint(creation_bp)
-
+app.register_blueprint(resource_bp)
 
 # from services.storage.storage_service import remove_from_r2
 # async def foo():
