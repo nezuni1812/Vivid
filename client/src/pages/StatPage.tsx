@@ -201,7 +201,15 @@ const YoutubeStatPage = () => {
           commentCount: item.statistics.commentCount || "0",
           likeCount: item.statistics.likeCount || "0",
         }))
-        setVideos(videoList)
+
+        // Sắp xếp theo lượt xem giảm dần
+        const sortedVideos = videoList.sort(
+          (a, b) => parseInt(b.viewCount) - parseInt(a.viewCount)
+        )
+        // Lấy tối đa 10 video có lượt xem cao nhất
+        const top10Videos = sortedVideos.slice(0, 10)
+
+        setVideos(top10Videos)
         setLoading(false)
       } catch (err) {
         console.error(err)
