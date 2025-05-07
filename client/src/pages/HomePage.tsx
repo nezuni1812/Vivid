@@ -1071,15 +1071,29 @@ const HomePage = () => {
         <div className="flex justify-between items-start mb-2">
           <h3 className="font-medium text-sm line-clamp-2 text-left">{clip.prompt}</h3>
         </div>
-        <div className="flex items-center justify-between text-xs text-gray-500">
-          <div className="flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            <span>{formatDate(clip.created_at)}</span>
+        <div className="flex flex-col gap-2 text-xs text-gray-500">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              <span>{formatDate(clip.created_at)}</span>
+            </div>
+            <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full ${getStatusColor(clip.status)}`}>
+              {getStatusIcon(clip.status)}
+              <span className="capitalize">{clip.status === "processing" ? "Đang xử lý" : "Hoàn thành"}</span>
+            </div>
           </div>
-          <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full ${getStatusColor(clip.status)}`}>
-            {getStatusIcon(clip.status)}
-            <span className="capitalize">{clip.status === "processing" ? "Đang xử lý" : "Hoàn thành"}</span>
-          </div>
+          {clip.status === "completed" && (
+            <a
+              href={clip.clip_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-blue-600 hover:underline mt-1"
+              onClick={(e) => e.stopPropagation()}
+              >
+              <LinkIcon className="h-3 w-3" />
+              <span>Xem video</span>
+            </a>
+          )}
         </div>
       </CardContent>
     </Card>
