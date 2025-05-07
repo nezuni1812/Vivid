@@ -5,21 +5,7 @@ import { Button } from "../components/ui/button";
 const Resource = ({ workspace_id }: { workspace_id: string | undefined }) => {
   const navigate = useNavigate();
 
-  const [scriptClips, setScriptClips] = useState<any[]>([
-    // "http://localhost:5000/images/b0c24e0208044db8af2afdf523ff4f6e.png",
-    // "http://localhost:5000/images/f42cd7200b724ce090ac972ca25bd5bb.png",
-    // "http://localhost:5000/images/1284c3a6a06b49b3bc828d5424b9636b.png",
-    // "http://localhost:5000/images/6e1ad82ff5e148f6970b99c48ae55fc0.png",
-    // "https://videos.pexels.com/video-files/6738901/6738901-uhd_3840_2160_25fps.mp4",
-    // "https://videos.pexels.com/video-files/8064156/8064156-hd_1920_1080_30fps.mp4",
-    // "http://localhost:5000/images/de09158baa0a47f3a8ff317f2aeded14.png",
-    // "https://videos.pexels.com/video-files/4806404/4806404-hd_1080_1920_30fps.mp4",
-    // "https://videos.pexels.com/video-files/5726648/5726648-uhd_1440_2732_25fps.mp4",
-    // "https://videos.pexels.com/video-files/7955160/7955160-uhd_4096_2160_25fps.mp4",
-    // "https://videos.pexels.com/video-files/3129902/3129902-uhd_2560_1440_25fps.mp4",
-    // "https://videos.pexels.com/video-files/7698685/7698685-uhd_4096_2160_25fps.mp4",
-    // "https://videos.pexels.com/video-files/25935014/11922020_720_1280_15fps.mp4",
-  ]);
+  const [scriptClips, setScriptClips] = useState<any[]>([]);
 
   const [prompt, setPrompt] = useState<string[]>(
     Array(scriptClips.length).fill("")
@@ -55,10 +41,10 @@ const Resource = ({ workspace_id }: { workspace_id: string | undefined }) => {
     const fetchClips = async () => {
       try {
         const response = await fetch(
-          `${new URL(
-            "clips-by-workspace?workspace_id=" + workspace_id,
+          new URL(
+            `workspaces/${workspace_id}/resources`,
             import.meta.env.VITE_BACKEND_URL
-          )}`,
+          ),
           {
             method: "GET",
           }
@@ -105,7 +91,7 @@ const Resource = ({ workspace_id }: { workspace_id: string | undefined }) => {
   }, [workspace_id]);
 
   const updateImage = async (index: number, prompt: string) => {
-    if (scriptClips[index].endsWith("mp4")) {
+    if (scriptClips[index].resource_type === "video") {
       console.log("Video file, skipping image generation.");
       return;
     }
@@ -121,7 +107,7 @@ const Resource = ({ workspace_id }: { workspace_id: string | undefined }) => {
           what: "image",
           script: JSON.parse(audioData.timings)[index].content,
           prompt: prompt,
-          filename: scriptClips[index].endsWith("mp4")
+          filename: scriptClips[index].resource_type === "video"
             ? null
             : scriptClips[index],
         }),
@@ -169,7 +155,7 @@ const Resource = ({ workspace_id }: { workspace_id: string | undefined }) => {
         onClick={() => {
           navigate("/editor", {
             state: {
-              resourceList: scriptClips.map((clip) => clip?.clip_url),
+              resourceList: scriptClips.map((clip) => clip?.resource_url),
               timing: JSON.parse(audioData.timings),
               audioUrl: audioData.audio_url,
               workspaceId: workspace_id,
@@ -189,23 +175,18 @@ const Resource = ({ workspace_id }: { workspace_id: string | undefined }) => {
           item: { start_time: number; end_time: number; content: string },
           index: number
         ) => {
-          let material = scriptClips[index]?.clip_url;
+          let material = scriptClips[index]?.resource_url;
           if (scriptClips[index]?.status == "processing") {
             console.log(
               "Processing",
-              scriptClips[index]?.clip_url,
+              scriptClips[index]?.resource_url,
               scriptClips[index]?.status
             );
             material =
               "https://upload.wikimedia.org/wikipedia/commons/b/b1/Loading_icon.gif";
           }
-          const isImage =
-            material?.endsWith(".png") ||
-            material?.endsWith(".jpg") ||
-            material?.endsWith(".jpeg") ||
-            material?.endsWith(".gif");
-          const isVideo =
-            material?.endsWith(".mp4") || material?.endsWith(".mov");
+          const isImage = scriptClips[index]?.resource_type === "image";
+          const isVideo = scriptClips[index]?.resource_type === "video";
 
           return (
             <div className="mb-10" key={index}>

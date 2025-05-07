@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 import uuid
 from urllib.parse import urljoin
 
-from models.models import Clip
+from models.models import Clip, Resource
 from services.storage.storage_service import upload_to_r2, upload_blob_to_r2
 
 load_dotenv()
@@ -42,13 +42,13 @@ def new_creations():
     if not workspace:
         return jsonify({"error": "No workspace_id provided"}), 400
     
-    oldClips = Clip.objects(workspace_id=workspace)
+    oldClips = Resource.objects(workspace_id=workspace)
     if oldClips:
         for clip in oldClips:
             # TODO: please remove the old cloudflare image file if its an image
             clip.delete()
     
-    newClips = [Clip(workspace_id=workspace, prompt="", clip_url="", status="processing") for scriptSegment in data]
+    newClips = [Resource(workspace_id=workspace, resource_url="", status="processing", resource_type="image") for scriptSegment in data]
     for clip in newClips:
         clip.save()
 
@@ -59,8 +59,8 @@ def new_creations():
     print("Videos done:", materials)
     for idx in range(len(materials)):
         if materials[idx] is not None:
-            newClips[idx].clip_url = materials[idx]
-            newClips[idx].prompt = script_content[idx].description
+            newClips[idx].resource_url = materials[idx]
+            newClips[idx].resource_type = "video"
             newClips[idx].status = "completed"
             newClips[idx].save();
     
@@ -71,8 +71,8 @@ def new_creations():
     print("All done")
     for idx in range(len(materials)):
         if materials[idx] is not None:
-            newClips[idx].clip_url = materials[idx]
-            newClips[idx].prompt = script_content[idx].description
+            newClips[idx].resource_url = materials[idx]
+            # newClips[idx].resource_type = "image"
             newClips[idx].status = "completed"
             newClips[idx].save();
     
@@ -226,11 +226,15 @@ async def get_image(description, filename=None, additional=None) -> str:
         response.text,
     ]
     print("Prompt content:", prompt_content)
-    finalresponse = client.models.generate_content(
-        model="models/gemini-2.0-flash-exp",
-        contents=prompt_content,
-        config=types.GenerateContentConfig(response_modalities=['Text', 'Image'])
-    )
+    try:
+        finalresponse = client.models.generate_content(
+            model="models/gemini-2.0-flash-exp",
+            contents=prompt_content,
+            config=types.GenerateContentConfig(response_modalities=['Text', 'Image'])
+        )
+    except Exception as e:
+        print("Error:", e)
+        return None
     for part in finalresponse.candidates[0].content.parts:
         if part.text is not None:
             print(part.text)
