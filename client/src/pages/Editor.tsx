@@ -16,7 +16,7 @@ export const ExportVid = async (
   height = "1080p",
   format = "mp4",
   fps = "30",
-  updateProgress: (current: number, total: number) => void,
+  updateProgress: (current: number, total: number) => void
 ) => {
   const scene = engine.scene.get();
   const page = engine.scene.getCurrentPage();
@@ -243,6 +243,7 @@ export default function CesdkEditor({
 
       // engine.block.setDuration(page, 20);
 
+      console.log("All video URLs", videoUrls);
       engine.block.appendChild(page, track);
       for (let i = 0; i < videoUrls.length; i++) {
         const url = videoUrls[i];
@@ -267,7 +268,9 @@ export default function CesdkEditor({
           video2,
           timing[i].end_time - timing[i].start_time
         );
-        engine.block.setMuted(video2, true);
+        if (url.endsWith("mp4")) {
+          engine.block.setMuted(video2, true);
+        }
         console.log(
           "Video",
           i,
@@ -393,25 +396,33 @@ export default function CesdkEditor({
       <div className="flex gap-2 w-full">
         <div ref={containerRef} className="h-full flex-7" />
 
-        <div className="new-resource flex-3 pr-2">
-          {/* <Button
-            variant="outline"
-            size="icon"
-            className="w-full p-2 my-2"
-            onClick={() => ExportVid(mainEngine)}
-          >
-            Export video
-          </Button> */}
-          <PublishOptionsDialog
-            exportVid={(
-              quality: string,
-              format: string,
-              fps: string,
-              updateProgress: (current: number, total: number) => void
-            ) => ExportVid(mainEngine, workspaceId, quality, format, fps, updateProgress)}
-          />
-          <CreateTab />
-        </div>
+      <div className="new-resource flex-3 pr-2">
+        {/* <Button
+          variant="outline"
+          size="icon"
+          className="w-full p-2 my-2"
+          onClick={() => ExportVid(mainEngine)}
+        >
+          Export video
+        </Button> */}
+        <PublishOptionsDialog
+          exportVid={(
+            quality: string,
+            format: string,
+            fps: string,
+            updateProgress: (current: number, total: number) => void
+          ) =>
+            ExportVid(
+              mainEngine,
+              workspaceId,
+              quality,
+              format,
+              fps,
+              updateProgress
+            )
+          }
+        />
+        <CreateTab />
       </div>
     </div>
   );

@@ -140,7 +140,7 @@ class Script(BaseModel):
     type: str
     description: str
     
-def determine_illustration_content(scripts) -> list[Script]:
+def determine_illustration_content(scripts, style=1) -> list[Script]:
     
     print("Determining illustration content")
     response = client.models.generate_content(
