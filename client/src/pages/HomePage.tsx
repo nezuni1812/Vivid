@@ -650,7 +650,7 @@ const HomePage = () => {
           if (publishedClip.platform === "TikTok" && tiktokAccessToken) {
             try {
               const tiktokResponse = await fetch(
-                `https://open.tiktokapis.com/v2/video/list/?fields=id,title,cover_image_url,view_count`,
+                `https://open.tiktokapis.com/v2/video/query/?fields=id,title,cover_image_url,view_count`,
                 {
                   method: "POST",
                   headers: {
@@ -658,7 +658,9 @@ const HomePage = () => {
                     "Content-Type": "application/json",
                   },
                   body: JSON.stringify({
-                    video_ids: [publishedClip.external_id],
+                    filters: {
+                      video_ids: [publishedClip.external_id],
+                    },
                   }),
                 }
               );
