@@ -4,6 +4,7 @@ import * as Tabs from "@radix-ui/react-tabs";
 import { Button } from "../components/ui/button";
 import ReactDOM from "react-dom/client";
 import PublishOptionsDialog from "../components/publish-options-dialog";
+import { ChevronLeft, ChevronRight, ImageIcon, Video, Share2 } from "lucide-react";
 
 export const ExportVid = async (
   engine: any,
@@ -127,10 +128,11 @@ export default function CesdkEditor({
   resourceList?: string[] | null;
 }) {
   const location = useLocation();
-
   const workspaceId = location.state?.workspaceId ?? null;
+  const containerRef = useRef(null)
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [activeTab, setActiveTab] = useState("tab1")
 
-  const containerRef = useRef(null);
   let cesdkInstance: any;
   let mainTrack: any;
   let mainEngine: any;
@@ -388,123 +390,118 @@ export default function CesdkEditor({
     console.log("Video exported successfully!");
   };*/
 
+  const toggleSidebar = () => {
+    setIsExpanded(!isExpanded);
+  };
+
   return (
     <div className="flex gap-2 w-full">
       <div ref={containerRef} className="h-full flex-7" />
 
-      <div className="new-resource flex-3 pr-2">
-        {/* <Button
-          variant="outline"
+      <div
+        className={`resource-sidebar transition-all duration-300 flex flex-col ${
+          isExpanded ? "w-80" : "w-14"
+        } bg-white border-l border-gray-200 shadow-sm`}
+      >
+        <Button
+          variant="ghost"
           size="icon"
-          className="w-full p-2 my-2"
-          onClick={() => ExportVid(mainEngine)}
+          onClick={toggleSidebar}
+          className="self-end mx-2"
+          aria-label={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
         >
-          Export video
-        </Button> */}
-        <CreateTab />
-        <PublishOptionsDialog
-          exportVid={(
-        quality: string,
-        format: string,
-        fps: string,
-        updateProgress: (current: number, total: number) => void
-          ) =>
-        ExportVid(
-          mainEngine,
-          workspaceId ?? "",
-          quality,
-          format,
-          fps,
-          updateProgress
-        )
-          }
-          workspaceId={workspaceId ?? ""}
-        />
+          {isExpanded ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+        </Button>
+
+        <div className="flex flex-col items-center gap-2 p-2">
+          {isExpanded ? (
+            <>
+              <PublishOptionsDialog
+                exportVid={(
+                  quality: string,
+                  format: string,
+                  fps: string,
+                  updateProgress: (current: number, total: number) => void,
+                ) => ExportVid(mainEngine, workspaceId ?? "", quality, format, fps, updateProgress)}
+                workspaceId={workspaceId ?? ""}
+              />
+              <div className="w-full mt-2">
+                <Tabs.Root className="w-full" defaultValue="tab1" value={activeTab} onValueChange={setActiveTab}>
+                  <Tabs.List className="rounded-md bg-gray-100 p-1 flex gap-2 w-full shadow-sm">
+                    <Tabs.Trigger
+                      className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                        activeTab === "tab1" ? "bg-white text-gray-900 shadow-sm" : "text-gray-600 hover:bg-gray-200"
+                      }`}
+                      value="tab1"
+                    >
+                      Generate image
+                    </Tabs.Trigger>
+
+                    <Tabs.Trigger
+                      className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                        activeTab === "tab2" ? "bg-white text-gray-900 shadow-sm" : "text-gray-600 hover:bg-gray-200"
+                      }`}
+                      value="tab2"
+                    >
+                      Find video
+                    </Tabs.Trigger>
+                  </Tabs.List>
+                  <Tabs.Content className="mt-2 p-4 bg-white rounded-md shadow-sm border border-gray-200" value="tab1">
+                    <ImageGenTab mainEngine={mainEngine} />
+                  </Tabs.Content>
+
+                  <Tabs.Content className="mt-2 p-4 bg-white rounded-md shadow-sm border border-gray-200" value="tab2">
+                    <VideoGetTab />
+                  </Tabs.Content>
+                </Tabs.Root>
+              </div>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-10 h-10 rounded-full"
+                onClick={() => {
+                  setIsExpanded(true)
+                }}
+                title="Share video"
+              >
+                <Share2 className="h-5 w-5" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`w-10 h-10 rounded-full ${activeTab === "tab1" ? "bg-gray-100" : ""}`}
+                onClick={() => {
+                  setActiveTab("tab1")
+                  setIsExpanded(true)
+                }}
+                title="Generate image"
+              >
+                <ImageIcon className="h-5 w-5" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`w-10 h-10 rounded-full ${activeTab === "tab2" ? "bg-gray-100" : ""}`}
+                onClick={() => {
+                  setActiveTab("tab2")
+                  setIsExpanded(true)
+                }}
+                title="Find video"
+              >
+                <Video className="h-5 w-5" />
+              </Button>
+            </>
+          )}
+        </div>
       </div>
     </div>
-  );
+  )
 }
-
-const CreateTab = () => {
-  // choose the default tab to be opened
-  const [activeTab, setActiveTab] = useState("tab1");
-  const [prompt, setPrompt] = useState("");
-  const [newImage, setNewImage] = useState("");
-  const generateImageOnUserPrompt = async (prompt: string) => {
-    console.log("Prompt:", prompt);
-    const response = await fetch(
-      `${new URL("creations/create-image", import.meta.env.VITE_BACKEND_URL)}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          prompt,
-          width: 512,
-          height: 512,
-          samples: 1,
-          steps: 20,
-          seed: null,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      console.error("Error creating image:", response.statusText);
-      return;
-    }
-
-    const data = await response.json();
-    console.log("Image created:", data);
-    setNewImage(data.content);
-  };
-
-  return (
-    <Tabs.Root
-      className="w-full mb-4"
-      defaultValue="tab1"
-      value={activeTab}
-      onValueChange={setActiveTab}
-    >
-      <Tabs.List className="rounded-md bg-gray-100 p-1 flex gap-2 w-full shadow-sm">
-        <Tabs.Trigger
-          className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-            activeTab === "tab1"
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-600 hover:bg-gray-200"
-          }`}
-          value="tab1"
-        >
-          Generate image
-        </Tabs.Trigger>
-
-        <Tabs.Trigger
-          className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-            activeTab === "tab2"
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-600 hover:bg-gray-200"
-          }`}
-          value="tab2"
-        >
-          Find video
-        </Tabs.Trigger>
-      </Tabs.List>
-      <Tabs.Content className="mt-4 p-4 bg-white rounded-md shadow-sm border border-gray-200" value="tab1">
-        <ImageGenTab
-          prompt={prompt}
-          setPrompt={setPrompt}
-          generateImageOnUserPrompt={generateImageOnUserPrompt}
-          newImage={newImage}
-        />
-      </Tabs.Content>
-
-      <Tabs.Content className="mt-4 p-4 bg-white rounded-md shadow-sm border border-gray-200" value="tab2">
-        <VideoGetTab />
-      </Tabs.Content>
-    </Tabs.Root>
-  );
-};
 
 const OpenImagePopup = (imageUrl: string) => {
   const handleClick = () => {
@@ -534,17 +531,37 @@ const OpenImagePopup = (imageUrl: string) => {
   handleClick();
 };
 
-const ImageGenTab = ({
-  prompt,
-  setPrompt,
-  generateImageOnUserPrompt,
-  newImage,
-}: {
-  prompt: string;
-  setPrompt: React.Dispatch<React.SetStateAction<string>>;
-  generateImageOnUserPrompt: (e: any) => {};
-  newImage: string;
-}) => {
+const ImageGenTab = ({ mainEngine }: { mainEngine: any }) => {
+  const [prompt, setPrompt] = useState("");
+  const [newImage, setNewImage] = useState("");
+
+  const generateImageOnUserPrompt = async (prompt: string) => {
+    console.log("Prompt:", prompt)
+    const response = await fetch(`${new URL("creations/create-image", import.meta.env.VITE_BACKEND_URL)}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        prompt,
+        width: 512,
+        height: 512,
+        samples: 1,
+        steps: 20,
+        seed: null,
+      }),
+    })
+
+    if (!response.ok) {
+      console.error("Error creating image:", response.statusText);
+      return;
+    }
+
+    const data = await response.json();
+    console.log("Image created:", data);
+    setNewImage(data.content);
+  };
+
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold text-gray-900">Tạo hình ảnh mới</h2>
@@ -578,7 +595,7 @@ const ImageGenTab = ({
         >
           <div className="img-wrapper">
             <img
-              src={newImage}
+              src={newImage || "/placeholder.svg"}
               alt="New generated image"
               draggable
               className="w-full h-auto object-cover"

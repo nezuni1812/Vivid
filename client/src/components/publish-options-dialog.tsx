@@ -5,7 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import { Button } from "../components/ui/button"
 import { Dialog, DialogContent } from "../components/ui/dialog"
-import { Upload, Share2 } from "lucide-react"
+import { Share2 } from "lucide-react"
 import PublishOptions from "./publish-options"
 
 interface PublishOptionsDialogProps {
@@ -20,7 +20,7 @@ export default function PublishOptionsDialog({ trigger, workspaceId, exportVid }
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       {trigger || (
-        <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setIsOpen(true)}>
+        <Button className="bg-blue-600 hover:bg-blue-700 w-full" onClick={() => setIsOpen(true)}>
           <Share2 className="mr-2 h-4 w-4" />
           Chia sẻ video
         </Button>
