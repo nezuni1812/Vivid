@@ -134,10 +134,10 @@ export default function CesdkEditor({
   const containerRef = useRef(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState("tab1");
+  const [mainEngine, setMainEngine] = useState<any>(null);
 
   let cesdkInstance: any;
   let mainTrack: any;
-  let mainEngine: any;
 
   useEffect(() => {
     const loadCesdk = async () => {
@@ -234,7 +234,7 @@ export default function CesdkEditor({
 
       const track = engine.block.create("track");
       mainTrack = track;
-      mainEngine = engine;
+      setMainEngine(engine)
       const page = engine.scene.getCurrentPage();
 
       engine.block.setWidth(page, 1280);
@@ -344,7 +344,7 @@ export default function CesdkEditor({
         </Button>
 
         <div className="flex flex-col items-center gap-2 p-2">
-          {isExpanded ? (
+          {isExpanded && mainEngine ? (
             <>
               <PublishOptionsDialog
                 exportVid={(

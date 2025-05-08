@@ -221,7 +221,7 @@ export default function ScriptGenerator({workspace_id}:{workspace_id:string}) {
               key={suggestedTopic}
               variant="outline"
               onClick={() => handleTopicSelect(suggestedTopic)}
-              className={topic === suggestedTopic ? "border-green-500 bg-green-50" : ""}
+              className={topic === suggestedTopic ? "border-blue-500 bg-blue-50" : ""}
             >
               {suggestedTopic}
             </Button>
@@ -299,7 +299,7 @@ export default function ScriptGenerator({workspace_id}:{workspace_id:string}) {
             <Button
               onClick={handleUploadToServer}
               disabled={isUploading}
-              className="w-full bg-green-600 hover:bg-green-700"
+              className="w-full bg-blue-600 hover:bg-blue-700"
             >
               {isUploading ? (
                 <>
@@ -321,7 +321,7 @@ export default function ScriptGenerator({workspace_id}:{workspace_id:string}) {
       {isGenerating ? (
         <div className="h-60 flex items-center justify-center border rounded-md bg-gray-50">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700 mx-auto"></div>
             <p className="mt-2 text-sm text-gray-500">Đang tạo kịch bản...</p>
           </div>
         </div>
@@ -335,7 +335,7 @@ export default function ScriptGenerator({workspace_id}:{workspace_id:string}) {
               </Button>
               { <Button
                 size="sm"
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-blue-600 hover:bg-blue-700"
                 onClick={completeScript}
                 disabled={!scriptId}
               >

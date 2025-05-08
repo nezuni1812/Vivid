@@ -336,7 +336,7 @@ export default function VoiceConfig({workspace_id}:{workspace_id:string}) {
                 <Button
                   onClick={handleUploadVoiceFile}
                   disabled={isUploadingVoice}
-                  className="w-full bg-green-600 hover:bg-green-700"
+                  className="w-full bg-blue-600 hover:bg-blue-700"
                 >
                   {isUploadingVoice ? (
                     <>
