@@ -667,10 +667,14 @@ const HomePage = () => {
               }
               const tiktokData = await tiktokResponse.json();
               if (tiktokData.data && tiktokData.data.videos && tiktokData.data.videos.length > 0) {
-                const video = tiktokData.data.videos[0];
-                title = video.title || title;
-                thumbnail = video.cover_image_url || thumbnail;
-                views = video.view_count || 0;
+                const video = tiktokData.data.videos.find(
+                  (v: any) => v.id === publishedClip.external_id
+                );
+                if (video) {
+                  title = video.title || title;
+                  thumbnail = video.cover_image_url || thumbnail;
+                  views = video.view_count || 0;
+                }
               } else {
                 console.warn(`No TikTok video found for ID: ${publishedClip.external_id}`);
               }
