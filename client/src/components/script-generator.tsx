@@ -198,15 +198,15 @@ export default function ScriptGenerator({workspace_id}:{workspace_id:string}) {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <label className="text-sm font-medium">Chủ đề khoa học {workspace_id}</label>
+        <label className="text-sm font-medium">Chủ đề khoa học</label>
         <div className="flex gap-2">
           <Textarea
             placeholder="Nhập chủ đề khoa học..."
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
-            className="flex-1 min-h-[60px] resize-none"
+            className="flex-1 min-h-60px] resize-none"
           />
-          <Button onClick={generateScript} disabled={!topic || isGenerating}>
+          <Button onClick={generateScript} disabled={!topic || isGenerating} className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700">
             <Wand2 className="mr-2 h-4 w-4" />
             Tạo kịch bản
           </Button>

@@ -171,7 +171,7 @@ const Resource = ({ workspace_id }: { workspace_id: string | undefined }) => {
   }
 
   return (
-    <div className="container mx-auto py-6 px-4 md:px-10 bg-gray-50">
+    <div className="container mx-auto bg-gray-50">
       <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-100 mb-6">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">

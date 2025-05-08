@@ -27,6 +27,7 @@ import PublishOptions from "../components/publish-options";
 import { useNavigate } from "react-router-dom";
 import { useWorkspace } from "../context/WorkspaceContext";
 import Resource from "./Resource";
+import { FaFolder } from "react-icons/fa"
 
 const steps = [
   { id: "content", label: "Nội dung" },
@@ -88,57 +89,42 @@ export default function CreateVideo() {
   }, [workspaceId]);
 
   return (
-    <>
+    <div className="min-h-screen">
       {activeStep === "content" && (
         <main className="max-w-[45rem] container mx-auto py-6 px-4 md:px-6">
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center">
-              <Button
-                variant="outline"
-                size="icon"
-                className="mr-2"
-                onClick={() => navigate("/homepage")}
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <h1 className="text-3xl font-bold">Tạo Video Mới</h1>
-            </div>
-            <Button className="bg-green-600 hover:bg-green-700">
-              <Save className="mr-2 h-4 w-4" />
-              Lưu dự thảo
-            </Button>
-          </div>
-
-          <div className="mb-8">
-            <Tabs value={activeStep} className="w-full">
-              <TabsList className="grid grid-cols-2 w-full">
-                {steps.map((step) => (
-                  <TabsTrigger
-                    key={step.id}
-                    value={step.id}
-                    onClick={() => setActiveStep(step.id)}
-                  >
-                    {step.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-
-              <TabsContent value="content" className="space-y-8">
-                {/* Navigation buttons for sections */}
-                <div className="flex justify-between bg-gray-50 p-3 rounded-lg sticky top-0 z-10 border shadow-sm">
-                  <Button
-                    variant="outline"
-                    onClick={() => scrollToSection(scriptRef)}
-                  >
+          <div className="mb-6">
+            <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-100 mb-6">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Button variant="ghost" onClick={() => navigate("/homepage")} className="mr-2 p-1">
+                      <ArrowLeft className="h-5 w-5" />
+                    </Button>
+                    <div>
+                      <CardTitle className="text-xl flex items-center gap-2">
+                        <FaFolder className="text-purple-600" />
+                        Tạo Video Mới
+                      </CardTitle>
+                      <CardDescription>Tạo kịch bản và cấu hình giọng nói cho video của bạn</CardDescription>
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between gap-4 mt-2">
+                  <Button variant="outline" className="w-full font-medium" onClick={() => scrollToSection(scriptRef)}>
                     Kịch bản
                   </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => scrollToSection(voiceRef)}
-                  >
+                  <Button variant="outline" className="w-full font-medium" onClick={() => scrollToSection(voiceRef)}>
                     Giọng nói
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="mb-8">
+            {/* Navigation buttons for sections - Improved layout */}
 
                 {/* Script Section */}
                 <div ref={scriptRef}>
@@ -156,7 +142,7 @@ export default function CreateVideo() {
                 </div>
 
                 {/* Voice Section */}
-                <div ref={voiceRef}>
+                <div ref={voiceRef} className="mt-8">
                   <Card>
                     <CardHeader>
                       <CardTitle>Cấu hình giọng nói</CardTitle>
@@ -170,54 +156,26 @@ export default function CreateVideo() {
                   </Card>
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex justify-end mt-8">
                   <Button
                     onClick={() => {
                       setActiveStep("generate");
                     }}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-blue-600 hover:bg-blue-700"
                   >
-                    Tiếp tục đến xuất bản
+                    Tiếp tục
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
-              </TabsContent>
-
-              <TabsContent value="publish">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Xuất bản và quản lý nội dung</CardTitle>
-                    <CardDescription>
-                      Cấu hình xuất bản và chia sẻ video của bạn
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <PublishOptions />
-                  </CardContent>
-                </Card>
-
-                <div className="flex justify-between mt-6">
-                  <Button
-                    variant="outline"
-                    onClick={() => setActiveStep("content")}
-                  >
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Quay lại chỉnh sửa
-                  </Button>
-
-                  <Button className="bg-green-600 hover:bg-green-700">
-                    Hoàn thành
-                  </Button>
-                </div>
-              </TabsContent>
-            </Tabs>
           </div>
         </main>
       )}
-      
-      {activeStep === "generate"&& (
-        <Resource workspace_id={workspace_id}></Resource>
+
+      {activeStep === "generate" && (
+        <main className="container mx-auto py-6 px-4 md:px-6 lg:px-8 xl:px-10 max-w-[1200px] bg-white">
+          <Resource workspace_id={workspace_id}></Resource>
+        </main>
       )}
-    </>
+    </div>
   );
 }
