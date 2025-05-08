@@ -516,6 +516,7 @@ const ImageGenTab = ({ mainEngine }: { mainEngine: any }) => {
 
   const generateImageOnUserPrompt = async (prompt: string) => {
     console.log("Prompt:", prompt);
+    setNewResourceLoading(true);
     const response = await fetch(
       `${new URL("creations/create-image", import.meta.env.VITE_BACKEND_URL)}`,
       {
@@ -541,6 +542,7 @@ const ImageGenTab = ({ mainEngine }: { mainEngine: any }) => {
 
     const data = await response.json();
     console.log("Image created:", data);
+    setNewResourceLoading(false);
     setNewImage(data.content);
   };
 
