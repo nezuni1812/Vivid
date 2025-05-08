@@ -89,6 +89,20 @@ def new_creations():
     
     return jsonify(materials), 200
 
+@creation_bp.route("/creations/get-video", methods=["POST"])
+def get_video_on_keyword():
+    print("Getting video on keyword")
+    data = request.get_json()
+    if not data or "keyword" not in data:
+        return jsonify({"error": "No data provided"}), 400
+    
+    print("Data:", data)
+    # return jsonify({"content": "good request"}), 200
+
+    video_url = asyncio.run(get_video(data["keyword"]))
+    print("Generating video with description:", data["keyword"], " with filename:", video_url)
+    return jsonify({"content": video_url}), 200
+
 @creation_bp.route("/creations/create-image", methods=["POST"])
 def create_image():
     print("Creating image on user prompt")

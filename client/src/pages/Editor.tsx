@@ -4,7 +4,13 @@ import * as Tabs from "@radix-ui/react-tabs";
 import { Button } from "../components/ui/button";
 import ReactDOM from "react-dom/client";
 import PublishOptionsDialog from "../components/publish-options-dialog";
-import { ChevronLeft, ChevronRight, ImageIcon, Video, Share2 } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ImageIcon,
+  Video,
+  Share2,
+} from "lucide-react";
 
 export const ExportVid = async (
   engine: any,
@@ -59,10 +65,6 @@ export const ExportVid = async (
     fps: fps,
     format: format,
   });
-
-  // return new Promise(async (resolve) => {
-  //   setTimeout(() => resolve({ content: "hoio" }), 1000);
-  // });
 
   // Video Export
   const progressCallback = (
@@ -129,9 +131,9 @@ export default function CesdkEditor({
 }) {
   const location = useLocation();
   const workspaceId = location.state?.workspaceId ?? null;
-  const containerRef = useRef(null)
-  const [isExpanded, setIsExpanded] = useState(false)
-  const [activeTab, setActiveTab] = useState("tab1")
+  const containerRef = useRef(null);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [activeTab, setActiveTab] = useState("tab1");
 
   let cesdkInstance: any;
   let mainTrack: any;
@@ -314,82 +316,6 @@ export default function CesdkEditor({
     };
   }, []);
 
-  /*const ExportVid = async () => {
-    const scene = mainEngine.scene.get();
-    const page = mainEngine.scene.getCurrentPage();
-
-    // Video Export
-
-    const progressCallback = (
-      renderedFrames: any,
-      encodedFrames: any,
-      totalFrames: any
-    ) => {
-      console.log(
-        "Rendered",
-        renderedFrames,
-        "frames and encoded",
-        encodedFrames,
-        "frames out of",
-        totalFrames
-      );
-    };
-    const videoOptions = {
-      h264Profile: 77,
-      h264Level: 52,
-      videoBitrate: 0,
-      audioBitrate: 0,
-      timeOffset: 0,
-      duration: 10,
-      framerate: 30,
-      targetWidth: 1920,
-      targetHeight: 1080,
-    };
-    const videoBlob = await mainEngine.block.exportVideo(
-      page,
-      "video/mp4",
-      progressCallback,
-      videoOptions
-    );
-
-    console.log("Video Blob:", videoBlob);
-
-    const multipartForm = new FormData();
-    multipartForm.append("file", videoBlob, "video.mp4");
-    multipartForm.append("filename", "generated_video.mp4"); // Add a name for the file
-
-    const response = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/creations/save`,
-      {
-        method: "POST",
-        body: multipartForm,
-      }
-    );
-
-    if (!response.ok) {
-      console.error("Error uploading video:", response);
-      return;
-    }
-
-    const data = await response.json();
-    console.log("Video uploaded successfully:", data);
-
-    return;
-
-    // Create a link element
-    const link = document.createElement("a");
-
-    // Set the download attribute with the file name
-    link.download = "test.mp4";
-
-    // Create a URL for the Blob and set it as the href
-    link.href = URL.createObjectURL(videoBlob);
-
-    // Programmatically trigger the download
-    link.click();
-    console.log("Video exported successfully!");
-  };*/
-
   const toggleSidebar = () => {
     setIsExpanded(!isExpanded);
   };
@@ -410,7 +336,11 @@ export default function CesdkEditor({
           className="self-end mx-2"
           aria-label={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
         >
-          {isExpanded ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+          {isExpanded ? (
+            <ChevronRight className="h-5 w-5" />
+          ) : (
+            <ChevronLeft className="h-5 w-5" />
+          )}
         </Button>
 
         <div className="flex flex-col items-center gap-2 p-2">
@@ -421,36 +351,60 @@ export default function CesdkEditor({
                   quality: string,
                   format: string,
                   fps: string,
-                  updateProgress: (current: number, total: number) => void,
-                ) => ExportVid(mainEngine, workspaceId ?? "", quality, format, fps, updateProgress)}
+                  updateProgress: (current: number, total: number) => void
+                ) =>
+                  ExportVid(
+                    mainEngine,
+                    workspaceId ?? "",
+                    quality,
+                    format,
+                    fps,
+                    updateProgress
+                  )
+                }
                 workspaceId={workspaceId ?? ""}
               />
               <div className="w-full mt-2">
-                <Tabs.Root className="w-full" defaultValue="tab1" value={activeTab} onValueChange={setActiveTab}>
+                <Tabs.Root
+                  className="w-full"
+                  defaultValue="tab1"
+                  value={activeTab}
+                  onValueChange={setActiveTab}
+                >
                   <Tabs.List className="rounded-md bg-gray-100 p-1 flex gap-2 w-full shadow-sm">
                     <Tabs.Trigger
                       className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                        activeTab === "tab1" ? "bg-white text-gray-900 shadow-sm" : "text-gray-600 hover:bg-gray-200"
+                        activeTab === "tab1"
+                          ? "bg-white text-gray-900 shadow-sm"
+                          : "text-gray-600 hover:bg-gray-200"
                       }`}
                       value="tab1"
                     >
-                      Generate image
+                      Tạo hình
                     </Tabs.Trigger>
 
                     <Tabs.Trigger
                       className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                        activeTab === "tab2" ? "bg-white text-gray-900 shadow-sm" : "text-gray-600 hover:bg-gray-200"
+                        activeTab === "tab2"
+                          ? "bg-white text-gray-900 shadow-sm"
+                          : "text-gray-600 hover:bg-gray-200"
                       }`}
                       value="tab2"
                     >
-                      Find video
+                      Tìm video
                     </Tabs.Trigger>
                   </Tabs.List>
-                  <Tabs.Content className="mt-2 p-4 bg-white rounded-md shadow-sm border border-gray-200" value="tab1">
+                  <Tabs.Content
+                    className="mt-2 p-4 bg-white rounded-md shadow-sm border border-gray-200"
+                    value="tab1"
+                  >
                     <ImageGenTab mainEngine={mainEngine} />
                   </Tabs.Content>
 
-                  <Tabs.Content className="mt-2 p-4 bg-white rounded-md shadow-sm border border-gray-200" value="tab2">
+                  <Tabs.Content
+                    className="mt-2 p-4 bg-white rounded-md shadow-sm border border-gray-200"
+                    value="tab2"
+                  >
                     <VideoGetTab />
                   </Tabs.Content>
                 </Tabs.Root>
@@ -463,7 +417,7 @@ export default function CesdkEditor({
                 size="icon"
                 className="w-10 h-10 rounded-full"
                 onClick={() => {
-                  setIsExpanded(true)
+                  setIsExpanded(true);
                 }}
                 title="Share video"
               >
@@ -473,10 +427,12 @@ export default function CesdkEditor({
               <Button
                 variant="ghost"
                 size="icon"
-                className={`w-10 h-10 rounded-full ${activeTab === "tab1" ? "bg-gray-100" : ""}`}
+                className={`w-10 h-10 rounded-full ${
+                  activeTab === "tab1" ? "bg-gray-100" : ""
+                }`}
                 onClick={() => {
-                  setActiveTab("tab1")
-                  setIsExpanded(true)
+                  setActiveTab("tab1");
+                  setIsExpanded(true);
                 }}
                 title="Generate image"
               >
@@ -486,10 +442,12 @@ export default function CesdkEditor({
               <Button
                 variant="ghost"
                 size="icon"
-                className={`w-10 h-10 rounded-full ${activeTab === "tab2" ? "bg-gray-100" : ""}`}
+                className={`w-10 h-10 rounded-full ${
+                  activeTab === "tab2" ? "bg-gray-100" : ""
+                }`}
                 onClick={() => {
-                  setActiveTab("tab2")
-                  setIsExpanded(true)
+                  setActiveTab("tab2");
+                  setIsExpanded(true);
                 }}
                 title="Find video"
               >
@@ -500,10 +458,10 @@ export default function CesdkEditor({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-const OpenImagePopup = (imageUrl: string) => {
+const OpenImagePopup = (mediaUrl: string) => {
   const handleClick = () => {
     const popup = window.open(
       "",
@@ -512,7 +470,10 @@ const OpenImagePopup = (imageUrl: string) => {
     );
 
     if (popup) {
-      popup.document.title = "Generated image";
+      popup.document.title = "Generated media";
+
+      popup.document.head.innerHTML = "";
+      popup.document.body.innerHTML = "";
 
       const style = popup.document.createElement("style");
       style.textContent = `
@@ -521,10 +482,27 @@ const OpenImagePopup = (imageUrl: string) => {
       `;
       popup.document.head.appendChild(style);
 
-      const img = popup.document.createElement("img");
-      img.src = imageUrl;
-      img.alt = "Popup Image";
-      popup.document.body.appendChild(img);
+      const isImage = mediaUrl.toLowerCase().endsWith(".png");
+
+      if (isImage) {
+        const img = popup.document.createElement("img");
+        img.src = mediaUrl;
+        img.alt = "Popup Image";
+        popup.document.body.appendChild(img);
+      } else {
+        const video = popup.document.createElement("video");
+        video.src = mediaUrl;
+        video.controls = true;
+        video.autoplay = true;
+        video.draggable = true;
+
+        video.addEventListener("dragstart", (e) => {
+          e.dataTransfer?.setData("text/uri-list", mediaUrl); // For browsers and apps that support URI dragging
+          e.dataTransfer?.setData("text/plain", mediaUrl); // Backup plain text
+        });
+
+        popup.document.body.appendChild(video);
+      }
     }
   };
 
@@ -534,23 +512,27 @@ const OpenImagePopup = (imageUrl: string) => {
 const ImageGenTab = ({ mainEngine }: { mainEngine: any }) => {
   const [prompt, setPrompt] = useState("");
   const [newImage, setNewImage] = useState("");
+  const [newResourceLoading, setNewResourceLoading] = useState(false);
 
   const generateImageOnUserPrompt = async (prompt: string) => {
-    console.log("Prompt:", prompt)
-    const response = await fetch(`${new URL("creations/create-image", import.meta.env.VITE_BACKEND_URL)}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        prompt,
-        width: 512,
-        height: 512,
-        samples: 1,
-        steps: 20,
-        seed: null,
-      }),
-    })
+    console.log("Prompt:", prompt);
+    const response = await fetch(
+      `${new URL("creations/create-image", import.meta.env.VITE_BACKEND_URL)}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt,
+          width: 512,
+          height: 512,
+          samples: 1,
+          steps: 20,
+          seed: null,
+        }),
+      }
+    );
 
     if (!response.ok) {
       console.error("Error creating image:", response.statusText);
@@ -580,12 +562,15 @@ const ImageGenTab = ({ mainEngine }: { mainEngine: any }) => {
       <Button
         onClick={() => generateImageOnUserPrompt(prompt)}
         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-md transition-colors"
+        disabled={newResourceLoading}
       >
         Tạo hình ảnh
       </Button>
 
       <h2 className="text-lg font-semibold text-gray-900">Kết quả</h2>
-      <p className="text-sm text-gray-600">Kéo vào timeline để sử dụng</p>
+      <p className="text-sm text-gray-600">
+        Click và kéo vào timeline để sử dụng
+      </p>
       {newImage ? (
         <div
           className="image-container rounded-md overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer"
@@ -603,31 +588,87 @@ const ImageGenTab = ({ mainEngine }: { mainEngine: any }) => {
           </div>
         </div>
       ) : (
-        <p className="text-sm font-medium text-gray-500">Chưa có hình ảnh nào được tạo</p>
+        <p className="text-sm font-medium text-gray-500">
+          Chưa có hình ảnh nào được tạo
+        </p>
       )}
     </div>
   );
 };
 
 const VideoGetTab = () => {
+  const [newResourceLoading, setNewResourceLoading] = useState(false);
+  const [newVideo, setNewVideo] = useState("");
+  const [keyword, setKeyword] = useState("");
+
+  const findVideoOnUserKeywords = async (keyword: string) => {
+    setNewResourceLoading(true);
+    console.log("Prompt:", keyword);
+    const response = await fetch(
+      `${new URL("creations/get-video", import.meta.env.VITE_BACKEND_URL)}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          keyword,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      console.error("Error creating image:", response.statusText);
+      return;
+    }
+
+    const data = await response.json();
+    console.log("Image created:", data);
+    setNewResourceLoading(false);
+    setNewVideo(data.content);
+  };
+
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold text-gray-900">Tìm kiếm video</h2>
       <input
         type="text"
         name="search"
+        value={keyword}
+        onChange={(e) => {
+          setKeyword(e.target.value);
+        }}
         placeholder="Dùng từ khóa để kiếm hình ảnh"
         className="border border-gray-300 rounded-md p-3 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
       />
       <Button
+        onClick={() => findVideoOnUserKeywords(keyword)}
         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-md transition-colors"
+        disabled={newResourceLoading}
       >
         Tìm kiếm
       </Button>
 
       <h2 className="text-lg font-semibold text-gray-900">Kết quả</h2>
-      <p className="text-sm text-gray-600">Kéo vào timeline để sử dụng</p>
-      <p className="text-sm font-medium text-gray-500">Chưa có kết quả nào</p>
+      <p className="text-sm text-gray-600">
+        Click và kéo vào timeline để sử dụng
+      </p>
+      {!newVideo ? (
+        <p className="text-sm font-medium text-gray-500">Chưa có kết quả nào</p>
+      ) : (
+        <div
+          className="image-container rounded-md overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+        >
+          <div className="img-wrapper">
+            <video
+              src={newVideo || "/placeholder.svg"}
+              draggable
+              className="w-full h-auto object-cover"
+              controls
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
