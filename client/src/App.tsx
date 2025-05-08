@@ -46,8 +46,8 @@ function App() {
               />
               <Route path="/workspace-resources" element={<WorkspaceResources></WorkspaceResources>} />
               <Route path="/workspace/:id" element={<Workspace></Workspace>} />
-              <Route path="/resource" element={<Resource></Resource>} />
-              <Route path="/editor" element={<VideoEditor/>} />
+              {/* <Route path="/resource" element={<Resource></Resource>} /> */}
+              <Route path="/workspace/:id/editor" element={<VideoEditor/>} />
 
               <Route path="/facebook-stats" element={<FacebookStatPage />} />
 

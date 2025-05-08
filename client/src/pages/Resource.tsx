@@ -195,7 +195,7 @@ const Resource = ({ workspace_id }: { workspace_id: string | undefined }) => {
             <Button
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
               onClick={() => {
-                navigate("/editor", {
+                navigate(`/workspace/${workspace_id}/editor`, {
                   state: {
                     resourceList: scriptClips.map((clip) => clip?.resource_url),
                     timing: JSON.parse(audioData.timings),
