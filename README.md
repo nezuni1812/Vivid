@@ -65,9 +65,11 @@ The project needs both the backend and frontend to run. Follow the instructions 
    ```bash
     npm i
    ```
-3. Run the frontend:
+3. Set up environment variables:
+   Copy the `.env.example` file to `.env` and fill in the required values.
+4. Run the frontend:
    ```bash
     npm run dev
    ```
-4. Open your browser and go to `http://localhost:5173` to see the application.
+5. Open your browser and go to `http://localhost:5173` to see the application.
 
