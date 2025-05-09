@@ -610,7 +610,7 @@ export default function ShareVideoDialog({
         }),
       });
 
-      alert("Video đã được đăng lên Facebook thành công!");
+      alert(`Video đã được đăng lên Facebook thành công! Link video: https://www.facebook.com/${selectedFacebookPage.id}/videos/${uploadData.id}`);
       setFacebook({ title: "", description: "" });
       onClose();
     } catch (err) {

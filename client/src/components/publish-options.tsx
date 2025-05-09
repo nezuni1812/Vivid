@@ -920,7 +920,7 @@ export default function PublishOptions({
         savePublishedData(
           "Facebook",
           data.id,
-          `https://www.facebook.com/${selectedPage.id}/posts/${data.id}`,
+          `https://www.facebook.com/${selectedPage.id}/videos/${data.id}`,
           facebook.title,
           facebook.description
         );
