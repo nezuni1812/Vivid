@@ -42,6 +42,8 @@ export default function ScriptGenerator({workspace_id}:{workspace_id:string}) {
       const response = await axios.get(`http://127.0.0.1:5000/scripts?workspace_id=${workspace_id}`)
       const scripts = response.data
 
+      setLanguage("vietnamese")
+      
       if (scripts.length > 0) {
         const script = scripts[0]
         setTopic(script.title || "")
