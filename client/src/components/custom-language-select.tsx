@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "../lib/utils"
 import { Button } from "../components/ui/button"
@@ -70,9 +70,15 @@ export function LanguageSelect({ value, onChange }: LanguageSelectProps) {
   const [showCustomInput, setShowCustomInput] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  useEffect(() => {
+    setSelectedLanguage(value);
+    console.log("LanguageSelect - value:", value, "selectedLanguage:", value);
+  }, [value]);
+
   // Find the selected language label
   const selectedLanguageLabel: string = 
-    languages.find((language: { value: string; label: string }) => language.value === selectedLanguage)?.label || value
+    languages.find((language) => language.value === selectedLanguage)?.label || 
+    (customLanguage.trim() ? customLanguage : "Unknown Language");
 
   // Handle language selection
   const handleSelect = (currentValue: string) => {
@@ -133,7 +139,11 @@ export function LanguageSelect({ value, onChange }: LanguageSelectProps) {
                 <CommandEmpty>Không tìm thấy ngôn ngữ.</CommandEmpty>
                 <CommandGroup className="max-h-[300px] overflow-auto">
                   {languages.map((language) => (
-                    <CommandItem key={language.value} value={language.label} onSelect={() => handleSelect(language.value)}>
+                    <CommandItem
+                      key={language.value}
+                      value={language.value}
+                      onSelect={() => handleSelect(language.value)}
+                    >
                       <Check
                         className={cn(
                           "mr-2 h-4 w-4",

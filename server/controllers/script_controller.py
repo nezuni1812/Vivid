@@ -89,14 +89,14 @@ class ScriptController:
             return {"error": str(e)}, 500
         
     @staticmethod
-    async def create_script_from_text(workspace_id, title, content, language):
+    async def create_script_from_text(workspace_id, title, content, language, style=2):
         try:
             # Create a new script from the provided text
             script = Script(
                 workspace_id=workspace_id,
                 title=title,
                 generated_script=content,
-                style=1,  
+                style=style,
                 language=language,
                 status="draft"
             )

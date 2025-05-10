@@ -30,7 +30,7 @@ export default function ScriptGenerator({workspace_id}:{workspace_id:string}) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
-  const [language, setLanguage] = useState("vietnamese")
+  const [language, setLanguage] = useState("")
   const [wordCount, setWordCount] = useState<number>(100)
   const { workspaceId, scriptId, setScriptId } = useWorkspace();
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -195,6 +195,8 @@ export default function ScriptGenerator({workspace_id}:{workspace_id:string}) {
       if (response.data && response.data.script) {
         setGeneratedScript(response.data.script)
         setScriptId(response.data.id)
+        setLanguage(response.data.language || "vietnamese")
+        setStyle(response.data.style || "general")
         // Set a topic based on the file name (optional)
         if (response.data.title) {
           setTopic(response.data.title)

@@ -70,9 +70,17 @@ def generate_script_from_file():
             return jsonify({"error": "Missing workspace_id"}), 400
             
         workspace_id = request.form['workspace_id']
-        voice_style = int(request.form.get('voice_style', 1))
         language = request.form.get('language', 'en')
-        
+        style = request.form.get('style', 'general')  # Default to 'general'
+
+        # Map style to integer
+        style_mapping = {
+            "children": 1,
+            "general": 2,
+            "advanced": 3
+        }
+        style_value = style_mapping.get(style.lower(), 2)  # Default to 2 (general) if invalid
+
         # Check if file is provided
         if 'file' not in request.files:
             return jsonify({"error": "No file provided"}), 400
@@ -122,23 +130,22 @@ def generate_script_from_file():
                 workspace_id=workspace_id,
                 title=os.path.splitext(filename)[0],
                 content=text_content,
-                language=language
+                language=language,
+                style=style_value
             )
         )
-        ScriptController.save_new_script(
-            workspace_id=workspace_id,
-            title=os.path.splitext(filename)[0],
-            content=text_content,
-        )
+        loop.close()
+
         # Check if script creation was successful
         if script_result[1] != 201:
-            loop.close()
             return jsonify(script_result[0]), script_result[1]
             
         return jsonify({
             "id": script_result[0].get("script_id"),
             "script": text_content,
-            "title": os.path.splitext(filename)[0]
+            "title": os.path.splitext(filename)[0],
+            "style": style,
+            "language": language
         }), 201
 
     except Exception as e:

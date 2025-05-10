@@ -70,7 +70,7 @@ export default function VoiceConfig({workspace_id}:{workspace_id:string}) {
         )
 
         if (!response.ok) {
-          throw new Error("Failed to fetch audio data")
+          //throw new Error("Failed to fetch audio data")
         }
 
         const data = await response.json()
