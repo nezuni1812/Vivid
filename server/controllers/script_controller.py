@@ -118,8 +118,16 @@ class ScriptController:
             {
                 "id": str(script.id),
                 "title": script.title,
-                "source_content": script.source_content,
+                "generated_script": script.generated_script,
+                "language": script.language,
+                "style": {
+                    1: "children",
+                    2: "general",
+                    3: "advanced"
+                }.get(script.style, "general"),
+                "status": script.status,
                 "created_at": script.created_at.isoformat(),
+                "updated_at": script.updated_at.isoformat() if script.updated_at else None,
             }
             for script in scripts
         ]

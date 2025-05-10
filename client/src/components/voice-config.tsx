@@ -2,7 +2,7 @@
 import { useWorkspace } from "../context/WorkspaceContext"
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "./ui/button"
 import { Slider } from "./ui/slider"
 import { Upload, Volume2, Loader2, X } from "lucide-react"
@@ -53,8 +53,45 @@ export default function VoiceConfig({workspace_id}:{workspace_id:string}) {
   const [uploadedVoiceUrl, setUploadedVoiceUrl] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { scriptId, workspaceId } = useWorkspace()
+  const [audioTimestamp, setAudioTimestamp] = useState<number>(Date.now())
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const selectedProvider = voiceProviders.find((p) => p.id === provider)
+
+  useEffect(() => {
+    const fetchAudioData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        const response = await fetch(
+          `http://localhost:5000/workspaces/${workspace_id}/get?kind=audio`
+        )
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch audio data")
+        }
+
+        const data = await response.json()
+        console.log("Fetched audio data:", data)
+
+        if (data && data.audio_url) {
+          setUploadedVoiceUrl(data.audio_url)
+          setActiveTab("human")
+          setAudioTimestamp(Date.now())
+        }
+      } catch (err: any) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (workspace_id) {
+      fetchAudioData()
+    }
+  }, [workspace_id])
 
   const handlePlay = () => {
     setIsPlaying(!isPlaying)
@@ -83,6 +120,7 @@ export default function VoiceConfig({workspace_id}:{workspace_id:string}) {
 
       if (response.status === 201 && response.data?.audio_url) {
         setAudioUrl(response.data.audio_url)
+        setAudioTimestamp(Date.now())
         setShowAudioPreview(true)
         alert("Tạo âm thanh thành công!")
       } else {
@@ -151,6 +189,7 @@ export default function VoiceConfig({workspace_id}:{workspace_id:string}) {
       // Đổi việc kiểm tra từ 'voice_url' thành 'audio_url'
       if (response.data && response.data.audio_url) {
         setUploadedVoiceUrl(response.data.audio_url)
+        setAudioTimestamp(Date.now())
         
         // Có thể cập nhật scriptId từ kết quả trả về
         if (response.data.script_id) {
@@ -170,10 +209,17 @@ export default function VoiceConfig({workspace_id}:{workspace_id:string}) {
 
   return (
     <div className="space-y-6">
+      {loading && (
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700 mx-auto"></div>
+          <p className="mt-2 text-sm text-gray-500">Đang tải dữ liệu âm thanh...</p>
+        </div>
+      )}
+      {error && <p className="text-red-500 text-sm">{error}</p>}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="ai">Giọng nói AI</TabsTrigger>
-          <TabsTrigger value="human">Giọng người thật</TabsTrigger>
+          <TabsTrigger value="human">Giọng thu có sẵn</TabsTrigger>
         </TabsList>
 
         <TabsContent value="ai" className="space-y-6">
@@ -282,7 +328,7 @@ export default function VoiceConfig({workspace_id}:{workspace_id:string}) {
               <div className="space-y-2 mt-4">
                 <label className="text-sm font-medium">Xem trước âm thanh</label>
                 <div className="border rounded-md p-4 bg-gray-50">
-                  <audio key={audioUrl} src={audioUrl || "#"} controls className="w-full" />
+                  <audio key={`${audioUrl}-${audioTimestamp}`} src={audioUrl || "#"} controls className="w-full" />
                   <p className="text-xs text-gray-500 mt-2">
                     Bạn có thể nghe thử âm thanh được tạo từ kịch bản đã phê duyệt
                   </p>
@@ -294,7 +340,7 @@ export default function VoiceConfig({workspace_id}:{workspace_id:string}) {
 
         <TabsContent value="human" className="space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Tải lên giọng người thật</label>
+            <label className="text-sm font-medium">Tải lên giọng thu sẵn</label>
             <div
               className="border-2 border-dashed rounded-md p-4 text-center cursor-pointer hover:bg-gray-50"
               onClick={() => fileInputRef.current?.click()}
@@ -359,7 +405,7 @@ export default function VoiceConfig({workspace_id}:{workspace_id:string}) {
             <div className="space-y-2 mt-4">
               <label className="text-sm font-medium">Xem trước giọng nói đã tải lên</label>
               <div className="border rounded-md p-4 bg-gray-50">
-                <audio key={uploadedVoiceUrl} src={uploadedVoiceUrl} controls className="w-full" />
+                <audio key={`${uploadedVoiceUrl}-${audioTimestamp}`} src={uploadedVoiceUrl} controls className="w-full" />
                 <p className="text-xs text-gray-500 mt-2">Giọng nói đã tải lên sẽ được sử dụng cho kịch bản của bạn</p>
               </div>
             </div>

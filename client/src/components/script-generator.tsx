@@ -28,14 +28,39 @@ export default function ScriptGenerator({workspace_id}:{workspace_id:string}) {
   const [generatedScript, setGeneratedScript] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [language, setLanguage] = useState("vietnamese")
   const [wordCount, setWordCount] = useState<number>(100)
   const { workspaceId, scriptId, setScriptId } = useWorkspace();
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Hàm lấy thông tin script từ server
+  const fetchScript = async () => {
+    try {
+      const response = await axios.get(`http://127.0.0.1:5000/scripts?workspace_id=${workspace_id}`)
+      const scripts = response.data
+
+      if (scripts.length > 0) {
+        const script = scripts[0]
+        setTopic(script.title || "")
+        setStyle(script.style || "general")
+        setLanguage(script.language || "vietnamese")
+        setWordCount(script.length || 100)
+        setGeneratedScript(script.generated_script || "")
+        setScriptId(script.id)
+      }
+    } catch (error) {
+      console.error("Error fetching script:", error)
+    }
+  }
+
+  useEffect(() => {
+    if (workspace_id) {
+      fetchScript()
+    }
+  }, [workspace_id])
 
   const handleTopicSelect = (selectedTopic: string) => {
     setTopic(selectedTopic)
@@ -155,10 +180,9 @@ export default function ScriptGenerator({workspace_id}:{workspace_id:string}) {
       // Create form data
       const formData = new FormData()
       formData.append("file", selectedFile)
-      formData.append("workspace_id", workspace_id) // Replace with actual workspace ID from context/props
-      formData.append("style", style) // Add the current style
-
-      formData.append("language", language);
+      formData.append("workspace_id", workspace_id)
+      formData.append("style", style)
+      formData.append("language", language)
 
       // Send to server
       const response = await axios.post("http://127.0.0.1:5000/generate-script-from-file", formData, {
@@ -330,23 +354,24 @@ export default function ScriptGenerator({workspace_id}:{workspace_id:string}) {
           <div className="flex justify-between items-center">
             <label className="text-sm font-medium">Kịch bản đã tạo</label>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={generateScript}>
                 Tạo lại
               </Button>
-              { <Button
+              <Button
                 size="sm"
                 className="bg-blue-600 hover:bg-blue-700"
                 onClick={completeScript}
                 disabled={!scriptId}
               >
                 Lưu kịch bản
-              </Button> }
+              </Button>
             </div>
           </div>
           <Textarea
             value={generatedScript}
-            onChange={(e) => setGeneratedScript(e.target.value)}
+            onChange={handleTextareaChange}
             className="min-h-[300px] font-mono"
+            ref={textareaRef}
           />
         </div>
       ) : null}

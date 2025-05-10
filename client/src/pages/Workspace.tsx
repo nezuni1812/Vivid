@@ -43,7 +43,7 @@ export default function CreateVideo() {
   const imagesRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
 
-  const { scriptId, workspaceId } = useWorkspace(); // Get scriptId from context
+  //const { scriptId, workspaceId } = useWorkspace(); // Get scriptId from context
   const { id: workspace_id } = useParams();
   const scrollToSection = (ref: React.RefObject<HTMLDivElement | null>) => {
     if (ref.current) {
@@ -51,7 +51,7 @@ export default function CreateVideo() {
     }
   };
 
-  useEffect(() => {
+  /*useEffect(() => {
     // Lấy danh sách các scripts thuộc về workspace_id
     const fetchScripts = async () => {
       try {
@@ -86,7 +86,42 @@ export default function CreateVideo() {
     if (workspaceId) {
       fetchScripts();
     }
-  }, [workspaceId]);
+  }, [workspaceId]);*/
+
+  useEffect(() => {
+    // Lấy danh sách các resources thuộc về workspace_id
+    const fetchResources = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:5000/workspaces/${workspace_id}/resources`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch resources");
+        }
+
+        const resources = await response.json();
+        console.log("Fetched resources:", resources);
+
+        if (resources.length > 0) {
+          setActiveStep("generate");
+        } else {
+          setActiveStep("content");
+        }
+      } catch (error) {
+        console.error("Error fetching resources:", error);
+        setActiveStep("content");
+      }
+    };
+
+    fetchResources();
+  }, [workspace_id]);
 
   return (
     <div className="min-h-screen">
