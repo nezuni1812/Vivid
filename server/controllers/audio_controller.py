@@ -151,7 +151,7 @@ class AudioController:
 
 
     @staticmethod
-    async def speech_to_text(workspace_id, audio_file, language_value):
+    async def speech_to_text(workspace_id, audio_file, language_value, update_existing=False):
         try:
             # Phân tích file âm thanh
             result_text, timings_string = analyze_audio(audio_file, language_value)
@@ -159,6 +159,53 @@ class AudioController:
             # Tạo title từ tên file
             title = os.path.basename(audio_file).split('.')[0]
             
+            # Kiểm tra nếu update_existing=True và đã có audio tồn tại
+            if update_existing:
+                # Tìm workspace object trước
+                workspace = Workspace.objects(id=workspace_id).first()
+                if not workspace:
+                    return {"error": f"Không tìm thấy workspace với ID {workspace_id}"}, 404
+                    
+                # Tìm audio hiện có
+                existing_audio = Audio.objects(workspace_id=workspace).first()
+                if existing_audio:
+                    # Lấy script hiện có và cập nhật nội dung
+                    script = existing_audio.script_id
+                    script.generated_script = result_text
+                    script.save()
+                    
+                    # Chuyển đổi file sang định dạng MP3
+                    temp_mp3 = os.path.join(tempfile.gettempdir(), f"{title}_converted.mp3")
+                    audio = AudioSegment.from_file(audio_file)
+                    audio.export(temp_mp3, format="mp3")
+                    
+                    try:
+                        # Xóa file âm thanh cũ nếu cần
+                        if existing_audio.audio_url:
+                            await delete_from_r2(existing_audio.audio_url)
+                        
+                        # Upload file mới
+                        file_name = f"audios/{workspace_id}/{title.replace(' ', '_')}.mp3"
+                        audio_url = await upload_to_r2(temp_mp3, file_name)
+                        
+                        # Cập nhật audio hiện có
+                        existing_audio.audio_url = audio_url
+                        existing_audio.timings = timings_string
+                        existing_audio.save()
+                        
+                        return {
+                            "status": "success",
+                            "script_id": str(script.id),
+                            "audio_url": audio_url,
+                            "text": result_text,
+                            "timings": eval(timings_string)
+                        }, 200
+                    finally:
+                        # Đảm bảo xóa file tạm sau khi hoàn thành
+                        if os.path.exists(temp_mp3):
+                            os.remove(temp_mp3)
+            
+            # Xử lý tạo mới nếu không update hoặc không tìm thấy audio hiện có
             # Tạo script từ văn bản đã nhận dạng
             script_result = await ScriptController.create_script_from_text(
                 workspace_id=workspace_id,
@@ -205,7 +252,7 @@ class AudioController:
                 
         except Exception as e:
             return {"error": str(e)}, 500
-        
+    
     @staticmethod
     def get_audio_by_workspace_id(workspace_id_string):
         """Get audio dựa vào string ID của workspace"""

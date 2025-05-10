@@ -130,6 +130,9 @@ def generate_audio_from_file():
         filepath = os.path.join(temp_dir, filename)
         file.save(filepath)
         
+        # Kiểm tra xem đã có audio với workspace_id này chưa
+        existing_audio = Audio.objects(workspace_id=workspace_id).first()
+        
         # Xử lý file âm thanh
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -138,7 +141,8 @@ def generate_audio_from_file():
             AudioController.speech_to_text(
                 workspace_id=workspace_id,
                 audio_file=filepath,
-                language_value=language
+                language_value=language,
+                update_existing=True if existing_audio else False
             )
         )
         
