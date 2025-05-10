@@ -26,23 +26,41 @@ def generate_script():
         if not all(field in data for field in required_fields):
             return jsonify({"error": "Missing required fields"}), 400
 
+        # Chuyển đổi style từ chuỗi sang số
+        if data["style"] == "children":
+            style_value = 1
+        elif data["style"] == "general":
+            style_value = 2
+        elif data["style"] == "advanced":
+            style_value = 3
+        else:
+            style_value = data["style"]  # Giữ nguyên nếu là số
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         
-        if data["style"] == "children":
-            data["style"] = 1
-        elif data["style"] == "general":
-            data["style"] = 2
-        elif data["style"] == "advanced":
-            data["style"] = 3
-
+        # Kiểm tra xem đã có script nào với workspace_id này chưa
+        from models.models import Script, Workspace
+        
+        workspace = Workspace.objects(id=data["workspace_id"]).first()
+        if not workspace:
+            return jsonify({"error": f"Không tìm thấy workspace với ID {data['workspace_id']}"}), 404
+            
+        existing_script = Script.objects(workspace_id=workspace).first()
+        update_existing = False
+        
+        if existing_script:
+            update_existing = True
+            script_id = str(existing_script.id)
+        
         result = loop.run_until_complete(
             ScriptController.generate_script(
                 data["workspace_id"],
                 data["title"],
-                data["style"],
+                style_value,
                 data["length"],
-                data["language"]
+                data["language"],
+                update_existing=update_existing
             )
         )
         loop.close()
@@ -51,6 +69,7 @@ def generate_script():
             "id": result[0].get("script_id"),
             "script": result[0].get("script"),
             "title": result[0].get("title"),
+            "updated": update_existing
         }), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -120,6 +139,19 @@ def generate_script_from_file():
         if not text_content.strip():
             return jsonify({"error": "Could not extract text from file"}), 400
         
+        # Kiểm tra xem đã có script nào với workspace_id này chưa
+        from models.models import Script, Workspace
+        
+        workspace = Workspace.objects(id=workspace_id).first()
+        if not workspace:
+            return jsonify({"error": f"Không tìm thấy workspace với ID {workspace_id}"}), 404
+            
+        existing_script = Script.objects(workspace_id=workspace).first()
+        update_existing = False
+        
+        if existing_script:
+            update_existing = True
+        
         # Create a script from the extracted text
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -131,13 +163,14 @@ def generate_script_from_file():
                 title=os.path.splitext(filename)[0],
                 content=text_content,
                 language=language,
-                style=style_value
+                style=style_value,
+                update_existing=update_existing
             )
         )
         loop.close()
 
         # Check if script creation was successful
-        if script_result[1] != 201:
+        if script_result[1] not in [200, 201]:
             return jsonify(script_result[0]), script_result[1]
             
         return jsonify({
@@ -145,8 +178,9 @@ def generate_script_from_file():
             "script": text_content,
             "title": os.path.splitext(filename)[0],
             "style": style,
-            "language": language
-        }), 201
+            "language": language,
+            "updated": update_existing
+        }), script_result[1]
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

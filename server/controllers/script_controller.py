@@ -3,32 +3,45 @@ from services.language.translator_service import translate_to_english
 from services.content.wiki_service import get_wikipedia_summary
 from services.content.script_service import create_script_with_gemini, create_title_with_gemini, create_description_with_gemini
 from models.models import Script, Workspace, Clip
+import datetime
 
 class ScriptController:
     @staticmethod
-    async def generate_script(workspace_id, title, style, length, language):
+    async def generate_script(workspace_id, title, style, length, language, update_existing=False):
         try:
             # Validate workspace
             workspace = Workspace.objects(id=workspace_id).first()
             if not workspace:
                 raise Exception("Workspace not found")
 
-            
-            # original_text, detected_lang = await detect_language_and_input(title)
-            # english_topic = await translate_to_english(original_text)
-            
-            # Get Wiki data
-            # wiki_data = get_wikipedia_summary(english_topic, sentences=1)
-            # print(f"Wiki data: {wiki_data}")
-            # Generate script
+            # Generate script content
             generated_script = create_script_with_gemini(
                 title, 
                 style, 
                 length,
                 language
             )
-            # print(f"Generated script: {generated_script}")
-            # Save to database
+            
+            # Kiểm tra nếu update_existing=True, tìm script hiện có và cập nhật
+            if update_existing:
+                existing_script = Script.objects(workspace_id=workspace).first()
+                if existing_script:
+                    # Cập nhật script hiện có
+                    existing_script.title = title
+                    existing_script.generated_script = generated_script
+                    existing_script.language = language
+                    existing_script.style = style
+                    existing_script.updated_at = datetime.datetime.now()
+                    existing_script.save()
+                    
+                    print(f"Script updated: {existing_script.id}")
+                    return {
+                        "script_id": str(existing_script.id),
+                        "title": title,
+                        "script": generated_script,
+                    }, 200
+            
+            # Nếu không update hoặc không tìm thấy script hiện có, tạo mới
             script = Script(
                 workspace_id=workspace,
                 title=title,
@@ -47,7 +60,6 @@ class ScriptController:
 
         except Exception as e:
             return {"error": str(e)}, 500
-        # Implement this method in your ScriptController class
     
     @staticmethod
     async def save_new_script(workspace_id, title, content):
@@ -89,11 +101,30 @@ class ScriptController:
             return {"error": str(e)}, 500
         
     @staticmethod
-    async def create_script_from_text(workspace_id, title, content, language, style=2):
+    async def create_script_from_text(workspace_id, title, content, language, style=2, update_existing=False):
         try:
-            # Create a new script from the provided text
+            # Validate workspace
+            workspace = Workspace.objects(id=workspace_id).first()
+            if not workspace:
+                return {"error": f"Không tìm thấy workspace với ID {workspace_id}"}, 404
+                
+            # Kiểm tra nếu update_existing=True, tìm script hiện có và cập nhật
+            if update_existing:
+                existing_script = Script.objects(workspace_id=workspace).first()
+                if existing_script:
+                    # Cập nhật script hiện có
+                    existing_script.title = title
+                    existing_script.generated_script = content
+                    existing_script.language = language
+                    existing_script.style = style
+                    existing_script.updated_at = datetime.datetime.now()
+                    existing_script.save()
+                    
+                    return {"script_id": str(existing_script.id), "message": "Script updated successfully"}, 200
+                    
+            # Create a new script from the provided text (nếu không update hoặc không tìm thấy script)
             script = Script(
-                workspace_id=workspace_id,
+                workspace_id=workspace,
                 title=title,
                 generated_script=content,
                 style=style,
@@ -105,7 +136,7 @@ class ScriptController:
             return {"script_id": str(script.id), "message": "Script created successfully"}, 201
         except Exception as e:
             return {"error": str(e)}, 500
-        
+
     @staticmethod
     def get_scripts_by_workspace(workspace_id):
         workspace = Workspace.objects(id=workspace_id).first()
