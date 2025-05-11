@@ -115,6 +115,7 @@ const Resource = ({ workspace_id }: { workspace_id: string | undefined }) => {
           filename: scriptClips[index].resource_type === "video"
             ? null
             : scriptClips[index].resource_url,
+          style: audioData.voice_style
         }),
       }
     );

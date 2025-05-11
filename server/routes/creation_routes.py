@@ -153,7 +153,12 @@ def gen_on_prompt():
         else:
             filename = f"{uuid.uuid4().hex}.png"
             
-        filename = asyncio.run(get_image(data["script"], filename=filename, additional=data.get("prompt", None)))
+        filename = asyncio.run(get_image(
+            data["script"], 
+            filename=filename, 
+            additional=data.get("prompt", None), 
+            style=data.get("style", None)
+            ))
         print("Generating image with description:", data["prompt"], " with filename:", filename)
         resource = Resource.objects(id=data["id"]).first()
         resource.resource_url = filename
