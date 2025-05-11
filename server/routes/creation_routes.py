@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 import uuid
 from urllib.parse import urljoin
 
-from models.models import Clip, Resource, Script
+from models.models import Clip, Resource, Script, Workspace
 from models import models
 from services.storage.storage_service import upload_to_r2, upload_blob_to_r2
 
@@ -153,13 +153,15 @@ def gen_on_prompt():
         else:
             filename = f"{uuid.uuid4().hex}.png"
             
+        script = models.Script.objects(workspace_id=data["workspace_id"]).first()
+        
         filename = asyncio.run(get_image(
             data["script"], 
             filename=filename, 
             additional=data.get("prompt", None), 
-            style=data.get("style", None)
+            style=script.style
             ))
-        print("Generating image with description:", data["prompt"], " with filename:", filename)
+        print("Generating image with description:", data.get("prompt", "none"), " with filename:", filename)
         resource = Resource.objects(id=data["id"]).first()
         resource.resource_url = filename
         resource.resource_type = "image"
