@@ -298,6 +298,14 @@ export default function CesdkEditor({
         // "https://pub-678b8517ce85460f91e69a5c322f3ea7.r2.dev/audios/6818bd3fc154edd026497deb/Recording.mp3"
       );
       console.log("Audio URL", audioUrl);
+      // const backgroundAudio = engine.block.create("audio");
+      // engine.block.appendChild(page, backgroundAudio);
+      // engine.block.setString(
+      //   backgroundAudio,
+      //   "audio/fileURI",
+      //   "https://cdn.img.ly/assets/demo/v1/ly.img.audio/audios/far_from_home.m4a"
+      // );
+      // engine.block.setVolume(backgroundAudio, 0.3); 
 
       const track1 = engine.block.create("track");
 
