@@ -114,7 +114,7 @@ const Resource = ({ workspace_id }: { workspace_id: string | undefined }) => {
           prompt: prompt,
           filename: scriptClips[index].resource_type === "video"
             ? null
-            : scriptClips[index],
+            : scriptClips[index].resource_url,
         }),
       }
     );
