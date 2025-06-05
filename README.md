@@ -3,7 +3,7 @@
 An AI-powered application for making pop-sci videos based on user topics or voice recording, with support for automation upload to social media platforms and tracking user engagement on YouTube, TikTok, and Facebook.
 
 ## Video demo
-Coming soon!
+[![Vivid - Phần mềm tự động hóa tạo Video bằng AI on YouTube](https://img.youtube.com/vi/BcLDmO-cOaM/0.jpg)](https://www.youtube.com/watch?v=BcLDmO-cOaM)
 ## Features
 - Google OAuth for user authentication
 - Generate scripts:
